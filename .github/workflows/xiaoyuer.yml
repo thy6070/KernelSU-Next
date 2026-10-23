@@ -1,0 +1,126 @@
+name: Build Xiaoyuer
+
+on:
+  workflow_dispatch:
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      size: ${{ steps.cert.outputs.size }}
+      hash: ${{ steps.cert.outputs.hash }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Keystore and certificate fingerprint
+        id: cert
+        run: |
+          set -euo pipefail
+          mkdir -p signing
+          if [ -f signing/xiaoyuer.jks ]; then
+            PASS="$(cat signing/pass.txt)"
+            echo "reuse existing keystore"
+          else
+            PASS="$(openssl rand -hex 16)"
+            keytool -genkeypair -keystore signing/xiaoyuer.jks -alias xiaoyuer \
+              -keyalg RSA -keysize 2048 -validity 36500 \
+              -storepass "$PASS" -keypass "$PASS" \
+              -dname "CN=Xiaoyuer,O=Xiaoyuer,C=CN"
+            printf '%s' "$PASS" > signing/pass.txt
+            echo "generated new keystore"
+          fi
+          keytool -exportcert -alias xiaoyuer -keystore signing/xiaoyuer.jks -storepass "$PASS" -file cert.der
+          SIZE=$(stat -c%s cert.der)
+          HASH=$(sha256sum cert.der | awk '{print $1}')
+          HEX=$(printf '0x%x' "$SIZE")
+          echo "size=$HEX" >> "$GITHUB_OUTPUT"
+          echo "hash=$HASH" >> "$GITHUB_OUTPUT"
+          echo "cert der size=$SIZE hex=$HEX"
+          echo "cert sha256=$HASH"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: signing
+          path: |
+            signing/xiaoyuer.jks
+            signing/pass.txt
+
+  build-lkm:
+    needs: prepare
+    uses: ./.github/workflows/ddk-lkm-ksu.yml
+    with:
+      kmi: android14-6.1
+      manager_package: com.tencent.qqpimsecure
+      expected_manager_size: ${{ needs.prepare.outputs.size }}
+      expected_manager_hash: ${{ needs.prepare.outputs.hash }}
+
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - run: mkdir -p noop && echo noop > noop/noop.txt
+      - uses: actions/upload-artifact@v7
+        with:
+          name: noop
+          path: noop
+
+  build-ksud:
+    needs: noop
+    uses: ./.github/workflows/ksud.yml
+    with:
+      target: aarch64-linux-android
+      pack_lkm: false
+      pack_ksuinit: false
+
+  build-manager:
+    needs: [prepare, build-ksud]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: signing
+          path: signing-artifact
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: ksud-aarch64-linux-android
+          path: ksud-artifact
+
+      - name: Wire signing and ksud payload
+        run: |
+          set -euo pipefail
+          PASS="$(cat signing-artifact/pass.txt)"
+          mkdir -p manager/app/src/main/jniLibs/arm64-v8a
+          cp ksud-artifact/aarch64-linux-android/release/ksud manager/app/src/main/jniLibs/arm64-v8a/libksud.so
+          {
+            echo "KEYSTORE_FILE=${{ github.workspace }}/signing-artifact/xiaoyuer.jks"
+            echo "KEYSTORE_PASSWORD=$PASS"
+            echo "KEY_ALIAS=xiaoyuer"
+            echo "KEY_PASSWORD=$PASS"
+          } >> manager/gradle.properties
+          ls -la manager/app/src/main/jniLibs/arm64-v8a
+
+      - name: Apply launcher icon
+        run: |
+          pip install pillow
+          python3 .github/brand/make_icons.py
+
+      - name: Gradle assembleRelease
+        working-directory: manager
+        run: ./gradlew assembleRelease --no-daemon
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: manager-apk
+          path: manager/app/build/outputs/apk/release/*.apk
