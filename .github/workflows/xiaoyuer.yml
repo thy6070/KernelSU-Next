@@ -110,6 +110,9 @@ jobs:
           } >> manager/gradle.properties
           ls -la manager/app/src/main/jniLibs/arm64-v8a
 
+      - name: Spoof namespace
+        run: python3 .github/brand/spoof_ns.py
+
       - name: Apply launcher icon and app name
         run: |
           pip install pillow
