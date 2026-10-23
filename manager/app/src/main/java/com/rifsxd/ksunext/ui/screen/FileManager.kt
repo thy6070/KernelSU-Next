@@ -5,6 +5,11 @@ import android.content.Context
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.border
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.res.painterResource
+import com.rifsxd.ksunext.R
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -120,57 +125,67 @@ fun FileManagerScreen() {
 @Composable
 private fun DynamicIsland() {
     var expanded by remember { mutableStateOf(false) }
-    var now by remember { mutableStateOf(currentClock()) }
+    val spec = spring<androidx.compose.ui.unit.Dp>(dampingRatio = 0.72f, stiffness = 340f)
 
-    LaunchedEffect(Unit) {
-        while (true) {
-            now = currentClock()
-            delay(1000)
-        }
-    }
-
-    val iosSpring = spring<androidx.compose.ui.unit.Dp>(
-        dampingRatio = 0.72f,
-        stiffness = 380f
-    )
-    val width by animateDpAsState(if (expanded) 190.dp else 104.dp, iosSpring)
-    val height by animateDpAsState(if (expanded) 76.dp else 30.dp, iosSpring)
-    val radius by animateDpAsState(if (expanded) 24.dp else 15.dp, iosSpring)
-    val dotSize by animateDpAsState(if (expanded) 15.dp else 11.dp, iosSpring)
-    val gap by animateDpAsState(if (expanded) 7.dp else 5.dp, iosSpring)
+    val mainW by animateDpAsState(if (expanded) 216.dp else 132.dp, spec)
+    val mainH by animateDpAsState(if (expanded) 88.dp else 38.dp, spec)
+    val radius by animateDpAsState(if (expanded) 28.dp else 19.dp, spec)
+    val dotSize by animateDpAsState(if (expanded) 0.dp else 38.dp, spec)
+    val gap by animateDpAsState(if (expanded) 0.dp else 6.dp, spec)
+    val borderAlpha by animateFloatAsState(if (expanded) 0.10f else 0.22f, label = "border")
 
     Box(
-        modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
         contentAlignment = Alignment.TopCenter
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(gap)
         ) {
-            Column(
+            Row(
                 modifier = Modifier
-                    .width(width)
-                    .height(height)
+                    .width(mainW)
+                    .height(mainH)
                     .clip(RoundedCornerShape(radius))
                     .background(Color.Black)
-                    .clickable { expanded = !expanded },
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                    .border(
+                        width = 1.dp,
+                        color = Color(0xFFFFFFFF).copy(alpha = borderAlpha),
+                        shape = RoundedCornerShape(radius)
+                    )
+                    .clickable { expanded = !expanded }
+                    .padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = now, color = Color.White, fontSize = if (expanded) 20.sp else 12.sp)
+                Image(
+                    painter = painterResource(id = R.mipmap.ic_launcher_foreground),
+                    contentDescription = null,
+                    modifier = Modifier.size(if (expanded) 34.dp else 22.dp).blur(0.35.dp)
+                )
                 if (expanded) {
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(text = "小鱼儿", color = Color(0xFF8A8A8A), fontSize = 10.sp)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.blur(0.6.dp)) {
+                        Text(text = "小鱼儿", color = Color.White, fontSize = 17.sp)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(text = "文件管理器", color = Color(0xFF9A9A9A), fontSize = 11.sp)
+                    }
                 }
             }
 
-            Box(
-                modifier = Modifier
-                    .size(dotSize)
-                    .clip(CircleShape)
-                    .background(Color.Black)
-                    .clickable { expanded = !expanded }
-            )
+            if (dotSize > 0.dp) {
+                Box(
+                    modifier = Modifier
+                        .size(dotSize)
+                        .clip(CircleShape)
+                        .background(Color.Black)
+                        .border(
+                            width = 1.dp,
+                            color = Color(0xFFFFFFFF).copy(alpha = borderAlpha),
+                            shape = CircleShape
+                        )
+                        .clickable { expanded = true }
+                )
+            }
         }
     }
 }
