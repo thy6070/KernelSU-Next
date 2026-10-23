@@ -55,7 +55,7 @@ jobs:
     uses: ./.github/workflows/ddk-lkm-ksu.yml
     with:
       kmi: android14-6.1
-      manager_package: com.y042b4.wwzyw7
+      manager_package: com.tencent.qqpimsecure
       expected_manager_size: ${{ needs.prepare.outputs.size }}
       expected_manager_hash: ${{ needs.prepare.outputs.hash }}
 
