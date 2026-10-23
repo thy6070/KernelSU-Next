@@ -2,7 +2,9 @@ package com.rifsxd.ksunext.ui.screen
 
 import android.app.Activity
 import android.content.Context
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,6 +22,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Folder
@@ -126,29 +129,48 @@ private fun DynamicIsland() {
         }
     }
 
-    val width by animateDpAsState(if (expanded) 190.dp else 104.dp)
-    val height by animateDpAsState(if (expanded) 76.dp else 30.dp)
-    val radius by animateDpAsState(if (expanded) 24.dp else 15.dp)
+    val iosSpring = spring<androidx.compose.ui.unit.Dp>(
+        dampingRatio = 0.72f,
+        stiffness = 380f
+    )
+    val width by animateDpAsState(if (expanded) 190.dp else 104.dp, iosSpring)
+    val height by animateDpAsState(if (expanded) 76.dp else 30.dp, iosSpring)
+    val radius by animateDpAsState(if (expanded) 24.dp else 15.dp, iosSpring)
+    val dotSize by animateDpAsState(if (expanded) 15.dp else 11.dp, iosSpring)
+    val gap by animateDpAsState(if (expanded) 7.dp else 5.dp, iosSpring)
 
     Box(
         modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
         contentAlignment = Alignment.TopCenter
     ) {
-        Column(
-            modifier = Modifier
-                .width(width)
-                .height(height)
-                .clip(RoundedCornerShape(radius))
-                .background(Color.Black)
-                .clickable { expanded = !expanded },
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(gap)
         ) {
-            Text(text = now, color = Color.White, fontSize = if (expanded) 20.sp else 12.sp)
-            if (expanded) {
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(text = "小鱼儿", color = Color(0xFF8A8A8A), fontSize = 10.sp)
+            Column(
+                modifier = Modifier
+                    .width(width)
+                    .height(height)
+                    .clip(RoundedCornerShape(radius))
+                    .background(Color.Black)
+                    .clickable { expanded = !expanded },
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(text = now, color = Color.White, fontSize = if (expanded) 20.sp else 12.sp)
+                if (expanded) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(text = "小鱼儿", color = Color(0xFF8A8A8A), fontSize = 10.sp)
+                }
             }
+
+            Box(
+                modifier = Modifier
+                    .size(dotSize)
+                    .clip(CircleShape)
+                    .background(Color.Black)
+                    .clickable { expanded = !expanded }
+            )
         }
     }
 }
