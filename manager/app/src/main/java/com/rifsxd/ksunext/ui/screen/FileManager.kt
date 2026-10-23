@@ -1,5 +1,8 @@
 package com.rifsxd.ksunext.ui.screen
 
+import android.content.Context
+import android.graphics.Bitmap
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -23,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -30,6 +34,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -56,17 +63,21 @@ fun FileManagerScreen() {
     var rightPath by remember { mutableStateOf("/data/") }
 
     Row(modifier = Modifier.fillMaxSize().background(Color(BG_COLOR))) {
-        BrowserPane(
-            path = leftPath,
-            onNavigate = { leftPath = it },
-            modifier = Modifier.weight(1f)
-        )
+        key(leftPath) {
+            BrowserPane(
+                path = leftPath,
+                onNavigate = { leftPath = it },
+                modifier = Modifier.weight(1f)
+            )
+        }
         Column(modifier = Modifier.width(1.dp).fillMaxHeight().background(Color(0xFF4A4A4A))) {}
-        BrowserPane(
-            path = rightPath,
-            onNavigate = { rightPath = it },
-            modifier = Modifier.weight(1f)
-        )
+        key(rightPath) {
+            BrowserPane(
+                path = rightPath,
+                onNavigate = { rightPath = it },
+                modifier = Modifier.weight(1f)
+            )
+        }
     }
 }
 
@@ -88,6 +99,7 @@ private fun BrowserPane(
                 name = "..",
                 isDir = true,
                 modified = 0L,
+                fullPath = "",
                 onClick = {
                     val up = parentOf(path)
                     if (up != path) onNavigate(up)
@@ -99,6 +111,7 @@ private fun BrowserPane(
                 name = entry.name,
                 isDir = entry.isDir,
                 modified = entry.modified,
+                fullPath = joinPath(path, entry.name),
                 onClick = { if (entry.isDir) onNavigate(joinPath(path, entry.name)) }
             )
         }
@@ -106,7 +119,13 @@ private fun BrowserPane(
 }
 
 @Composable
-private fun FsRow(name: String, isDir: Boolean, modified: Long, onClick: () -> Unit) {
+private fun FsRow(
+    name: String,
+    isDir: Boolean,
+    modified: Long,
+    fullPath: String,
+    onClick: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -114,31 +133,7 @@ private fun FsRow(name: String, isDir: Boolean, modified: Long, onClick: () -> U
             .padding(horizontal = 6.dp, vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (isDir) {
-            Box(
-                modifier = Modifier
-                    .size(30.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(TILE_COLOR)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Folder,
-                    contentDescription = null,
-                    tint = Color(FOLDER_ICON),
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-        } else {
-            Box(modifier = Modifier.size(30.dp), contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = Icons.Filled.InsertDriveFile,
-                    contentDescription = null,
-                    tint = Color(FILE_ICON),
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-        }
+        RowIcon(isDir = isDir, name = name, fullPath = fullPath, isParent = fullPath.isEmpty())
         Spacer(modifier = Modifier.width(8.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -160,14 +155,66 @@ private fun FsRow(name: String, isDir: Boolean, modified: Long, onClick: () -> U
     }
 }
 
+@Composable
+private fun RowIcon(isDir: Boolean, name: String, fullPath: String, isParent: Boolean) {
+    val context = LocalContext.current
+    var apkIcon by remember(fullPath) { mutableStateOf<Bitmap?>(null) }
+
+    LaunchedEffect(fullPath) {
+        if (!isDir && !isParent && name.endsWith(".apk", ignoreCase = true)) {
+            apkIcon = withContext(Dispatchers.IO) { loadApkIcon(context, fullPath) }
+        }
+    }
+
+    when {
+        isDir -> Box(
+            modifier = Modifier
+                .size(30.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color(TILE_COLOR)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Folder,
+                contentDescription = null,
+                tint = Color(FOLDER_ICON),
+                modifier = Modifier.size(18.dp)
+            )
+        }
+
+        apkIcon != null -> Box(modifier = Modifier.size(30.dp), contentAlignment = Alignment.Center) {
+            Image(
+                bitmap = apkIcon!!.asImageBitmap(),
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+                contentScale = ContentScale.Fit
+            )
+        }
+
+        else -> Box(modifier = Modifier.size(30.dp), contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = Icons.Filled.InsertDriveFile,
+                contentDescription = null,
+                tint = Color(FILE_ICON),
+                modifier = Modifier.size(18.dp)
+            )
+        }
+    }
+}
+
+private fun loadApkIcon(context: Context, path: String): Bitmap? = runCatching {
+    val pm = context.packageManager
+    val info = pm.getPackageArchiveInfo(path, 0) ?: return null
+    val appInfo = info.applicationInfo ?: return null
+    appInfo.sourceDir = path
+    appInfo.publicSourceDir = path
+    (pm.getApplicationIcon(appInfo) as? android.graphics.drawable.BitmapDrawable)?.bitmap
+        ?: runCatching { (pm.getApplicationIcon(appInfo) as android.graphics.drawable.BitmapDrawable).bitmap }.getOrNull()
+}.getOrNull()
+
 private fun formatTime(millis: Long): String =
     SimpleDateFormat("yy-MM-dd HH:mm", Locale.getDefault()).format(Date(millis))
 
-/**
- * Root shell is the source of truth: app-level File API is limited by scoped
- * storage and cannot see files it did not create (this is why apk files were
- * missing). File API is only used to enrich rows with modification time.
- */
 private suspend fun listDir(path: String): List<FsEntry> = withContext(Dispatchers.IO) {
     val norm = if (path.endsWith("/")) path else "$path/"
 
