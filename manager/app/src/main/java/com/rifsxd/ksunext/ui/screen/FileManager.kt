@@ -1,7 +1,6 @@
 package com.rifsxd.ksunext.ui.screen
 
 import android.content.Context
-import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -28,12 +27,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -42,11 +43,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.topjohnwu.superuser.Shell
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 
 private const val BG_COLOR = 0xFF2B2B2B.toInt()
 private const val TILE_COLOR = 0xFF3A3A3A.toInt()
@@ -55,12 +59,15 @@ private const val SUB_COLOR = 0xFF8A8A8A.toInt()
 private const val FOLDER_ICON = 0xFFD6D6D6.toInt()
 private const val FILE_ICON = 0xFF9A9A9A.toInt()
 
+private val apkIconCache = ConcurrentHashMap<String, ImageBitmap?>()
+private val apkIconMutex = Mutex()
+
 data class FsEntry(val name: String, val isDir: Boolean, val modified: Long = 0L)
 
 @Composable
 fun FileManagerScreen() {
-    var leftPath by remember { mutableStateOf("/storage/emulated/0/") }
-    var rightPath by remember { mutableStateOf("/data/") }
+    var leftPath by remember { mutableStateOf("/storage/emulated/0") }
+    var rightPath by remember { mutableStateOf("/data") }
 
     Row(modifier = Modifier.fillMaxSize().background(Color(BG_COLOR))) {
         key(leftPath) {
@@ -93,6 +100,8 @@ private fun BrowserPane(
         entries = listDir(path)
     }
 
+    val parent = parentOf(path)
+
     LazyColumn(modifier = modifier.fillMaxSize().background(Color(BG_COLOR))) {
         item {
             FsRow(
@@ -100,10 +109,8 @@ private fun BrowserPane(
                 isDir = true,
                 modified = 0L,
                 fullPath = "",
-                onClick = {
-                    val up = parentOf(path)
-                    if (up != path) onNavigate(up)
-                }
+                isParent = true,
+                onClick = { if (parent != path) onNavigate(parent) }
             )
         }
         items(entries) { entry ->
@@ -112,6 +119,7 @@ private fun BrowserPane(
                 isDir = entry.isDir,
                 modified = entry.modified,
                 fullPath = joinPath(path, entry.name),
+                isParent = false,
                 onClick = { if (entry.isDir) onNavigate(joinPath(path, entry.name)) }
             )
         }
@@ -124,16 +132,17 @@ private fun FsRow(
     isDir: Boolean,
     modified: Long,
     fullPath: String,
+    isParent: Boolean,
     onClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 6.dp, vertical = 3.dp),
+            .padding(horizontal = 6.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        RowIcon(isDir = isDir, name = name, fullPath = fullPath, isParent = fullPath.isEmpty())
+        RowIcon(isDir = isDir, name = name, fullPath = fullPath, isParent = isParent)
         Spacer(modifier = Modifier.width(8.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -157,19 +166,22 @@ private fun FsRow(
 
 @Composable
 private fun RowIcon(isDir: Boolean, name: String, fullPath: String, isParent: Boolean) {
-    val context = LocalContext.current
-    var apkIcon by remember(fullPath) { mutableStateOf<Bitmap?>(null) }
+    val ctx = LocalContext.current
 
-    LaunchedEffect(fullPath) {
-        if (!isDir && !isParent && name.endsWith(".apk", ignoreCase = true)) {
-            apkIcon = withContext(Dispatchers.IO) { loadApkIcon(context, fullPath) }
+    val apkIcon by produceState<ImageBitmap?>(apkIconCache[fullPath], fullPath) {
+        if (value != null) return@produceState
+        if (isDir || isParent || !isApk(name)) return@produceState
+        value = withContext(Dispatchers.IO) {
+            apkIconMutex.withLock {
+                apkIconCache.getOrPut(fullPath) { loadApkIcon(ctx, fullPath) }
+            }
         }
     }
 
     when {
         isDir -> Box(
             modifier = Modifier
-                .size(30.dp)
+                .size(28.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .background(Color(TILE_COLOR)),
             contentAlignment = Alignment.Center
@@ -178,39 +190,76 @@ private fun RowIcon(isDir: Boolean, name: String, fullPath: String, isParent: Bo
                 imageVector = Icons.Filled.Folder,
                 contentDescription = null,
                 tint = Color(FOLDER_ICON),
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(17.dp)
             )
         }
 
-        apkIcon != null -> Box(modifier = Modifier.size(30.dp), contentAlignment = Alignment.Center) {
+        apkIcon != null -> Box(modifier = Modifier.size(28.dp), contentAlignment = Alignment.Center) {
             Image(
-                bitmap = apkIcon!!.asImageBitmap(),
+                bitmap = apkIcon!!,
                 contentDescription = null,
                 modifier = Modifier.size(24.dp),
                 contentScale = ContentScale.Fit
             )
         }
 
-        else -> Box(modifier = Modifier.size(30.dp), contentAlignment = Alignment.Center) {
+        else -> Box(modifier = Modifier.size(28.dp), contentAlignment = Alignment.Center) {
             Icon(
                 imageVector = Icons.Filled.InsertDriveFile,
                 contentDescription = null,
                 tint = Color(FILE_ICON),
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(17.dp)
             )
         }
     }
 }
 
-private fun loadApkIcon(context: Context, path: String): Bitmap? = runCatching {
-    val pm = context.packageManager
-    val info = pm.getPackageArchiveInfo(path, 0) ?: return null
-    val appInfo = info.applicationInfo ?: return null
-    appInfo.sourceDir = path
-    appInfo.publicSourceDir = path
-    (pm.getApplicationIcon(appInfo) as? android.graphics.drawable.BitmapDrawable)?.bitmap
-        ?: runCatching { (pm.getApplicationIcon(appInfo) as android.graphics.drawable.BitmapDrawable).bitmap }.getOrNull()
-}.getOrNull()
+private fun loadApkIcon(ctx: Context, path: String): ImageBitmap? {
+    return try {
+        val pm = ctx.packageManager
+        var usedPath = path
+        var info = pm.getPackageArchiveInfo(path, 0)
+
+        if (info == null) {
+            val probe = ctx.cacheDir.absolutePath + "/icon_probe_" + Math.abs(path.hashCode()) + ".apk"
+            copyOutForIcon(path, probe)
+            usedPath = probe
+            info = pm.getPackageArchiveInfo(probe, 0)
+        }
+
+        val app = info?.applicationInfo
+        if (app == null) null else {
+            app.sourceDir = usedPath
+            app.publicSourceDir = usedPath
+            try {
+                app.loadIcon(pm)?.toBitmap()?.asImageBitmap()
+            } catch (t: Throwable) {
+                null
+            }
+        }
+    } catch (t: Throwable) {
+        null
+    }
+}
+
+private fun copyOutForIcon(src: String, dest: String) {
+    try {
+        val p = Runtime.getRuntime().exec(
+            arrayOf("su", "-c", "cp " + shq(src) + " " + shq(dest) + " && chmod 644 " + shq(dest))
+        )
+        p.waitFor()
+    } catch (t: Throwable) {
+    }
+}
+
+private fun shq(s: String): String = "'" + s.replace("'", "'\\''") + "'"
+
+internal fun isApk(n: String): Boolean {
+    val lower = n.lowercase()
+    if (lower.endsWith(".apk")) return true
+    val tail = lower.substringAfterLast(".apk.", "")
+    return tail.isNotEmpty() && tail.all { it.isDigit() }
+}
 
 private fun formatTime(millis: Long): String =
     SimpleDateFormat("yy-MM-dd HH:mm", Locale.getDefault()).format(Date(millis))
@@ -245,11 +294,10 @@ private suspend fun listDir(path: String): List<FsEntry> = withContext(Dispatche
 }
 
 private fun parentOf(path: String): String {
-    val trimmed = path.trimEnd('/')
-    if (trimmed.isEmpty()) return "/"
-    val idx = trimmed.lastIndexOf('/')
-    return if (idx <= 0) "/" else trimmed.substring(0, idx + 1)
+    val p = if (path.length > 1 && path.endsWith("/")) path.dropLast(1) else path
+    val i = p.lastIndexOf('/')
+    return if (i <= 0) "/" else p.substring(0, i)
 }
 
 private fun joinPath(base: String, name: String): String =
-    if (base.endsWith("/")) "$base$name/" else "$base/$name/"
+    if (base.endsWith("/")) "$base$name" else "$base/$name"
