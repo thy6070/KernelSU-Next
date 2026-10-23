@@ -22,6 +22,11 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p signing
+          if [ -f .github/brand/signing.jks ]; then
+            cp .github/brand/signing.jks signing/xiaoyuer.jks
+            cp .github/brand/pass.txt signing/pass.txt
+            echo "pinned keystore from repo"
+          fi
           if [ -f signing/xiaoyuer.jks ]; then
             PASS="$(cat signing/pass.txt)"
             echo "reuse existing keystore"
