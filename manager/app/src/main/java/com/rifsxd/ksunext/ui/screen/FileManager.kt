@@ -46,7 +46,7 @@ private const val TILE_COLOR = 0xFF3A3A3A.toInt()
 private const val TEXT_COLOR = 0xFFEDEDED.toInt()
 private const val SUB_COLOR = 0xFF8A8A8A.toInt()
 private const val FOLDER_ICON = 0xFFD6D6D6.toInt()
-private const val FILE_ICON = 0xFF8A8A8A.toInt()
+private const val FILE_ICON = 0xFF9A9A9A.toInt()
 
 data class FsEntry(val name: String, val isDir: Boolean, val modified: Long = 0L)
 
@@ -79,7 +79,7 @@ private fun BrowserPane(
     var entries by remember(path) { mutableStateOf<List<FsEntry>>(emptyList()) }
 
     LaunchedEffect(path) {
-        entries = readDir(path)
+        entries = listDir(path)
     }
 
     LazyColumn(modifier = modifier.fillMaxSize().background(Color(BG_COLOR))) {
@@ -88,7 +88,10 @@ private fun BrowserPane(
                 name = "..",
                 isDir = true,
                 modified = 0L,
-                onClick = { onNavigate(parentOf(path)) }
+                onClick = {
+                    val up = parentOf(path)
+                    if (up != path) onNavigate(up)
+                }
             )
         }
         items(entries) { entry ->
@@ -108,29 +111,40 @@ private fun FsRow(name: String, isDir: Boolean, modified: Long, onClick: () -> U
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 6.dp),
+            .padding(horizontal = 6.dp, vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            modifier = Modifier
-                .size(38.dp)
-                .clip(RoundedCornerShape(9.dp))
-                .background(Color(TILE_COLOR)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = if (isDir) Icons.Filled.Folder else Icons.Filled.InsertDriveFile,
-                contentDescription = null,
-                tint = if (isDir) Color(FOLDER_ICON) else Color(FILE_ICON),
-                modifier = Modifier.size(22.dp)
-            )
+        if (isDir) {
+            Box(
+                modifier = Modifier
+                    .size(30.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(TILE_COLOR)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Folder,
+                    contentDescription = null,
+                    tint = Color(FOLDER_ICON),
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        } else {
+            Box(modifier = Modifier.size(30.dp), contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = Icons.Filled.InsertDriveFile,
+                    contentDescription = null,
+                    tint = Color(FILE_ICON),
+                    modifier = Modifier.size(18.dp)
+                )
+            }
         }
-        Spacer(modifier = Modifier.width(10.dp))
+        Spacer(modifier = Modifier.width(8.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = name,
                 color = Color(TEXT_COLOR),
-                fontSize = 14.sp,
+                fontSize = 13.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -138,7 +152,7 @@ private fun FsRow(name: String, isDir: Boolean, modified: Long, onClick: () -> U
                 Text(
                     text = formatTime(modified),
                     color = Color(SUB_COLOR),
-                    fontSize = 11.sp,
+                    fontSize = 10.sp,
                     maxLines = 1
                 )
             }
@@ -149,24 +163,43 @@ private fun FsRow(name: String, isDir: Boolean, modified: Long, onClick: () -> U
 private fun formatTime(millis: Long): String =
     SimpleDateFormat("yy-MM-dd HH:mm", Locale.getDefault()).format(Date(millis))
 
-private suspend fun readDir(path: String): List<FsEntry> = withContext(Dispatchers.IO) {
-    val direct = runCatching { File(path).listFiles() }.getOrNull()
-    val list: List<FsEntry> = if (direct != null) {
-        direct.map { FsEntry(it.name, it.isDirectory, it.lastModified()) }
-    } else {
-        val out = runCatching {
-            Shell.cmd("ls -1p \"$path\" 2>/dev/null").exec().out
-        }.getOrDefault(emptyList())
-        out.filter { it.isNotBlank() }.map { line ->
+/**
+ * Root shell is the source of truth: app-level File API is limited by scoped
+ * storage and cannot see files it did not create (this is why apk files were
+ * missing). File API is only used to enrich rows with modification time.
+ */
+private suspend fun listDir(path: String): List<FsEntry> = withContext(Dispatchers.IO) {
+    val norm = if (path.endsWith("/")) path else "$path/"
+
+    val shellOut = runCatching {
+        Shell.cmd("ls -1p \"$norm\" 2>/dev/null").exec().out
+    }.getOrDefault(emptyList())
+
+    val fromShell = shellOut
+        .filter { it.isNotBlank() }
+        .map { line ->
             val trimmed = line.trim()
             FsEntry(trimmed.removeSuffix("/"), trimmed.endsWith("/"))
         }
+
+    val timeMap: Map<String, Long> = runCatching {
+        File(norm).listFiles()?.associate { it.name to it.lastModified() } ?: emptyMap()
+    }.getOrDefault(emptyMap())
+
+    val merged = if (fromShell.isNotEmpty()) {
+        fromShell.map { it.copy(modified = timeMap[it.name] ?: 0L) }
+    } else {
+        runCatching { File(norm).listFiles() }.getOrNull()
+            ?.map { FsEntry(it.name, it.isDirectory, it.lastModified()) }
+            ?: emptyList()
     }
-    list.sortedWith(compareByDescending<FsEntry> { it.isDir }.thenBy { it.name.lowercase() })
+
+    merged.sortedWith(compareByDescending<FsEntry> { it.isDir }.thenBy { it.name.lowercase() })
 }
 
 private fun parentOf(path: String): String {
     val trimmed = path.trimEnd('/')
+    if (trimmed.isEmpty()) return "/"
     val idx = trimmed.lastIndexOf('/')
     return if (idx <= 0) "/" else trimmed.substring(0, idx + 1)
 }
