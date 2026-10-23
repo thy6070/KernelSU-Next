@@ -1,9 +1,6 @@
 package com.rifsxd.ksunext.ui.screen
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.drawable.BitmapDrawable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -50,22 +47,19 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 
 private const val BG_COLOR = 0xFF2B2B2B.toInt()
 private const val TILE_COLOR = 0xFF3A3A3A.toInt()
 private const val TEXT_COLOR = 0xFFEDEDED.toInt()
-private const val SUB_COLOR = 0xFF8A8A8A.toInt()
+private const val SUB_COLOR = 0xFF7F7F7F.toInt()
 private const val FOLDER_ICON = 0xFFD6D6D6.toInt()
 private const val FILE_ICON = 0xFF9A9A9A.toInt()
 
 private val apkIconCache = ConcurrentHashMap<String, ImageBitmap?>()
 private val apkIconMutex = Mutex()
 
-data class FsEntry(val name: String, val isDir: Boolean, val modified: Long = 0L)
+data class FsEntry(val name: String, val isDir: Boolean)
 
 @Composable
 fun FileManagerScreen() {
@@ -97,7 +91,7 @@ private fun BrowserPane(
     onNavigate: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var entries by remember(path) { mutableStateOf<List<FsEntry>>(emptyList()) }
+    var entries by remember { mutableStateOf<List<FsEntry>?>(null) }
 
     LaunchedEffect(path) {
         entries = listDir(path)
@@ -107,24 +101,48 @@ private fun BrowserPane(
 
     LazyColumn(modifier = modifier.fillMaxSize().background(Color(BG_COLOR))) {
         item {
-            FsRow(
-                name = "..",
-                isDir = true,
-                modified = 0L,
-                fullPath = "",
-                isParent = true,
-                onClick = { if (parent != path) onNavigate(parent) }
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(enabled = parent != path) { onNavigate(parent) }
+                    .padding(horizontal = 6.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(TILE_COLOR)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Folder,
+                        contentDescription = null,
+                        tint = Color(FOLDER_ICON),
+                        modifier = Modifier.size(17.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "..", color = Color(TEXT_COLOR), fontSize = 13.sp)
+            }
         }
-        items(entries) { entry ->
+        items(entries.orEmpty()) { entry ->
             FsRow(
                 name = entry.name,
                 isDir = entry.isDir,
-                modified = entry.modified,
                 fullPath = joinPath(path, entry.name),
-                isParent = false,
                 onClick = { if (entry.isDir) onNavigate(joinPath(path, entry.name)) }
             )
+        }
+        if (entries != null && entries!!.isEmpty()) {
+            item {
+                Text(
+                    text = "（空目录或没有权限）",
+                    color = Color(SUB_COLOR),
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp)
+                )
+            }
         }
     }
 }
@@ -133,47 +151,35 @@ private fun BrowserPane(
 private fun FsRow(
     name: String,
     isDir: Boolean,
-    modified: Long,
     fullPath: String,
-    isParent: Boolean,
     onClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 6.dp, vertical = 2.dp),
+            .padding(horizontal = 6.dp, vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        RowIcon(isDir = isDir, name = name, fullPath = fullPath, isParent = isParent)
+        RowIcon(isDir = isDir, name = name, fullPath = fullPath)
         Spacer(modifier = Modifier.width(8.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = name,
-                color = Color(TEXT_COLOR),
-                fontSize = 13.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            if (modified > 0L) {
-                Text(
-                    text = formatTime(modified),
-                    color = Color(SUB_COLOR),
-                    fontSize = 10.sp,
-                    maxLines = 1
-                )
-            }
-        }
+        Text(
+            text = name,
+            color = Color(TEXT_COLOR),
+            fontSize = 13.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
 @Composable
-private fun RowIcon(isDir: Boolean, name: String, fullPath: String, isParent: Boolean) {
+private fun RowIcon(isDir: Boolean, name: String, fullPath: String) {
     val ctx = LocalContext.current
 
     val apkIcon by produceState<ImageBitmap?>(apkIconCache[fullPath], fullPath) {
         if (value != null) return@produceState
-        if (isDir || isParent || !isApk(name)) return@produceState
+        if (isDir || !isApk(name)) return@produceState
         value = withContext(Dispatchers.IO) {
             apkIconMutex.withLock {
                 apkIconCache.getOrPut(fullPath) { loadApkIcon(ctx, fullPath) }
@@ -236,13 +242,13 @@ private fun loadApkIcon(ctx: Context, path: String): ImageBitmap? {
             app.publicSourceDir = usedPath
             try {
                 val drawable = app.loadIcon(pm)
-                val bmp: Bitmap = if (drawable is BitmapDrawable && drawable.bitmap != null) {
+                val bmp = if (drawable is android.graphics.drawable.BitmapDrawable && drawable.bitmap != null) {
                     drawable.bitmap
                 } else {
                     val w = drawable.intrinsicWidth.coerceAtLeast(1)
                     val h = drawable.intrinsicHeight.coerceAtLeast(1)
-                    val b = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-                    val canvas = Canvas(b)
+                    val b = android.graphics.Bitmap.createBitmap(w, h, android.graphics.Bitmap.Config.ARGB_8888)
+                    val canvas = android.graphics.Canvas(b)
                     drawable.setBounds(0, 0, w, h)
                     drawable.draw(canvas)
                     b
@@ -276,9 +282,6 @@ internal fun isApk(n: String): Boolean {
     return tail.isNotEmpty() && tail.all { it.isDigit() }
 }
 
-private fun formatTime(millis: Long): String =
-    SimpleDateFormat("yy-MM-dd HH:mm", Locale.getDefault()).format(Date(millis))
-
 private suspend fun listDir(path: String): List<FsEntry> = withContext(Dispatchers.IO) {
     val norm = if (path.endsWith("/")) path else "$path/"
 
@@ -293,19 +296,14 @@ private suspend fun listDir(path: String): List<FsEntry> = withContext(Dispatche
             FsEntry(trimmed.removeSuffix("/"), trimmed.endsWith("/"))
         }
 
-    val timeMap: Map<String, Long> = runCatching {
-        File(norm).listFiles()?.associate { it.name to it.lastModified() } ?: emptyMap()
-    }.getOrDefault(emptyMap())
-
-    val merged = if (fromShell.isNotEmpty()) {
-        fromShell.map { it.copy(modified = timeMap[it.name] ?: 0L) }
+    if (fromShell.isNotEmpty()) {
+        fromShell.sortedWith(compareByDescending<FsEntry> { it.isDir }.thenBy { it.name.lowercase() })
     } else {
         runCatching { File(norm).listFiles() }.getOrNull()
-            ?.map { FsEntry(it.name, it.isDirectory, it.lastModified()) }
+            ?.map { FsEntry(it.name, it.isDirectory) }
+            ?.sortedWith(compareByDescending<FsEntry> { it.isDir }.thenBy { it.name.lowercase() })
             ?: emptyList()
     }
-
-    merged.sortedWith(compareByDescending<FsEntry> { it.isDir }.thenBy { it.name.lowercase() })
 }
 
 private fun parentOf(path: String): String {
