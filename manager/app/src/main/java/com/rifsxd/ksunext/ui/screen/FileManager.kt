@@ -10,6 +10,11 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.res.painterResource
 import com.rifsxd.ksunext.R
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.updateTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -125,14 +130,45 @@ fun FileManagerScreen() {
 @Composable
 private fun DynamicIsland() {
     var expanded by remember { mutableStateOf(false) }
-    val spec = spring<androidx.compose.ui.unit.Dp>(dampingRatio = 0.72f, stiffness = 340f)
+    val soft = spring<androidx.compose.ui.unit.Dp>(dampingRatio = 0.52f, stiffness = 420f)
 
-    val mainW by animateDpAsState(if (expanded) 216.dp else 132.dp, spec)
-    val mainH by animateDpAsState(if (expanded) 88.dp else 38.dp, spec)
-    val radius by animateDpAsState(if (expanded) 28.dp else 19.dp, spec)
-    val dotSize by animateDpAsState(if (expanded) 0.dp else 38.dp, spec)
-    val gap by animateDpAsState(if (expanded) 0.dp else 6.dp, spec)
-    val borderAlpha by animateFloatAsState(if (expanded) 0.10f else 0.22f, label = "border")
+    val tr = updateTransition(expanded, label = "island")
+    val mainW by tr.animateDp(soft) { if (it) 232.dp else 152.dp }
+    val mainH by tr.animateDp(soft) { if (it) 90.dp else 40.dp }
+    val radius by tr.animateDp(soft) { if (it) 30.dp else 20.dp }
+    val gap by tr.animateDp(soft) { if (it) 0.dp else 6.dp }
+    val iconSize by tr.animateDp(soft) { if (it) 40.dp else 26.dp }
+    val borderAlpha by tr.animateFloat(soft) { if (it) 0.10f else 0.22f }
+
+    val dotSize by tr.animateDp(
+        transitionSpec = { tween(durationMillis = 200, delayMillis = if (targetState) 150 else 40) }
+    ) { if (it) 0.dp else 40.dp }
+
+    var blurring by remember { mutableStateOf(false) }
+    LaunchedEffect(expanded) {
+        blurring = true
+        delay(420)
+        blurring = false
+    }
+    val blurPx by animateDpAsState(if (blurring) 3.5.dp else 0.dp, label = "blur")
+
+    val dotOffset = remember { Animatable(0f) }
+    val squeeze = remember { Animatable(1f) }
+
+    LaunchedEffect(expanded) {
+        if (expanded) {
+            dotOffset.animateTo(18f, spring(dampingRatio = 0.42f, stiffness = 900f))
+            dotOffset.animateTo(0f, spring(dampingRatio = 0.28f, stiffness = 1100f))
+            squeeze.animateTo(0.92f, tween(70))
+            squeeze.animateTo(1f, spring(dampingRatio = 0.28f, stiffness = 900f))
+        } else {
+            squeeze.animateTo(0.94f, tween(70))
+            squeeze.animateTo(1f, spring(dampingRatio = 0.3f, stiffness = 900f))
+            dotOffset.snapTo(0f)
+            dotOffset.animateTo(12f, spring(dampingRatio = 0.38f, stiffness = 900f))
+            dotOffset.animateTo(3f, spring(dampingRatio = 0.5f, stiffness = 700f))
+        }
+    }
 
     Box(
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
@@ -140,7 +176,11 @@ private fun DynamicIsland() {
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(gap)
+            horizontalArrangement = Arrangement.spacedBy(gap),
+            modifier = Modifier.graphicsLayer {
+                scaleX = squeeze.value
+                scaleY = squeeze.value
+            }
         ) {
             Row(
                 modifier = Modifier
@@ -148,26 +188,22 @@ private fun DynamicIsland() {
                     .height(mainH)
                     .clip(RoundedCornerShape(radius))
                     .background(Color.Black)
-                    .border(
-                        width = 1.dp,
-                        color = Color(0xFFFFFFFF).copy(alpha = borderAlpha),
-                        shape = RoundedCornerShape(radius)
-                    )
+                    .border(1.dp, Color(0xFFFFFFFF).copy(alpha = borderAlpha), RoundedCornerShape(radius))
                     .clickable { expanded = !expanded }
-                    .padding(horizontal = 12.dp),
+                    .padding(horizontal = 14.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Image(
                     painter = painterResource(id = R.mipmap.ic_launcher_foreground),
                     contentDescription = null,
-                    modifier = Modifier.size(if (expanded) 34.dp else 22.dp).blur(0.35.dp)
+                    modifier = Modifier.size(iconSize).blur(blurPx * 0.15f)
                 )
                 if (expanded) {
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column(modifier = Modifier.blur(0.6.dp)) {
-                        Text(text = "小鱼儿", color = Color.White, fontSize = 17.sp)
+                    Spacer(modifier = Modifier.width(14.dp))
+                    Column(modifier = Modifier.blur(blurPx)) {
+                        Text(text = "小鱼儿", color = Color.White, fontSize = 18.sp)
                         Spacer(modifier = Modifier.height(2.dp))
-                        Text(text = "文件管理器", color = Color(0xFF9A9A9A), fontSize = 11.sp)
+                        Text(text = "文件管理器", color = Color(0xFF9A9A9A), fontSize = 12.sp)
                     }
                 }
             }
@@ -175,14 +211,11 @@ private fun DynamicIsland() {
             if (dotSize > 0.dp) {
                 Box(
                     modifier = Modifier
+                        .offset(x = dotOffset.value.dp)
                         .size(dotSize)
                         .clip(CircleShape)
                         .background(Color.Black)
-                        .border(
-                            width = 1.dp,
-                            color = Color(0xFFFFFFFF).copy(alpha = borderAlpha),
-                            shape = CircleShape
-                        )
+                        .border(1.dp, Color(0xFFFFFFFF).copy(alpha = borderAlpha), CircleShape)
                         .clickable { expanded = true }
                 )
             }
