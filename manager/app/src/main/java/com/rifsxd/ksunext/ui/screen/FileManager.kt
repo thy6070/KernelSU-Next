@@ -1,6 +1,9 @@
 package com.rifsxd.ksunext.ui.screen
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.BitmapDrawable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -232,7 +235,19 @@ private fun loadApkIcon(ctx: Context, path: String): ImageBitmap? {
             app.sourceDir = usedPath
             app.publicSourceDir = usedPath
             try {
-                app.loadIcon(pm)?.toBitmap()?.asImageBitmap()
+                val drawable = app.loadIcon(pm)
+                val bmp: Bitmap = if (drawable is BitmapDrawable && drawable.bitmap != null) {
+                    drawable.bitmap
+                } else {
+                    val w = drawable.intrinsicWidth.coerceAtLeast(1)
+                    val h = drawable.intrinsicHeight.coerceAtLeast(1)
+                    val b = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+                    val canvas = Canvas(b)
+                    drawable.setBounds(0, 0, w, h)
+                    drawable.draw(canvas)
+                    b
+                }
+                bmp.asImageBitmap()
             } catch (t: Throwable) {
                 null
             }
