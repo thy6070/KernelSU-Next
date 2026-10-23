@@ -104,7 +104,7 @@ private fun BrowserPane(
     Text(
         text = path,
         color = Color(SUB_COLOR),
-        fontSize = 10.sp,
+        fontSize = 11.sp,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp)
@@ -116,12 +116,12 @@ private fun BrowserPane(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable(enabled = parent != path) { onNavigate(parent) }
-                    .padding(horizontal = 6.dp, vertical = 6.dp),
+                    .padding(horizontal = 6.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
                     modifier = Modifier
-                        .size(28.dp)
+                        .size(32.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .background(Color(TILE_COLOR)),
                     contentAlignment = Alignment.Center
@@ -130,11 +130,11 @@ private fun BrowserPane(
                         imageVector = Icons.Filled.Folder,
                         contentDescription = null,
                         tint = Color(FOLDER_ICON),
-                        modifier = Modifier.size(17.dp)
+                        modifier = Modifier.size(20.dp)
                     )
                 }
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "..", color = Color(TEXT_COLOR), fontSize = 13.sp)
+                Text(text = "..", color = Color(TEXT_COLOR), fontSize = 15.sp)
             }
         }
         items(entries.orEmpty()) { entry ->
@@ -150,7 +150,7 @@ private fun BrowserPane(
                 Text(
                     text = "（空目录或没有权限）",
                     color = Color(SUB_COLOR),
-                    fontSize = 12.sp,
+                    fontSize = 13.sp,
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp)
                 )
             }
@@ -170,7 +170,7 @@ private fun FsRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 6.dp, vertical = 3.dp),
+            .padding(horizontal = 6.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         RowIcon(isDir = isDir, name = name, fullPath = fullPath)
@@ -178,7 +178,7 @@ private fun FsRow(
         Text(
             text = name,
             color = Color(TEXT_COLOR),
-            fontSize = 13.sp,
+            fontSize = 15.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
@@ -202,7 +202,7 @@ private fun RowIcon(isDir: Boolean, name: String, fullPath: String) {
     when {
         isDir -> Box(
             modifier = Modifier
-                .size(28.dp)
+                .size(32.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .background(Color(TILE_COLOR)),
             contentAlignment = Alignment.Center
@@ -211,25 +211,25 @@ private fun RowIcon(isDir: Boolean, name: String, fullPath: String) {
                 imageVector = Icons.Filled.Folder,
                 contentDescription = null,
                 tint = Color(FOLDER_ICON),
-                modifier = Modifier.size(17.dp)
+                modifier = Modifier.size(20.dp)
             )
         }
 
-        apkIcon != null -> Box(modifier = Modifier.size(28.dp), contentAlignment = Alignment.Center) {
+        apkIcon != null -> Box(modifier = Modifier.size(32.dp), contentAlignment = Alignment.Center) {
             Image(
                 bitmap = apkIcon!!,
                 contentDescription = null,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(28.dp),
                 contentScale = ContentScale.Fit
             )
         }
 
-        else -> Box(modifier = Modifier.size(28.dp), contentAlignment = Alignment.Center) {
+        else -> Box(modifier = Modifier.size(32.dp), contentAlignment = Alignment.Center) {
             Icon(
                 imageVector = Icons.Filled.InsertDriveFile,
                 contentDescription = null,
                 tint = Color(FILE_ICON),
-                modifier = Modifier.size(17.dp)
+                modifier = Modifier.size(20.dp)
             )
         }
     }
