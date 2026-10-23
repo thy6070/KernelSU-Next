@@ -2,9 +2,11 @@ package com.rifsxd.ksunext.ui.screen
 
 import android.app.Activity
 import android.content.Context
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -49,10 +51,14 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.topjohnwu.superuser.Shell
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 
 private const val BG_COLOR = 0xFF2B2B2B.toInt()
@@ -84,7 +90,8 @@ fun FileManagerScreen() {
     var leftPath by remember { mutableStateOf("/storage/emulated/0") }
     var rightPath by remember { mutableStateOf("/data") }
 
-    Row(modifier = Modifier.fillMaxSize().background(Color(BG_COLOR))) {
+    Box(modifier = Modifier.fillMaxSize().background(Color(BG_COLOR))) {
+    Row(modifier = Modifier.fillMaxSize()) {
         key(leftPath) {
             BrowserPane(
                 path = leftPath,
@@ -101,7 +108,52 @@ fun FileManagerScreen() {
             )
         }
     }
+
+    DynamicIsland()
+    }
 }
+
+@Composable
+private fun DynamicIsland() {
+    var expanded by remember { mutableStateOf(false) }
+    var now by remember { mutableStateOf(currentClock()) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            now = currentClock()
+            delay(1000)
+        }
+    }
+
+    val width by animateDpAsState(if (expanded) 190.dp else 104.dp)
+    val height by animateDpAsState(if (expanded) 76.dp else 30.dp)
+    val radius by animateDpAsState(if (expanded) 24.dp else 15.dp)
+
+    Box(
+        modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+        contentAlignment = Alignment.TopCenter
+    ) {
+        Column(
+            modifier = Modifier
+                .width(width)
+                .height(height)
+                .clip(RoundedCornerShape(radius))
+                .background(Color.Black)
+                .clickable { expanded = !expanded },
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(text = now, color = Color.White, fontSize = if (expanded) 20.sp else 12.sp)
+            if (expanded) {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(text = "小鱼儿", color = Color(0xFF8A8A8A), fontSize = 10.sp)
+            }
+        }
+    }
+}
+
+private fun currentClock(): String =
+    SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
 
 @Composable
 private fun BrowserPane(
