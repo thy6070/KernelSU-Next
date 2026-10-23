@@ -1,0 +1,86 @@
+name: Quick UI Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_run:
+        description: 'run id that produced ksud + keystore (empty = latest successful Build Xiaoyuer)'
+        required: false
+        default: ''
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Resolve source run
+        id: src
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -n "${{ inputs.source_run }}" ]; then
+            RID="${{ inputs.source_run }}"
+          else
+            RID=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+              "https://api.github.com/repos/${{ github.repository }}/actions/workflows/xiaoyuer.yml/runs?status=success&per_page=1" \
+              | python3 -c "import sys,json;print(json.load(sys.stdin)['workflow_runs'][0]['id'])")
+          fi
+          echo "using source run $RID"
+          echo "run_id=$RID" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: ksud-aarch64-linux-android
+          path: ksud-artifact
+          run-id: ${{ steps.src.outputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: signing
+          path: signing-artifact
+          run-id: ${{ steps.src.outputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Wire signing and ksud payload
+        run: |
+          set -euo pipefail
+          PASS="$(cat signing-artifact/pass.txt)"
+          mkdir -p manager/app/src/main/jniLibs/arm64-v8a
+          cp ksud-artifact/aarch64-linux-android/release/ksud manager/app/src/main/jniLibs/arm64-v8a/libksud.so
+          {
+            echo "KEYSTORE_FILE=${{ github.workspace }}/signing-artifact/xiaoyuer.jks"
+            echo "KEYSTORE_PASSWORD=$PASS"
+            echo "KEY_ALIAS=xiaoyuer"
+            echo "KEY_PASSWORD=$PASS"
+          } >> manager/gradle.properties
+
+      - name: Spoof namespace
+        run: python3 .github/brand/spoof_ns.py
+
+      - name: Apply launcher icon and app name
+        run: |
+          pip install pillow
+          python3 .github/brand/make_icons.py
+          grep -rl 'name="app_name"' manager/app/src/main/res | while read -r f; do
+            sed -i -E 's#<string name="app_name"[^>]*>[^<]*</string>#<string name="app_name">小鱼儿</string>#' "$f"
+          done
+
+      - name: Gradle assembleRelease
+        working-directory: manager
+        run: ./gradlew assembleRelease --no-daemon
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: manager-apk-quick
+          path: manager/app/build/outputs/apk/release/*.apk
