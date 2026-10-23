@@ -66,7 +66,30 @@ fun FileManagerScreen() {
     var leftPath by remember { mutableStateOf("/storage/emulated/0") }
     var rightPath by remember { mutableStateOf("/data") }
 
-    Row(modifier = Modifier.fillMaxSize().background(Color(BG_COLOR))) {
+    var rootOk by remember { mutableStateOf<Boolean?>(null) }
+
+    LaunchedEffect(Unit) {
+        rootOk = withContext(Dispatchers.IO) {
+            runCatching { Shell.getShell().isRoot }.getOrDefault(false)
+        }
+    }
+
+    Column(modifier = Modifier.fillMaxSize().background(Color(BG_COLOR))) {
+        Text(
+            text = when (rootOk) {
+                null -> "root: 检测中…"
+                true -> "root: 可用"
+                false -> "root: 不可用 —— 无法读取 /data，也无法列出 apk"
+            },
+            color = if (rootOk == false) Color(0xFFFF6B6B) else Color(SUB_COLOR),
+            fontSize = 11.sp,
+            maxLines = 1,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 4.dp)
+        )
+
+        Row(modifier = Modifier.weight(1f).fillMaxSize()) {
         key(leftPath) {
             BrowserPane(
                 path = leftPath,
@@ -81,6 +104,7 @@ fun FileManagerScreen() {
                 onNavigate = { rightPath = it },
                 modifier = Modifier.weight(1f)
             )
+        }
         }
     }
 }
