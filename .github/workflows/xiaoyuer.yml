@@ -110,10 +110,14 @@ jobs:
           } >> manager/gradle.properties
           ls -la manager/app/src/main/jniLibs/arm64-v8a
 
-      - name: Apply launcher icon
+      - name: Apply launcher icon and app name
         run: |
           pip install pillow
           python3 .github/brand/make_icons.py
+          grep -rl 'name="app_name"' manager/app/src/main/res | while read -r f; do
+            sed -i -E 's#<string name="app_name"[^>]*>[^<]*</string>#<string name="app_name">小鱼儿</string>#' "$f"
+          done
+          grep -rn 'name="app_name"' manager/app/src/main/res | head -5
 
       - name: Gradle assembleRelease
         working-directory: manager
