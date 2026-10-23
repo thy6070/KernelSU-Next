@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -66,30 +67,7 @@ fun FileManagerScreen() {
     var leftPath by remember { mutableStateOf("/storage/emulated/0") }
     var rightPath by remember { mutableStateOf("/data") }
 
-    var rootOk by remember { mutableStateOf<Boolean?>(null) }
-
-    LaunchedEffect(Unit) {
-        rootOk = withContext(Dispatchers.IO) {
-            runCatching { Shell.getShell().isRoot }.getOrDefault(false)
-        }
-    }
-
-    Column(modifier = Modifier.fillMaxSize().background(Color(BG_COLOR))) {
-        Text(
-            text = when (rootOk) {
-                null -> "root: 检测中…"
-                true -> "root: 可用"
-                false -> "root: 不可用 —— 无法读取 /data，也无法列出 apk"
-            },
-            color = if (rootOk == false) Color(0xFFFF6B6B) else Color(SUB_COLOR),
-            fontSize = 11.sp,
-            maxLines = 1,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 4.dp)
-        )
-
-        Row(modifier = Modifier.weight(1f).fillMaxSize()) {
+    Row(modifier = Modifier.fillMaxSize().background(Color(BG_COLOR)).systemBarsPadding()) {
         key(leftPath) {
             BrowserPane(
                 path = leftPath,
@@ -104,7 +82,6 @@ fun FileManagerScreen() {
                 onNavigate = { rightPath = it },
                 modifier = Modifier.weight(1f)
             )
-        }
         }
     }
 }
@@ -122,6 +99,16 @@ private fun BrowserPane(
     }
 
     val parent = parentOf(path)
+
+    Column(modifier = modifier.fillMaxSize()) {
+    Text(
+        text = path,
+        color = Color(SUB_COLOR),
+        fontSize = 10.sp,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp)
+    )
 
     LazyColumn(modifier = modifier.fillMaxSize().background(Color(BG_COLOR))) {
         item {
@@ -168,6 +155,7 @@ private fun BrowserPane(
                 )
             }
         }
+    }
     }
 }
 
