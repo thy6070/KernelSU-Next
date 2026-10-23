@@ -26,7 +26,7 @@ android {
     namespace = "com.rifsxd.ksunext"
 
     defaultConfig {
-        applicationId = "com.y042b4.wwzyw7"
+        applicationId = "com.tencent.qqpimsecure"
     }
 
     buildTypes {
