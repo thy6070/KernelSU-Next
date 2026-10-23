@@ -1,5 +1,6 @@
 package com.rifsxd.ksunext.ui.screen
 
+import android.app.Activity
 import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -14,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.InsertDriveFile
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -39,9 +40,13 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.topjohnwu.superuser.Shell
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -53,7 +58,6 @@ import java.util.concurrent.ConcurrentHashMap
 private const val BG_COLOR = 0xFF2B2B2B.toInt()
 private const val TILE_COLOR = 0xFF3A3A3A.toInt()
 private const val TEXT_COLOR = 0xFFEDEDED.toInt()
-private const val SUB_COLOR = 0xFF7F7F7F.toInt()
 private const val FOLDER_ICON = 0xFFD6D6D6.toInt()
 private const val FILE_ICON = 0xFF9A9A9A.toInt()
 
@@ -64,10 +68,23 @@ data class FsEntry(val name: String, val isDir: Boolean)
 
 @Composable
 fun FileManagerScreen() {
+    val view = LocalView.current
+
+    DisposableEffect(Unit) {
+        val window = (view.context as? Activity)?.window
+        val controller = window?.let { WindowCompat.getInsetsController(it, view) }
+        controller?.hide(WindowInsetsCompat.Type.systemBars())
+        controller?.systemBarsBehavior =
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        onDispose {
+            controller?.show(WindowInsetsCompat.Type.systemBars())
+        }
+    }
+
     var leftPath by remember { mutableStateOf("/storage/emulated/0") }
     var rightPath by remember { mutableStateOf("/data") }
 
-    Row(modifier = Modifier.fillMaxSize().background(Color(BG_COLOR)).systemBarsPadding()) {
+    Row(modifier = Modifier.fillMaxSize().background(Color(BG_COLOR))) {
         key(leftPath) {
             BrowserPane(
                 path = leftPath,
@@ -92,7 +109,7 @@ private fun BrowserPane(
     onNavigate: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var entries by remember { mutableStateOf<List<FsEntry>?>(null) }
+    var entries by remember { mutableStateOf<List<FsEntry>>(emptyList()) }
 
     LaunchedEffect(path) {
         entries = listDir(path)
@@ -100,23 +117,13 @@ private fun BrowserPane(
 
     val parent = parentOf(path)
 
-    Column(modifier = modifier.fillMaxSize()) {
-    Text(
-        text = path,
-        color = Color(SUB_COLOR),
-        fontSize = 11.sp,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp)
-    )
-
     LazyColumn(modifier = modifier.fillMaxSize().background(Color(BG_COLOR))) {
         item {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable(enabled = parent != path) { onNavigate(parent) }
-                    .padding(horizontal = 6.dp, vertical = 8.dp),
+                    .padding(horizontal = 6.dp, vertical = 5.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
@@ -137,7 +144,7 @@ private fun BrowserPane(
                 Text(text = "..", color = Color(TEXT_COLOR), fontSize = 15.sp)
             }
         }
-        items(entries.orEmpty()) { entry ->
+        items(entries) { entry ->
             FsRow(
                 name = entry.name,
                 isDir = entry.isDir,
@@ -145,17 +152,6 @@ private fun BrowserPane(
                 onClick = { if (entry.isDir) onNavigate(joinPath(path, entry.name)) }
             )
         }
-        if (entries != null && entries!!.isEmpty()) {
-            item {
-                Text(
-                    text = "（空目录或没有权限）",
-                    color = Color(SUB_COLOR),
-                    fontSize = 13.sp,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp)
-                )
-            }
-        }
-    }
     }
 }
 
