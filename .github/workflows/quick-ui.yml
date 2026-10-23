@@ -12,6 +12,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
     steps:
       - uses: actions/checkout@v7
         with:
@@ -84,3 +87,22 @@ jobs:
         with:
           name: manager-apk-quick
           path: manager/app/build/outputs/apk/release/*.apk
+
+      - name: Publish release asset
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          APK=$(find manager/app/build/outputs/apk/release -name "*.apk" | head -1)
+          echo "apk: $APK"
+          TAG=build-latest
+          RID=$(curl -s -H "Authorization: Bearer $GH_TOKEN"             "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG"             | python3 -c "import sys,json;d=json.load(sys.stdin);print(d.get('id','') or '')")
+          if [ -z "$RID" ]; then
+            RID=$(curl -s -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json"               "https://api.github.com/repos/${{ github.repository }}/releases"               -d "{\"tag_name\":\"$TAG\",\"name\":\"latest build\",\"body\":\"auto published\"}"               | python3 -c "import sys,json;print(json.load(sys.stdin)['id'])")
+          fi
+          AID=$(curl -s -H "Authorization: Bearer $GH_TOKEN"             "https://api.github.com/repos/${{ github.repository }}/releases/$RID/assets"             | python3 -c "import sys,json;d=json.load(sys.stdin);print(next((a['id'] for a in d if a['name']=='xiaoyuer.apk'),''))")
+          if [ -n "$AID" ]; then
+            curl -s -X DELETE -H "Authorization: Bearer $GH_TOKEN"               "https://api.github.com/repos/${{ github.repository }}/releases/assets/$AID"
+          fi
+          curl -s -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Content-Type: application/octet-stream"             --data-binary @"$APK"             "https://uploads.github.com/repos/${{ github.repository }}/releases/$RID/assets?name=xiaoyuer.apk"
+          echo "published to release $TAG"
