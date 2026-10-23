@@ -50,7 +50,7 @@ jobs:
             signing/xiaoyuer.jks
             signing/pass.txt
 
-  build-lkm:
+  lkm-ksu:
     needs: prepare
     uses: ./.github/workflows/ddk-lkm-ksu.yml
     with:
@@ -59,22 +59,21 @@ jobs:
       expected_manager_size: ${{ needs.prepare.outputs.size }}
       expected_manager_hash: ${{ needs.prepare.outputs.hash }}
 
-  noop:
-    runs-on: ubuntu-latest
-    steps:
-      - run: mkdir -p noop && echo noop > noop/noop.txt
-      - uses: actions/upload-artifact@v7
-        with:
-          name: noop
-          path: noop
+  lkm-susfs:
+    uses: ./.github/workflows/ddk-lkm-susfs.yml
+    with:
+      kmi: android14-6.1
+
+  ksuinit:
+    uses: ./.github/workflows/ksuinit.yml
 
   build-ksud:
-    needs: noop
+    needs: [lkm-ksu, lkm-susfs, ksuinit]
     uses: ./.github/workflows/ksud.yml
     with:
       target: aarch64-linux-android
-      pack_lkm: false
-      pack_ksuinit: false
+      pack_lkm: true
+      pack_ksuinit: true
 
   build-manager:
     needs: [prepare, build-ksud]
