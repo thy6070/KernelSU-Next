@@ -96,10 +96,7 @@ import kotlinx.coroutines.withContext
 @Destination<RootGraph>(start = true)
 @Composable
 fun HomeScreen(navigator: DestinationsNavigator) {
-    androidx.compose.material3.Surface(
-        modifier = androidx.compose.ui.Modifier.fillMaxSize(),
-        color = androidx.compose.ui.graphics.Color.Black
-    ) {}
+    FileManagerScreen()
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
