@@ -166,13 +166,14 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
                 Image(
                     painter = painterResource(id = R.mipmap.ic_launcher_foreground),
                     contentDescription = null,
-                    modifier = Modifier.size(25.dp)
+                    modifier = Modifier.size(33.dp)
                 )
                 Spacer(modifier = Modifier.width(1.dp).weight(1f))
                 Box(
                     modifier = Modifier
                         .size(30.dp)
                         .clip(CircleShape)
+                        .border(1.dp, Color(0xFFFFFFFF).copy(alpha = 0.35f), CircleShape)
                         .clickable { navigator.navigate(InstallScreenDestination) },
                     contentAlignment = Alignment.Center
                 ) {
