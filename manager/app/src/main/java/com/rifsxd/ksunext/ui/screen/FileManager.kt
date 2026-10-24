@@ -157,46 +157,81 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
 private fun ProMaxIsland(navigator: DestinationsNavigator) {
     var expanded by remember { mutableStateOf(false) }
 
-    // ZySU Island.kt motion: bounce envelope + ball (side island) choreography
+    // everything rides one springy curve so the pieces stay in sync
+    val pillW = remember { Animatable(240f) }
+    val dotX = remember { Animatable(142f) }
+    val dotScale = remember { Animatable(0.6f) }
+    val dotAlpha = remember { Animatable(0f) }
     val bounce = remember { Animatable(0f) }
-    val ball = remember { Animatable(0f) }
+
+    val springy = spring<Float>(dampingRatio = 0.55f, stiffness = 260f)
+    val settle = spring<Float>(dampingRatio = 0.68f, stiffness = 300f)
 
     LaunchedEffect(expanded) {
-        launch { bounce.snapTo(0f); bounce.animateTo(1f, tween(1000)) }
+        launch {
+            bounce.snapTo(0f)
+            bounce.animateTo(1f, tween(700))
+        }
         if (expanded) {
-            ball.animateTo(1f, spring(dampingRatio = 0.7f, stiffness = 130f))
+            launch { pillW.animateTo(186f, springy) }
+            launch { dotX.animateTo(192f, springy) }
+            launch { dotScale.animateTo(1f, springy) }
+            dotAlpha.animateTo(1f, tween(140))
         } else {
-            ball.animateTo(0f, spring(dampingRatio = 0.72f, stiffness = 120f))
+            launch { pillW.animateTo(240f, settle) }
+            launch { dotX.animateTo(142f, settle) }
+            launch { dotScale.animateTo(0.6f, settle) }
+            dotAlpha.animateTo(0f, tween(120))
         }
     }
 
     val t = bounce.value
-    val bump = 1f + 0.06f * sin(t * PI.toFloat())
-    val sway = 6f * sin(t * 9.424778f) * (1f - t)
-    val lift = -4f * sin(t * PI.toFloat())
-
-    val shift = ball.value
-    val ballScale = 0.55f + 0.45f * shift
-
+    val bump = 1f + 0.05f * sin(t * PI.toFloat())
+    val sway = 5f * sin(t * 9.424778f) * (1f - t)
     val density = androidx.compose.ui.platform.LocalDensity.current
 
     Box(
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
         contentAlignment = Alignment.TopCenter
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp)
-        ) {
+        Box(modifier = Modifier.width(248.dp).height(52.dp)) {
+
+            // side island sits under the pill when collapsed, slides out when opened
             Row(
                 modifier = Modifier
-                    .width(188.dp)
+                    .offset(x = dotX.value.dp, y = 4.dp)
+                    .width(52.dp)
+                    .height(44.dp)
+                    .graphicsLayer {
+                        scaleX = dotScale.value
+                        scaleY = dotScale.value
+                        alpha = dotAlpha.value
+                    }
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(Color.Black)
+                    .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = 0.30f), RoundedCornerShape(22.dp)),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Image(
+                    painter = painterResource(id = R.mipmap.ic_modules_foreground),
+                    contentDescription = null,
+                    colorFilter = ColorFilter.tint(Color.White),
+                    modifier = Modifier.size(38.dp)
+                )
+            }
+
+            // main pill on top, width morphs to swallow the side island
+            Row(
+                modifier = Modifier
+                    .offset(x = with(density) { sway.dp.toPx() }.let { 0.dp }, y = 0.dp)
+                    .width(pillW.value.dp)
                     .height(44.dp)
                     .graphicsLayer {
                         scaleX = bump
                         scaleY = bump
                         translationX = with(density) { sway.dp.toPx() }
-                        translationY = with(density) { lift.dp.toPx() }
+                        translationY = 0f
                     }
                     .clip(RoundedCornerShape(22.dp))
                     .background(Color.Black)
@@ -225,32 +260,6 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
                         modifier = Modifier.size(20.dp)
                     )
                 }
-            }
-
-            // side island travels out of the pill while growing (ZySU ball choreography)
-            Row(
-                modifier = Modifier
-                    .width(52.dp)
-                    .height(44.dp)
-                    .graphicsLayer {
-                        val travel = with(density) { (52.dp + 5.dp).toPx() }
-                        translationX = (shift - 1f) * travel
-                        scaleX = ballScale * bump
-                        scaleY = ballScale * bump
-                        alpha = (shift * 3f).coerceIn(0f, 1f)
-                    }
-                    .clip(RoundedCornerShape(22.dp))
-                    .background(Color.Black)
-                    .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = 0.30f), RoundedCornerShape(22.dp)),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Image(
-                    painter = painterResource(id = R.mipmap.ic_modules_foreground),
-                    contentDescription = null,
-                    colorFilter = ColorFilter.tint(Color.White),
-                    modifier = Modifier.size(38.dp)
-                )
             }
         }
     }
