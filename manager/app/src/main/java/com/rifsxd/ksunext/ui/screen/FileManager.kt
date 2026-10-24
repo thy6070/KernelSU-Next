@@ -56,6 +56,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -140,6 +141,7 @@ fun FileManagerScreen() {
 @Composable
 private fun DynamicIsland() {
     // morph: 0 = punch hole, 1 = compact pill, 2 = expanded
+    val uiScope = rememberCoroutineScope()
     var dragging by remember { mutableStateOf(false) }
     var dragValue by remember { mutableFloatStateOf(1f) }
     val morph = remember { Animatable(0f) }
@@ -188,10 +190,9 @@ private fun DynamicIsland() {
                         RoundedCornerShape(radius.dp)
                     )
                     .pointerInput(Unit) {
-                        val scope = this
                         awaitEachGesture {
                             awaitFirstDown()
-                            scope.launch { press.animateTo(0.97f, tween(40)) }
+                            uiScope.launch { press.animateTo(0.97f, tween(40)) }
                             dragging = true
                             dragValue = if (morph.value > 1.5f) 2f else 1f
                             while (true) {
@@ -202,7 +203,7 @@ private fun DynamicIsland() {
                             }
                             dragging = false
                             val settle = dragValue
-                            scope.launch {
+                            uiScope.launch {
                                 press.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = 700f))
                                 morph.snapTo(settle)
                                 morph.animateTo(if (settle > 1.5f) 2f else 1f, springMain)
