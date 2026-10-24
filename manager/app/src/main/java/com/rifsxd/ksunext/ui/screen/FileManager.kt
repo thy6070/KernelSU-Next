@@ -156,27 +156,33 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
 @Composable
 private fun ProMaxIsland(navigator: DestinationsNavigator) {
     Box(
-        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
         contentAlignment = Alignment.TopCenter
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
         ) {
-            // main pill: check (install/flash) on the left, app icon on the right
+            // main pill: app icon on the left, check (install/flash) on the right
             Row(
                 modifier = Modifier
-                    .width(206.dp)
-                    .height(48.dp)
-                    .clip(RoundedCornerShape(24.dp))
+                    .width(188.dp)
+                    .height(44.dp)
+                    .clip(RoundedCornerShape(22.dp))
                     .background(Color.Black)
-                    .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = 0.30f), RoundedCornerShape(24.dp))
+                    .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = 0.30f), RoundedCornerShape(22.dp))
                     .padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Image(
+                    painter = painterResource(id = R.mipmap.ic_launcher_foreground),
+                    contentDescription = null,
+                    modifier = Modifier.size(38.dp)
+                )
+                Spacer(modifier = Modifier.weight(1f))
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
+                        .size(40.dp)
                         .clip(CircleShape)
                         .clickable { navigator.navigate(InstallScreenDestination) },
                     contentAlignment = Alignment.Center
@@ -185,25 +191,19 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
                         imageVector = Icons.Filled.Check,
                         contentDescription = "install",
                         tint = Color.White,
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(20.dp)
                     )
                 }
-                Spacer(modifier = Modifier.weight(1f))
-                Image(
-                    painter = painterResource(id = R.mipmap.ic_launcher_foreground),
-                    contentDescription = null,
-                    modifier = Modifier.size(42.dp)
-                )
             }
 
-            // side island: capsule, not a circle
+            // side island: capsule with modules icon
             Row(
                 modifier = Modifier
-                    .width(58.dp)
-                    .height(48.dp)
-                    .clip(RoundedCornerShape(24.dp))
+                    .width(52.dp)
+                    .height(44.dp)
+                    .clip(RoundedCornerShape(22.dp))
                     .background(Color.Black)
-                    .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = 0.30f), RoundedCornerShape(24.dp)),
+                    .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = 0.30f), RoundedCornerShape(22.dp)),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
@@ -211,7 +211,7 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
                     painter = painterResource(id = R.mipmap.ic_modules_foreground),
                     contentDescription = null,
                     colorFilter = ColorFilter.tint(Color.White),
-                    modifier = Modifier.size(42.dp)
+                    modifier = Modifier.size(38.dp)
                 )
             }
         }
