@@ -163,14 +163,14 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            // main pill: check on the left, app icon on the right
+            // main pill: check (install/flash) on the left, app icon on the right
             Row(
                 modifier = Modifier
                     .width(206.dp)
                     .height(48.dp)
                     .clip(RoundedCornerShape(24.dp))
                     .background(Color.Black)
-                    .border(0.5.dp, Color(0x47FFFFFF), RoundedCornerShape(24.dp))
+                    .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = 0.30f), RoundedCornerShape(24.dp))
                     .padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -196,14 +196,14 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
                 )
             }
 
-            // side island: capsule (not a circle) with the modules icon
+            // side island: capsule, not a circle
             Row(
                 modifier = Modifier
                     .width(58.dp)
                     .height(48.dp)
                     .clip(RoundedCornerShape(24.dp))
                     .background(Color.Black)
-                    .border(0.5.dp, Color(0x47FFFFFF), RoundedCornerShape(24.dp)),
+                    .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = 0.30f), RoundedCornerShape(24.dp)),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
