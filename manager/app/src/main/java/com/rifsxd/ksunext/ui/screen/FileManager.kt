@@ -132,46 +132,24 @@ fun FileManagerScreen() {
 @Composable
 private fun DynamicIsland() {
     var expanded by remember { mutableStateOf(false) }
-    val soft = spring<androidx.compose.ui.unit.Dp>(dampingRatio = 0.52f, stiffness = 420f)
-    val softF = spring<Float>(dampingRatio = 0.52f, stiffness = 420f)
+    val spec = spring<androidx.compose.ui.unit.Dp>(dampingRatio = 0.78f, stiffness = 520f)
+    val specF = spring<Float>(dampingRatio = 0.78f, stiffness = 520f)
 
     val tr = updateTransition(expanded, label = "island")
-    val mainW by tr.animateDp(transitionSpec = { soft }) { if (it) 232.dp else 152.dp }
-    val mainH by tr.animateDp(transitionSpec = { soft }) { if (it) 90.dp else 40.dp }
-    val radius by tr.animateDp(transitionSpec = { soft }) { if (it) 30.dp else 20.dp }
-    val gap by tr.animateDp(transitionSpec = { soft }) { if (it) 0.dp else 6.dp }
-    val iconSize by tr.animateDp(transitionSpec = { soft }) { if (it) 40.dp else 26.dp }
-    val borderAlpha by tr.animateFloat(transitionSpec = { softF }) { if (it) 0.10f else 0.22f }
+    val mainW by tr.animateDp(transitionSpec = { spec }) { if (it) 232.dp else 152.dp }
+    val mainH by tr.animateDp(transitionSpec = { spec }) { if (it) 92.dp else 44.dp }
+    val radius by tr.animateDp(transitionSpec = { spec }) { if (it) 30.dp else 22.dp }
+    val gap by tr.animateDp(transitionSpec = { spec }) { if (it) 0.dp else 6.dp }
+    val dotSize by tr.animateDp(transitionSpec = { spec }) { if (it) 0.dp else 44.dp }
+    val borderAlpha by tr.animateFloat(transitionSpec = { specF }) { if (it) 0.10f else 0.22f }
 
-    val dotSize by tr.animateDp(
-        transitionSpec = { tween(durationMillis = 200, delayMillis = if (targetState) 150 else 40) }
-    ) { if (it) 0.dp else 40.dp }
-
-    var blurring by remember { mutableStateOf(false) }
+    var blurTarget by remember { mutableStateOf(0.dp) }
     LaunchedEffect(expanded) {
-        blurring = true
-        delay(420)
-        blurring = false
+        blurTarget = 2.5.dp
+        delay(140)
+        blurTarget = 0.dp
     }
-    val blurPx by animateDpAsState(if (blurring) 3.5.dp else 0.dp, label = "blur")
-
-    val dotOffset = remember { Animatable(0f) }
-    val squeeze = remember { Animatable(1f) }
-
-    LaunchedEffect(expanded) {
-        if (expanded) {
-            dotOffset.animateTo(18f, spring(dampingRatio = 0.42f, stiffness = 900f))
-            dotOffset.animateTo(0f, spring(dampingRatio = 0.28f, stiffness = 1100f))
-            squeeze.animateTo(0.92f, tween(70))
-            squeeze.animateTo(1f, spring(dampingRatio = 0.28f, stiffness = 900f))
-        } else {
-            squeeze.animateTo(0.94f, tween(70))
-            squeeze.animateTo(1f, spring(dampingRatio = 0.3f, stiffness = 900f))
-            dotOffset.snapTo(0f)
-            dotOffset.animateTo(12f, spring(dampingRatio = 0.38f, stiffness = 900f))
-            dotOffset.animateTo(3f, spring(dampingRatio = 0.5f, stiffness = 700f))
-        }
-    }
+    val blurPx by animateDpAsState(blurTarget, tween(180), label = "blur")
 
     Box(
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
@@ -179,11 +157,7 @@ private fun DynamicIsland() {
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(gap),
-            modifier = Modifier.graphicsLayer {
-                scaleX = squeeze.value
-                scaleY = squeeze.value
-            }
+            horizontalArrangement = Arrangement.spacedBy(gap)
         ) {
             Row(
                 modifier = Modifier
@@ -192,29 +166,31 @@ private fun DynamicIsland() {
                     .clip(RoundedCornerShape(radius))
                     .background(Color.Black)
                     .border(1.dp, Color(0xFFFFFFFF).copy(alpha = borderAlpha), RoundedCornerShape(radius))
-                    .clickable { expanded = !expanded }
-                    .padding(horizontal = 14.dp),
+                    .clickable { expanded = !expanded },
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Image(
                     painter = painterResource(id = R.mipmap.ic_launcher_foreground),
                     contentDescription = null,
-                    modifier = Modifier.size(iconSize).blur(blurPx * 0.15f)
+                    modifier = Modifier
+                        .size(if (expanded) 44.dp else 38.dp)
+                        .padding(start = 3.dp)
+                        .blur(blurPx * 0.2f)
                 )
                 if (expanded) {
-                    Spacer(modifier = Modifier.width(14.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.blur(blurPx)) {
                         Text(text = "小鱼儿", color = Color.White, fontSize = 18.sp)
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(text = "文件管理器", color = Color(0xFF9A9A9A), fontSize = 12.sp)
                     }
+                    Spacer(modifier = Modifier.width(12.dp))
                 }
             }
 
             if (dotSize > 0.dp) {
                 Box(
                     modifier = Modifier
-                        .offset(x = dotOffset.value.dp)
                         .size(dotSize)
                         .clip(CircleShape)
                         .background(Color.Black)
