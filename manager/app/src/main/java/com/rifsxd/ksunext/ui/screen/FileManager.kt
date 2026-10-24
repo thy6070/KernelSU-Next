@@ -152,7 +152,7 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
     val pillScale = remember { Animatable(1f) }
     val iconAlpha = remember { Animatable(0f) }
     val checkAlpha = remember { Animatable(1f) }
-    val dotX = remember { Animatable(172f) }
+    val dotX = remember { Animatable(147f) }
     val dotScale = remember { Animatable(0f) }
 
     val ease = FastOutSlowInEasing
@@ -163,15 +163,15 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
             launch { pillW.animateTo(96f, tween(200, easing = ease)) }
             launch { pillX.animateTo(62f, tween(200, easing = ease)) }
             launch { checkAlpha.animateTo(0f, tween(80)) }
-            pillScale.animateTo(1.5f, tween(220, easing = ease))
+            pillScale.animateTo(1.3f, tween(220, easing = ease))
             // slowly shrink back
             pillScale.animateTo(1f, tween(430, easing = ease))
             launch { pillW.animateTo(168f, tween(430, easing = ease)) }
             launch { pillX.animateTo(0f, tween(430, easing = ease)) }
             // reveal: check returns, side island fades up to full size
             launch { checkAlpha.animateTo(1f, tween(200, easing = ease)) }
-            launch { dotScale.animateTo(1f, tween(320, easing = ease)) }
-            launch { dotX.animateTo(172f, tween(320, easing = ease)) }
+            launch { dotScale.animateTo(1f, tween(330, easing = ease)) }
+            launch { dotX.animateTo(172f, tween(330, easing = ease)) }
             launch { iconAlpha.animateTo(1f, tween(220, easing = ease)) }
         } else {
             // stretch to the right, icon gone
@@ -181,7 +181,7 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
             launch { dotX.animateTo(202f, tween(170, easing = ease)) }
             dotScale.animateTo(0.82f, tween(170, easing = ease))
             // ...then retreats under the check mark while shrinking away
-            launch { dotX.animateTo(172f, tween(190, easing = ease)) }
+            launch { dotX.animateTo(147f, tween(190, easing = ease)) }
             dotScale.animateTo(0f, tween(190, easing = ease))
         }
     }
