@@ -153,7 +153,7 @@ private fun DynamicIsland() {
         delay(110)
         blurTarget = 0.dp
     }
-    val blurPx by animateDpAsState(blurTarget, tween(150), label = "blur")
+    val blurPx by animateDpAsState(blurTarget, tween<androidx.compose.ui.unit.Dp>(durationMillis = 150), label = "blur")
 
     Box(
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
