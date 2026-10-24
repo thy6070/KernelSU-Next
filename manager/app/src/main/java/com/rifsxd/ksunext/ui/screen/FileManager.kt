@@ -52,6 +52,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -139,6 +140,8 @@ fun FileManagerScreen() {
 @Composable
 private fun DynamicIsland() {
     // morph: 0 = punch hole, 1 = compact pill, 2 = expanded
+    var dragging by remember { mutableStateOf(false) }
+    var dragValue by remember { mutableFloatStateOf(1f) }
     val morph = remember { Animatable(0f) }
     val press = remember { Animatable(1f) }
     val contentAlpha = remember { Animatable(0f) }
@@ -155,7 +158,7 @@ private fun DynamicIsland() {
         dotAlpha.animateTo(1f, tween(160))
     }
 
-    val m = morph.value
+    val m = if (dragging) dragValue else morph.value
     val w = if (m <= 1f) 44f + 108f * m else 152f + 96f * (m - 1f)
     val h = if (m <= 1f) 26f + 18f * m else 44f + 52f * (m - 1f)
     val expanded = m > 1.5f
@@ -185,25 +188,25 @@ private fun DynamicIsland() {
                         RoundedCornerShape(radius.dp)
                     )
                     .pointerInput(Unit) {
+                        val scope = this
                         awaitEachGesture {
                             awaitFirstDown()
-                            press.animateTo(0.97f, tween(40))
-                            val base = if (morph.value > 1.5f) 2f else 1f
-                            var dy = 0f
+                            scope.launch { press.animateTo(0.97f, tween(40)) }
+                            dragging = true
+                            dragValue = if (morph.value > 1.5f) 2f else 1f
                             while (true) {
                                 val ev = awaitPointerEvent()
                                 val ch = ev.changes.firstOrNull() ?: break
-                                if (ch.pressed) {
-                                    dy += ch.positionChange().y
-                                    morph.stop()
-                                    morph.snapTo((base + dy / 240f).coerceIn(0f, 2f))
-                                } else {
-                                    break
-                                }
+                                if (!ch.pressed) break
+                                dragValue = (dragValue + ch.positionChange().y / 240f).coerceIn(0f, 2f)
                             }
-                            press.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = 700f))
-                            val target = if (morph.value > 1.5f) 2f else 1f
-                            morph.animateTo(target, springMain)
+                            dragging = false
+                            val settle = dragValue
+                            scope.launch {
+                                press.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = 700f))
+                                morph.snapTo(settle)
+                                morph.animateTo(if (settle > 1.5f) 2f else 1f, springMain)
+                            }
                         }
                     },
                 verticalAlignment = Alignment.CenterVertically
