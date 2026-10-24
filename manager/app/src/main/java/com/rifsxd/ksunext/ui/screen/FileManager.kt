@@ -157,9 +157,9 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
 private fun ProMaxIsland(navigator: DestinationsNavigator) {
     var expanded by remember { mutableStateOf(false) }
 
-    // everything rides one springy curve so the pieces stay in sync
-    val pillW = remember { Animatable(240f) }
-    val dotX = remember { Animatable(142f) }
+    // side island position only: it hides under the pill and slides out when opened.
+    // The pill never changes width and is drawn ON TOP of the side island.
+    val dotX = remember { Animatable(128f) }
     val dotScale = remember { Animatable(0.6f) }
     val dotAlpha = remember { Animatable(0f) }
     val bounce = remember { Animatable(0f) }
@@ -173,13 +173,11 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
             bounce.animateTo(1f, tween(700))
         }
         if (expanded) {
-            launch { pillW.animateTo(186f, springy) }
             launch { dotX.animateTo(192f, springy) }
             launch { dotScale.animateTo(1f, springy) }
-            dotAlpha.animateTo(1f, tween(140))
+            dotAlpha.animateTo(1f, tween(150))
         } else {
-            launch { pillW.animateTo(240f, settle) }
-            launch { dotX.animateTo(142f, settle) }
+            launch { dotX.animateTo(128f, settle) }
             launch { dotScale.animateTo(0.6f, settle) }
             dotAlpha.animateTo(0f, tween(120))
         }
@@ -196,7 +194,7 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
     ) {
         Box(modifier = Modifier.width(248.dp).height(52.dp)) {
 
-            // side island sits under the pill when collapsed, slides out when opened
+            // 1) side island drawn first (underneath)
             Row(
                 modifier = Modifier
                     .offset(x = dotX.value.dp, y = 4.dp)
@@ -221,17 +219,15 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
                 )
             }
 
-            // main pill on top, width morphs to swallow the side island
+            // 2) main pill drawn second (on top), fixed width
             Row(
                 modifier = Modifier
-                    .offset(x = with(density) { sway.dp.toPx() }.let { 0.dp }, y = 0.dp)
-                    .width(pillW.value.dp)
+                    .width(188.dp)
                     .height(44.dp)
                     .graphicsLayer {
                         scaleX = bump
                         scaleY = bump
                         translationX = with(density) { sway.dp.toPx() }
-                        translationY = 0f
                     }
                     .clip(RoundedCornerShape(22.dp))
                     .background(Color.Black)
