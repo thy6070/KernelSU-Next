@@ -158,7 +158,7 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
                     .height(37.5.dp)
                     .clip(RoundedCornerShape(18.75.dp))
                     .background(Color.Black)
-                    .border(1.dp, Color(0xFFFFFFFF).copy(alpha = 0.38f), RoundedCornerShape(18.75.dp))
+                    .border(1.dp, Color(0xFFE6E6E6).copy(alpha = 0.30f), RoundedCornerShape(18.75.dp))
                     .padding(horizontal = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -190,7 +190,7 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
                     .height(37.5.dp)
                     .clip(RoundedCornerShape(18.75.dp))
                     .background(Color.Black)
-                    .border(1.dp, Color(0xFFFFFFFF).copy(alpha = 0.38f), RoundedCornerShape(18.75.dp)),
+                    .border(1.dp, Color(0xFFE6E6E6).copy(alpha = 0.30f), RoundedCornerShape(18.75.dp)),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
