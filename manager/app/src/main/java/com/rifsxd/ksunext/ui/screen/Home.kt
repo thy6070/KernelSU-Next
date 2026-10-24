@@ -96,7 +96,7 @@ import kotlinx.coroutines.withContext
 @Destination<RootGraph>(start = true)
 @Composable
 fun HomeScreen(navigator: DestinationsNavigator) {
-    FileManagerScreen()
+    FileManagerScreen(navigator)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
