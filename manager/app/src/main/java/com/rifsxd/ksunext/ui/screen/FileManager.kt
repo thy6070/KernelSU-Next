@@ -147,127 +147,47 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
 
 @Composable
 private fun ProMaxIsland(navigator: DestinationsNavigator) {
-    var open by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) }
 
-    val pillW = remember { Animatable(190f) }
-    val pillX = remember { Animatable(0f) }
-    val pillScale = remember { Animatable(1f) }
-    val iconAlpha = remember { Animatable(0f) }
-    val checkAlpha = remember { Animatable(1f) }
-    val dotX = remember { Animatable(170f) }
-    val dotScale = remember { Animatable(0f) }
-    val shake = remember { Animatable(0f) }
+    // Apple-like spring: response ~0.32s, damping 0.75
+    val spec = spring<androidx.compose.ui.unit.Dp>(dampingRatio = 0.75f, stiffness = 385f)
+    val specF = spring<Float>(dampingRatio = 0.8f, stiffness = 385f)
 
-    val ease = FastOutSlowInEasing
-
-    LaunchedEffect(open) {
-        if (open) {
-            launch { pillW.animateTo(92f, tween(200, easing = ease)) }
-            launch { pillX.animateTo(49f, tween(200, easing = ease)) }
-            launch { checkAlpha.animateTo(0f, tween(80)) }
-            pillScale.animateTo(1.3f, tween(220, easing = ease))
-
-            // shrink back while the pill wobbles left/right and settles
-            val total = 520
-            val shrink = launch {
-                pillScale.animateTo(1f, tween(total, easing = ease))
-                launch { pillW.animateTo(190f, tween(total, easing = ease)) }
-                launch { pillX.animateTo(0f, tween(total, easing = ease)) }
-            }
-            launch {
-                val startTime = System.currentTimeMillis()
-                while (true) {
-                    val elapsed = (System.currentTimeMillis() - startTime).toInt()
-                    if (elapsed >= total) break
-                    val t = elapsed / total.toFloat()
-                    shake.snapTo(sin(t * PI.toFloat() * 6f) * 5f * (1f - t))
-                    kotlinx.coroutines.delay(16)
-                }
-                shake.animateTo(0f, tween(90))
-            }
-            shrink.join()
-
-            launch { checkAlpha.animateTo(1f, tween(200, easing = ease)) }
-            launch { dotScale.animateTo(1f, tween(330, easing = ease)) }
-            launch { dotX.animateTo(194f, tween(330, easing = ease)) }
-            launch { iconAlpha.animateTo(1f, tween(220, easing = ease)) }
-        } else {
-            launch { iconAlpha.animateTo(0f, tween(120)) }
-            launch { dotScale.animateTo(0f, tween(240, easing = ease)) }
-            launch { dotX.animateTo(170f, tween(240, easing = ease)) }
-            pillScale.animateTo(1f, tween(200))
-            pillW.animateTo(190f, tween(200))
-            pillX.animateTo(0f, tween(200))
-        }
-    }
+    val tr = updateTransition(expanded, label = "island")
+    val w by tr.animateDp(transitionSpec = { spec }) { if (it) 262.dp else 150.dp }
+    val h by tr.animateDp(transitionSpec = { spec }) { if (it) 92.dp else 40.dp }
+    val iconSize by tr.animateDp(transitionSpec = { spec }) { if (it) 40.dp else 26.dp }
+    val gapAfterIcon by tr.animateDp(transitionSpec = { spec }) { if (it) 12.dp else 0.dp }
+    val contentAlpha by tr.animateFloat(transitionSpec = { tween(180) }) { if (it) 1f else 0f }
+    val keyline by tr.animateFloat(transitionSpec = { specF }) { if (it) 0.10f else 0.20f }
 
     Box(
-        modifier = Modifier.fillMaxWidth().height(64.dp).padding(top = 6.dp),
+        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
         contentAlignment = Alignment.TopCenter
     ) {
-        Box(modifier = Modifier.width(250.dp).height(52.dp)) {
-
-            Row(
-                modifier = Modifier
-                    .offset(x = dotX.value.dp)
-                    .width(52.dp)
-                    .height(42.dp)
-                    .graphicsLayer {
-                        scaleX = dotScale.value
-                        scaleY = dotScale.value
-                    }
-                    .clip(RoundedCornerShape(21.dp))
-                    .background(Color.Black)
-                    .border(1.dp, Color(0xFFE6E6E6).copy(alpha = 0.30f), RoundedCornerShape(21.dp)),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Image(
-                    painter = painterResource(id = R.mipmap.ic_modules_foreground),
-                    contentDescription = null,
-                    colorFilter = ColorFilter.tint(Color.White),
-                    modifier = Modifier.size(36.dp)
-                )
-            }
-
-            Row(
-                modifier = Modifier
-                    .offset(x = (pillX.value + shake.value).dp)
-                    .width(pillW.value.dp)
-                    .height(42.dp)
-                    .graphicsLayer {
-                        scaleX = pillScale.value
-                        scaleY = pillScale.value
-                    }
-                    .clip(RoundedCornerShape(21.dp))
-                    .background(Color.Black)
-                    .border(1.dp, Color(0xFFE6E6E6).copy(alpha = 0.30f), RoundedCornerShape(21.dp))
-                    .clickable { open = !open }
-                    .padding(horizontal = 6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (iconAlpha.value > 0.01f) {
-                    Image(
-                        painter = painterResource(id = R.mipmap.ic_launcher_foreground),
-                        contentDescription = null,
-                        modifier = Modifier.size(37.dp).graphicsLayer { alpha = iconAlpha.value }
-                    )
+        Row(
+            modifier = Modifier
+                .width(w)
+                .height(h)
+                .clip(RoundedCornerShape(h / 2))
+                .background(Color.Black)
+                .border(1.dp, Color(0xFFEDEDED).copy(alpha = keyline), RoundedCornerShape(h / 2))
+                .clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) {
+                    expanded = !expanded
                 }
-                Spacer(modifier = Modifier.weight(1f))
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .clickable { navigator.navigate(InstallScreenDestination) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Check,
-                        contentDescription = "install",
-                        tint = Color.White,
-                        modifier = Modifier.size(19.dp).graphicsLayer { alpha = checkAlpha.value }
-                    )
-                }
+                .padding(horizontal = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Image(
+                painter = painterResource(id = R.mipmap.ic_launcher_foreground),
+                contentDescription = null,
+                modifier = Modifier.size(iconSize)
+            )
+            Spacer(modifier = Modifier.width(gapAfterIcon))
+            Column(modifier = Modifier.alpha(contentAlpha)) {
+                Text(text = "小鱼儿", color = Color.White, fontSize = 18.sp)
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(text = "文件管理器", color = Color(0xFF9A9A9A), fontSize = 12.sp)
             }
         }
     }
