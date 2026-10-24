@@ -155,6 +155,31 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
 
 @Composable
 private fun ProMaxIsland(navigator: DestinationsNavigator) {
+    var expanded by remember { mutableStateOf(false) }
+
+    // ZySU Island.kt motion: bounce envelope + ball (side island) choreography
+    val bounce = remember { Animatable(0f) }
+    val ball = remember { Animatable(0f) }
+
+    LaunchedEffect(expanded) {
+        launch { bounce.snapTo(0f); bounce.animateTo(1f, tween(1000)) }
+        if (expanded) {
+            ball.animateTo(1f, spring(dampingRatio = 0.7f, stiffness = 130f))
+        } else {
+            ball.animateTo(0f, spring(dampingRatio = 0.72f, stiffness = 120f))
+        }
+    }
+
+    val t = bounce.value
+    val bump = 1f + 0.06f * sin(t * PI.toFloat())
+    val sway = 6f * sin(t * 9.424778f) * (1f - t)
+    val lift = -4f * sin(t * PI.toFloat())
+
+    val shift = ball.value
+    val ballScale = 0.55f + 0.45f * shift
+
+    val density = androidx.compose.ui.platform.LocalDensity.current
+
     Box(
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
         contentAlignment = Alignment.TopCenter
@@ -163,14 +188,20 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(5.dp)
         ) {
-            // main pill: app icon on the left, check (install/flash) on the right
             Row(
                 modifier = Modifier
                     .width(188.dp)
                     .height(44.dp)
+                    .graphicsLayer {
+                        scaleX = bump
+                        scaleY = bump
+                        translationX = with(density) { sway.dp.toPx() }
+                        translationY = with(density) { lift.dp.toPx() }
+                    }
                     .clip(RoundedCornerShape(22.dp))
                     .background(Color.Black)
                     .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = 0.30f), RoundedCornerShape(22.dp))
+                    .clickable { expanded = !expanded }
                     .padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -196,11 +227,18 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
                 }
             }
 
-            // side island: capsule with modules icon
+            // side island travels out of the pill while growing (ZySU ball choreography)
             Row(
                 modifier = Modifier
                     .width(52.dp)
                     .height(44.dp)
+                    .graphicsLayer {
+                        val travel = with(density) { (52.dp + 5.dp).toPx() }
+                        translationX = (shift - 1f) * travel
+                        scaleX = ballScale * bump
+                        scaleY = ballScale * bump
+                        alpha = (shift * 3f).coerceIn(0f, 1f)
+                    }
                     .clip(RoundedCornerShape(22.dp))
                     .background(Color.Black)
                     .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = 0.30f), RoundedCornerShape(22.dp)),
