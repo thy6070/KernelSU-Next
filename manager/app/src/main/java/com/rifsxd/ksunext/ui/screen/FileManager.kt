@@ -86,6 +86,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
+import kotlin.math.PI
+import kotlin.math.sin
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -147,63 +149,76 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
 private fun ProMaxIsland(navigator: DestinationsNavigator) {
     var open by remember { mutableStateOf(false) }
 
-    val pillW = remember { Animatable(220f) }
+    val pillW = remember { Animatable(190f) }
     val pillX = remember { Animatable(0f) }
     val pillScale = remember { Animatable(1f) }
     val iconAlpha = remember { Animatable(0f) }
     val checkAlpha = remember { Animatable(1f) }
-    val dotX = remember { Animatable(147f) }
+    val dotX = remember { Animatable(170f) }
     val dotScale = remember { Animatable(0f) }
+    val shake = remember { Animatable(0f) }
 
     val ease = FastOutSlowInEasing
 
     LaunchedEffect(open) {
         if (open) {
-            // gather + scale up, check mark fades out
-            launch { pillW.animateTo(96f, tween(200, easing = ease)) }
-            launch { pillX.animateTo(62f, tween(200, easing = ease)) }
+            launch { pillW.animateTo(92f, tween(200, easing = ease)) }
+            launch { pillX.animateTo(49f, tween(200, easing = ease)) }
             launch { checkAlpha.animateTo(0f, tween(80)) }
             pillScale.animateTo(1.3f, tween(220, easing = ease))
-            // slowly shrink back
-            pillScale.animateTo(1f, tween(430, easing = ease))
-            launch { pillW.animateTo(168f, tween(430, easing = ease)) }
-            launch { pillX.animateTo(0f, tween(430, easing = ease)) }
-            // reveal: check returns, side island fades up to full size
+
+            // shrink back while the pill wobbles left/right and settles
+            val total = 520
+            val shrink = launch {
+                pillScale.animateTo(1f, tween(total, easing = ease))
+                launch { pillW.animateTo(190f, tween(total, easing = ease)) }
+                launch { pillX.animateTo(0f, tween(total, easing = ease)) }
+            }
+            launch {
+                val startTime = System.currentTimeMillis()
+                while (true) {
+                    val elapsed = (System.currentTimeMillis() - startTime).toInt()
+                    if (elapsed >= total) break
+                    val t = elapsed / total.toFloat()
+                    shake.snapTo(sin(t * PI.toFloat() * 6f) * 5f * (1f - t))
+                    kotlinx.coroutines.delay(16)
+                }
+                shake.animateTo(0f, tween(90))
+            }
+            shrink.join()
+
             launch { checkAlpha.animateTo(1f, tween(200, easing = ease)) }
             launch { dotScale.animateTo(1f, tween(330, easing = ease)) }
-            launch { dotX.animateTo(172f, tween(330, easing = ease)) }
+            launch { dotX.animateTo(194f, tween(330, easing = ease)) }
             launch { iconAlpha.animateTo(1f, tween(220, easing = ease)) }
         } else {
-            // stretch to the right, icon gone
             launch { iconAlpha.animateTo(0f, tween(120)) }
-            launch { pillW.animateTo(220f, tween(360, easing = ease)) }
-            // side island gets pushed right first...
-            launch { dotX.animateTo(202f, tween(170, easing = ease)) }
-            dotScale.animateTo(0.82f, tween(170, easing = ease))
-            // ...then retreats under the check mark while shrinking away
-            launch { dotX.animateTo(147f, tween(190, easing = ease)) }
-            dotScale.animateTo(0f, tween(190, easing = ease))
+            launch { dotScale.animateTo(0f, tween(240, easing = ease)) }
+            launch { dotX.animateTo(170f, tween(240, easing = ease)) }
+            pillScale.animateTo(1f, tween(200))
+            pillW.animateTo(190f, tween(200))
+            pillX.animateTo(0f, tween(200))
         }
     }
 
     Box(
-        modifier = Modifier.fillMaxWidth().height(58.dp).padding(top = 6.dp),
+        modifier = Modifier.fillMaxWidth().height(64.dp).padding(top = 6.dp),
         contentAlignment = Alignment.TopCenter
     ) {
-        Box(modifier = Modifier.width(220.dp).height(48.dp)) {
+        Box(modifier = Modifier.width(250.dp).height(52.dp)) {
 
             Row(
                 modifier = Modifier
                     .offset(x = dotX.value.dp)
-                    .width(46.dp)
-                    .height(37.5.dp)
+                    .width(52.dp)
+                    .height(42.dp)
                     .graphicsLayer {
                         scaleX = dotScale.value
                         scaleY = dotScale.value
                     }
-                    .clip(RoundedCornerShape(18.75.dp))
+                    .clip(RoundedCornerShape(21.dp))
                     .background(Color.Black)
-                    .border(1.dp, Color(0xFFE6E6E6).copy(alpha = 0.30f), RoundedCornerShape(18.75.dp)),
+                    .border(1.dp, Color(0xFFE6E6E6).copy(alpha = 0.30f), RoundedCornerShape(21.dp)),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
@@ -211,22 +226,22 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
                     painter = painterResource(id = R.mipmap.ic_modules_foreground),
                     contentDescription = null,
                     colorFilter = ColorFilter.tint(Color.White),
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(36.dp)
                 )
             }
 
             Row(
                 modifier = Modifier
-                    .offset(x = pillX.value.dp)
+                    .offset(x = (pillX.value + shake.value).dp)
                     .width(pillW.value.dp)
-                    .height(37.5.dp)
+                    .height(42.dp)
                     .graphicsLayer {
                         scaleX = pillScale.value
                         scaleY = pillScale.value
                     }
-                    .clip(RoundedCornerShape(18.75.dp))
+                    .clip(RoundedCornerShape(21.dp))
                     .background(Color.Black)
-                    .border(1.dp, Color(0xFFE6E6E6).copy(alpha = 0.30f), RoundedCornerShape(18.75.dp))
+                    .border(1.dp, Color(0xFFE6E6E6).copy(alpha = 0.30f), RoundedCornerShape(21.dp))
                     .clickable { open = !open }
                     .padding(horizontal = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -235,13 +250,13 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
                     Image(
                         painter = painterResource(id = R.mipmap.ic_launcher_foreground),
                         contentDescription = null,
-                        modifier = Modifier.size(33.dp).graphicsLayer { alpha = iconAlpha.value }
+                        modifier = Modifier.size(37.dp).graphicsLayer { alpha = iconAlpha.value }
                     )
                 }
                 Spacer(modifier = Modifier.weight(1f))
                 Box(
                     modifier = Modifier
-                        .size(30.dp)
+                        .size(32.dp)
                         .clip(CircleShape)
                         .clickable { navigator.navigate(InstallScreenDestination) },
                     contentAlignment = Alignment.Center
@@ -250,7 +265,7 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
                         imageVector = Icons.Filled.Check,
                         contentDescription = "install",
                         tint = Color.White,
-                        modifier = Modifier.size(18.dp).graphicsLayer { alpha = checkAlpha.value }
+                        modifier = Modifier.size(19.dp).graphicsLayer { alpha = checkAlpha.value }
                     )
                 }
             }
