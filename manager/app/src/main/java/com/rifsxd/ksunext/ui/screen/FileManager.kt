@@ -68,6 +68,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.topjohnwu.superuser.Shell
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -132,24 +133,61 @@ fun FileManagerScreen() {
 @Composable
 private fun DynamicIsland() {
     var expanded by remember { mutableStateOf(false) }
-    val spec = spring<androidx.compose.ui.unit.Dp>(dampingRatio = 0.78f, stiffness = 520f)
-    val specF = spring<Float>(dampingRatio = 0.78f, stiffness = 520f)
 
-    val tr = updateTransition(expanded, label = "island")
-    val mainW by tr.animateDp(transitionSpec = { spec }) { if (it) 232.dp else 152.dp }
-    val mainH by tr.animateDp(transitionSpec = { spec }) { if (it) 92.dp else 44.dp }
-    val radius by tr.animateDp(transitionSpec = { spec }) { if (it) 30.dp else 22.dp }
-    val gap by tr.animateDp(transitionSpec = { spec }) { if (it) 0.dp else 6.dp }
-    val dotSize by tr.animateDp(transitionSpec = { spec }) { if (it) 0.dp else 44.dp }
-    val borderAlpha by tr.animateFloat(transitionSpec = { specF }) { if (it) 0.10f else 0.22f }
+    val w = remember { Animatable(152f) }
+    val h = remember { Animatable(44f) }
+    val r = remember { Animatable(22f) }
+    val gap = remember { Animatable(6f) }
+    val dw = remember { Animatable(44f) }
+    val dh = remember { Animatable(44f) }
+    val icon = remember { Animatable(38f) }
+    val border = remember { Animatable(0.22f) }
+
+    val springy = spring<Float>(dampingRatio = 0.55f, stiffness = 620f)
+    val quick = tween<Float>(110)
 
     var blurTarget by remember { mutableStateOf(0.dp) }
     LaunchedEffect(expanded) {
         blurTarget = 2.5.dp
-        delay(140)
+        delay(120)
         blurTarget = 0.dp
     }
-    val blurPx by animateDpAsState(blurTarget, tween(180), label = "blur")
+    val blurPx by animateDpAsState(blurTarget, tween(160), label = "blur")
+
+    LaunchedEffect(expanded) {
+        if (expanded) {
+            launch { gap.animateTo(0f, quick) }
+            launch { dw.animateTo(0f, tween(130)); dh.animateTo(0f, tween(130)) }
+            launch { r.animateTo(30f, springy) }
+            launch { icon.animateTo(44f, springy) }
+            launch { border.animateTo(0.10f, quick) }
+            launch { w.animateTo(232f, springy) }
+            h.animateTo(92f, springy)
+        } else {
+            launch { border.animateTo(0.22f, quick) }
+            launch { r.animateTo(20f, quick) }
+            // 1) merge: two sides pull in, height bulges
+            launch { w.animateTo(198f, tween(110)) }
+            launch { h.animateTo(52f, tween(110)) }
+            // 2) dot peels off: tiny ellipse first, then grows
+            launch {
+                delay(70)
+                launch { dw.animateTo(14f, tween(70)) }
+                dh.animateTo(10f, tween(70))
+                launch { dw.animateTo(44f, springy) }
+                dh.animateTo(44f, springy)
+            }
+            // 3) gap opens as the dot separates
+            launch { delay(90); gap.animateTo(6f, tween(90)) }
+            // 4) main island returns, icon shrinks back
+            launch {
+                delay(120)
+                launch { w.animateTo(152f, springy) }
+                launch { icon.animateTo(38f, springy) }
+                h.animateTo(44f, springy)
+            }
+        }
+    }
 
     Box(
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
@@ -157,15 +195,15 @@ private fun DynamicIsland() {
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(gap)
+            horizontalArrangement = Arrangement.spacedBy(gap.value.dp)
         ) {
             Row(
                 modifier = Modifier
-                    .width(mainW)
-                    .height(mainH)
-                    .clip(RoundedCornerShape(radius))
+                    .width(w.value.dp)
+                    .height(h.value.dp)
+                    .clip(RoundedCornerShape(r.value.dp))
                     .background(Color.Black)
-                    .border(1.dp, Color(0xFFFFFFFF).copy(alpha = borderAlpha), RoundedCornerShape(radius))
+                    .border(1.dp, Color(0xFFFFFFFF).copy(alpha = border.value), RoundedCornerShape(r.value.dp))
                     .clickable { expanded = !expanded },
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -173,7 +211,7 @@ private fun DynamicIsland() {
                     painter = painterResource(id = R.mipmap.ic_launcher_foreground),
                     contentDescription = null,
                     modifier = Modifier
-                        .size(if (expanded) 44.dp else 38.dp)
+                        .size(icon.value.dp)
                         .padding(start = 3.dp)
                         .blur(blurPx * 0.2f)
                 )
@@ -188,13 +226,14 @@ private fun DynamicIsland() {
                 }
             }
 
-            if (dotSize > 0.dp) {
+            if (dw.value > 0.5f) {
                 Box(
                     modifier = Modifier
-                        .size(dotSize)
-                        .clip(CircleShape)
+                        .width(dw.value.dp)
+                        .height(dh.value.dp)
+                        .clip(RoundedCornerShape(percent = 50))
                         .background(Color.Black)
-                        .border(1.dp, Color(0xFFFFFFFF).copy(alpha = borderAlpha), CircleShape)
+                        .border(1.dp, Color(0xFFFFFFFF).copy(alpha = border.value), RoundedCornerShape(percent = 50))
                         .clickable { expanded = true }
                 )
             }
