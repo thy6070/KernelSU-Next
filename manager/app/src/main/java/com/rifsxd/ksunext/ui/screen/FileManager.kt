@@ -18,6 +18,8 @@ import androidx.compose.animation.core.updateTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -133,27 +135,55 @@ fun FileManagerScreen() {
 
 @Composable
 private fun DynamicIsland() {
+    // iOS-like spring: response 0.32s ~ stiffness 385, dampingFraction 0.75
+    val springMain = spring<Float>(dampingRatio = 0.75f, stiffness = 385f)
+    val springSoft = spring<Float>(dampingRatio = 0.72f, stiffness = 380f)
+
     var expanded by remember { mutableStateOf(false) }
-    val spec = spring<androidx.compose.ui.unit.Dp>(dampingRatio = 0.82f, stiffness = 380f)
-    val specF = spring<Float>(dampingRatio = 0.85f, stiffness = 380f)
 
-    val tr = updateTransition(expanded, label = "island")
-    val mainW by tr.animateDp(transitionSpec = { spec }) { if (it) 244.dp else 152.dp }
-    val mainH by tr.animateDp(transitionSpec = { spec }) { if (it) 92.dp else 44.dp }
-    val radius by tr.animateDp(transitionSpec = { spec }) { if (it) 30.dp else 22.dp }
-    val gap by tr.animateDp(transitionSpec = { spec }) { if (it) 0.dp else 5.dp }
-    val subW by tr.animateDp(transitionSpec = { spec }) { if (it) 0.dp else 52.dp }
-    val subH by tr.animateDp(transitionSpec = { spec }) { if (it) 0.dp else 40.dp }
-    val borderAlpha by tr.animateFloat(transitionSpec = { specF }) { if (it) 0.10f else 0.22f }
-    val contentAlpha by tr.animateFloat(transitionSpec = { tween(140) }) { if (it) 1f else 0f }
+    val width = remember { Animatable(0f) }
+    val height = remember { Animatable(30f) }
+    val gap = remember { Animatable(0f) }
+    val dotW = remember { Animatable(0f) }
+    val contentAlpha = remember { Animatable(0f) }
+    val contentScale = remember { Animatable(0.95f) }
+    val pressScale = remember { Animatable(1f) }
+    val borderAlpha = remember { Animatable(0.22f) }
 
-    var blurTarget by remember { mutableStateOf(0.dp) }
-    LaunchedEffect(expanded) {
-        blurTarget = 2.5.dp
-        delay(110)
-        blurTarget = 0.dp
+    // fixed corner radius (iOS keeps 44pt regardless of morph)
+    val radius = 22f
+
+    // entrance: pill stretches out of the punch-hole, content fades in 60ms later
+    LaunchedEffect(Unit) {
+        launch { width.animateTo(152f, springSoft) }
+        launch { height.animateTo(44f, springSoft) }
+        delay(60)
+        launch { contentAlpha.animateTo(1f, tween(180)) }
+        launch { contentScale.animateTo(1f, springSoft) }
+        delay(140)
+        launch { dotW.animateTo(52f, springSoft) }
+        launch { gap.animateTo(5f, springSoft) }
     }
-    val blurPx by animateDpAsState(blurTarget, tween<androidx.compose.ui.unit.Dp>(durationMillis = 150), label = "blur")
+
+    LaunchedEffect(expanded) {
+        // content leaves first, then the shell morphs
+        launch { contentAlpha.animateTo(0f, tween(90)) }
+        delay(90)
+        if (expanded) {
+            launch { width.animateTo(244f, springMain) }
+            launch { height.animateTo(92f, springMain) }
+            launch { dotW.animateTo(0f, springMain) }
+            launch { gap.animateTo(0f, springMain) }
+            launch { borderAlpha.animateTo(0.10f, springMain) }
+        } else {
+            launch { width.animateTo(152f, springMain) }
+            launch { height.animateTo(44f, springMain) }
+            launch { dotW.animateTo(52f, springMain) }
+            launch { gap.animateTo(5f, springMain) }
+            launch { borderAlpha.animateTo(0.22f, springMain) }
+        }
+        launch { contentAlpha.animateTo(1f, tween(160)) }
+    }
 
     Box(
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
@@ -161,16 +191,30 @@ private fun DynamicIsland() {
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(gap)
+            horizontalArrangement = Arrangement.spacedBy(gap.value.dp)
         ) {
             Row(
                 modifier = Modifier
-                    .width(mainW)
-                    .height(mainH)
-                    .clip(RoundedCornerShape(radius))
+                    .width(width.value.dp)
+                    .height(height.value.dp)
+                    .graphicsLayer {
+                        scaleX = pressScale.value
+                        scaleY = pressScale.value
+                    }
+                    .clip(RoundedCornerShape(radius.dp))
                     .background(Color.Black)
-                    .border(1.dp, Color(0xFFFFFFFF).copy(alpha = borderAlpha), RoundedCornerShape(radius))
-                    .clickable { expanded = !expanded },
+                    .border(1.dp, Color(0xFFFFFFFF).copy(alpha = borderAlpha.value), RoundedCornerShape(radius.dp))
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onPress = {
+                                pressScale.animateTo(0.97f, tween(40))
+                                tryAwaitRelease()
+                                pressScale.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = 700f))
+                            },
+                            onLongPress = { expanded = !expanded },
+                            onTap = { expanded = !expanded }
+                        )
+                    },
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Image(
@@ -179,11 +223,21 @@ private fun DynamicIsland() {
                     modifier = Modifier
                         .size(38.dp)
                         .padding(start = 3.dp)
-                        .blur(blurPx * 0.2f)
+                        .graphicsLayer {
+                            alpha = contentAlpha.value
+                            scaleX = contentScale.value
+                            scaleY = contentScale.value
+                        }
                 )
-                if (contentAlpha > 0.01f) {
+                if (contentAlpha.value > 0.01f) {
                     Spacer(modifier = Modifier.width(12.dp))
-                    Column(modifier = Modifier.alpha(contentAlpha).blur(blurPx)) {
+                    Column(
+                        modifier = Modifier.graphicsLayer {
+                            alpha = contentAlpha.value
+                            scaleX = contentScale.value
+                            scaleY = contentScale.value
+                        }
+                    ) {
                         Text(text = "小鱼儿", color = Color.White, fontSize = 18.sp)
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(text = "文件管理器", color = Color(0xFF9A9A9A), fontSize = 12.sp)
@@ -192,14 +246,14 @@ private fun DynamicIsland() {
                 }
             }
 
-            if (subW > 0.5.dp) {
+            if (dotW.value > 0.5f) {
                 Box(
                     modifier = Modifier
-                        .width(subW)
-                        .height(subH)
+                        .width(dotW.value.dp)
+                        .height(40.dp)
                         .clip(RoundedCornerShape(percent = 50))
                         .background(Color.Black)
-                        .border(1.dp, Color(0xFFFFFFFF).copy(alpha = borderAlpha), RoundedCornerShape(percent = 50))
+                        .border(1.dp, Color(0xFFFFFFFF).copy(alpha = borderAlpha.value), RoundedCornerShape(percent = 50))
                         .clickable { expanded = true }
                 )
             }
