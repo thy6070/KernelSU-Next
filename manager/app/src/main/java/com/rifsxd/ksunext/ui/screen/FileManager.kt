@@ -147,16 +147,30 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
 private fun ProMaxIsland(navigator: DestinationsNavigator) {
     var open by remember { mutableStateOf(false) }
 
-    // one smooth driver for the whole morph: no parallel springs -> no stutter
-    val progress by animateFloatAsState(
-        targetValue = if (open) 1f else 0f,
-        animationSpec = tween(durationMillis = 460, easing = FastOutSlowInEasing),
-        label = "islandProgress"
-    )
+    val pillW = remember { Animatable(220f) }
+    val pillScale = remember { Animatable(1f) }
+    val iconAlpha = remember { Animatable(0f) }
 
-    // collapsed: pill right edge swallows the side island; open: right side retracts
-    val pillW = 220f + (168f - 220f) * progress
-    val iconAlpha = progress
+    // pure tween choreography (no parallel springs -> no stutter)
+    val ease = FastOutSlowInEasing
+
+    LaunchedEffect(open) {
+        if (open) {
+            // 1) sides pull in while the pill scales up, content disappears
+            launch { pillW.animateTo(96f, tween(200, easing = ease)) }
+            launch { iconAlpha.animateTo(0f, tween(90)) }
+            pillScale.animateTo(1.5f, tween(220, easing = ease))
+            // 2) slowly shrink back while the right edge opens up again
+            launch { pillW.animateTo(168f, tween(430, easing = ease)) }
+            pillScale.animateTo(1f, tween(430, easing = ease))
+            // 3) app icon fades in on the left
+            launch { delay(180); iconAlpha.animateTo(1f, tween(220, easing = ease)) }
+        } else {
+            launch { iconAlpha.animateTo(0f, tween(140)) }
+            launch { pillW.animateTo(220f, tween(380, easing = ease)) }
+            pillScale.animateTo(1f, tween(300, easing = ease))
+        }
+    }
 
     val dotX = 172f
 
@@ -166,7 +180,7 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
     ) {
         Box(modifier = Modifier.width(220.dp).height(48.dp)) {
 
-            // side island tucked exactly behind the check mark area
+            // side island, tucked exactly behind the check mark
             Row(
                 modifier = Modifier
                     .offset(x = dotX.dp)
@@ -186,11 +200,15 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
                 )
             }
 
-            // main pill: left edge pinned, right edge grows/shrinks over the island
+            // main pill: left edge pinned, right edge morphs
             Row(
                 modifier = Modifier
-                    .width(pillW.dp)
+                    .width(pillW.value.dp)
                     .height(37.5.dp)
+                    .graphicsLayer {
+                        scaleX = pillScale.value
+                        scaleY = pillScale.value
+                    }
                     .clip(RoundedCornerShape(18.75.dp))
                     .background(Color.Black)
                     .border(1.dp, Color(0xFFE6E6E6).copy(alpha = 0.30f), RoundedCornerShape(18.75.dp))
@@ -198,11 +216,11 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
                     .padding(horizontal = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (iconAlpha > 0.01f) {
+                if (iconAlpha.value > 0.01f) {
                     Image(
                         painter = painterResource(id = R.mipmap.ic_launcher_foreground),
                         contentDescription = null,
-                        modifier = Modifier.size(33.dp).graphicsLayer { alpha = iconAlpha }
+                        modifier = Modifier.size(33.dp).graphicsLayer { alpha = iconAlpha.value }
                     )
                 }
                 Spacer(modifier = Modifier.weight(1f))
