@@ -140,128 +140,105 @@ fun FileManagerScreen() {
 
 @Composable
 private fun DynamicIsland() {
-    // morph: 0 = punch hole, 1 = compact pill, 2 = expanded
-    val uiScope = rememberCoroutineScope()
-    var dragging by remember { mutableStateOf(false) }
-    var dragValue by remember { mutableFloatStateOf(1f) }
-    val morph = remember { Animatable(0f) }
-    val press = remember { Animatable(1f) }
-    val contentAlpha = remember { Animatable(0f) }
-    val dotAlpha = remember { Animatable(0f) }
-    val borderAlpha = remember { Animatable(1f) }
+    // Motion constants borrowed from SmartIsland (GPLv3): stiffness 300,
+    // width damping 0.72 (≈4% overshoot), height/radius damping 1.0 (no overshoot).
+    val STIFFNESS = 300f
+    val WIDTH_DAMPING = 0.72f
+    val SETTLE_DAMPING = 1f
 
-    val springMain = spring<Float>(dampingRatio = 0.75f, stiffness = 385f)
+    var expanded by remember { mutableStateOf(false) }
+
+    val w = remember { Animatable(44f) }
+    val h = remember { Animatable(26f) }
+    val contentAlpha = remember { Animatable(0f) }
+    val press = remember { Animatable(1f) }
+    val border = remember { Animatable(0.22f) }
+
+    val widthSpec = spring<Float>(dampingRatio = WIDTH_DAMPING, stiffness = STIFFNESS)
+    val settleSpec = spring<Float>(dampingRatio = SETTLE_DAMPING, stiffness = STIFFNESS)
 
     LaunchedEffect(Unit) {
-        launch { morph.animateTo(1f, springMain) }
-        delay(60)
-        contentAlpha.animateTo(1f, tween(180))
-        delay(200)
-        dotAlpha.animateTo(1f, tween(160))
+        launch { w.animateTo(152f, widthSpec) }
+        launch { h.animateTo(44f, settleSpec) }
+        delay(120)
+        contentAlpha.animateTo(1f, tween(160))
     }
 
-    val m = if (dragging) dragValue else morph.value
-    val w = if (m <= 1f) 44f + 108f * m else 152f + 96f * (m - 1f)
-    val h = if (m <= 1f) 26f + 18f * m else 44f + 52f * (m - 1f)
-    val expanded = m > 1.5f
-    val radius = 22f
+    LaunchedEffect(expanded) {
+        if (expanded) {
+            launch { contentAlpha.animateTo(0f, tween(80)) }
+            delay(80)
+            launch { w.animateTo(250f, widthSpec) }
+            launch { h.animateTo(96f, settleSpec) }
+            launch { border.animateTo(0.10f, settleSpec) }
+            delay(90)
+            launch { contentAlpha.animateTo(1f, tween(180)) }
+        } else {
+            launch { contentAlpha.animateTo(0f, tween(70)) }
+            delay(70)
+            launch { w.animateTo(152f, widthSpec) }
+            launch { h.animateTo(44f, settleSpec) }
+            launch { border.animateTo(0.22f, settleSpec) }
+            delay(140)
+            launch { contentAlpha.animateTo(1f, tween(120)) }
+        }
+    }
 
     Box(
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
         contentAlignment = Alignment.TopCenter
     ) {
         Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(if (expanded) 0.dp else 5.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .width(w.dp)
-                    .height(h.dp)
-                    .graphicsLayer {
-                        scaleX = press.value
-                        scaleY = press.value
-                    }
-                    .clip(RoundedCornerShape(radius.dp))
-                    .background(Color.Black)
-                    .border(
-                        1.dp,
-                        Color(0xFFFFFFFF).copy(alpha = if (expanded) 0.10f else 0.22f),
-                        RoundedCornerShape(radius.dp)
-                    )
-                    .pointerInput(Unit) {
-                        awaitEachGesture {
-                            awaitFirstDown()
-                            uiScope.launch { press.animateTo(0.97f, tween(40)) }
-                            dragging = true
-                            dragValue = if (morph.value > 1.5f) 2f else 1f
-                            while (true) {
-                                val ev = awaitPointerEvent()
-                                val ch = ev.changes.firstOrNull() ?: break
-                                if (!ch.pressed) break
-                                dragValue = (dragValue + ch.positionChange().y / 240f).coerceIn(0f, 2f)
-                            }
-                            dragging = false
-                            val settle = dragValue
-                            uiScope.launch {
-                                press.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = 700f))
-                                morph.snapTo(settle)
-                                morph.animateTo(if (settle > 1.5f) 2f else 1f, springMain)
-                            }
-                        }
-                    },
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (expanded) {
-                    Column(
-                        modifier = Modifier.fillMaxSize().graphicsLayer { alpha = contentAlpha.value },
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.mipmap.ic_launcher_foreground),
-                            contentDescription = null,
-                            modifier = Modifier.size(46.dp)
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(text = "小鱼儿", color = Color.White, fontSize = 20.sp)
-                        Text(text = "文件管理器", color = Color(0xFF9A9A9A), fontSize = 12.sp)
-                    }
-                } else {
-                    Row(
-                        modifier = Modifier.fillMaxSize().graphicsLayer { alpha = contentAlpha.value },
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Spacer(modifier = Modifier.width(3.dp))
-                        Image(
-                            painter = painterResource(id = R.mipmap.ic_launcher_foreground),
-                            contentDescription = null,
-                            modifier = Modifier.size(38.dp)
-                        )
-                        if (m > 1.05f) {
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(text = "小鱼儿", color = Color.White, fontSize = 18.sp)
-                            Spacer(modifier = Modifier.width(12.dp))
-                        }
-                    }
+            modifier = Modifier
+                .width(w.value.dp)
+                .height(h.value.dp)
+                .graphicsLayer {
+                    scaleX = press.value
+                    scaleY = press.value
                 }
-            }
-
-            if (!expanded) {
-                Box(
-                    modifier = Modifier
-                        .graphicsLayer { alpha = dotAlpha.value }
-                        .width(52.dp)
-                        .height(40.dp)
-                        .clip(RoundedCornerShape(percent = 50))
-                        .background(Color.Black)
-                        .border(
-                            1.dp,
-                            Color(0xFFFFFFFF).copy(alpha = 0.22f),
-                            RoundedCornerShape(percent = 50)
-                        )
-                        .clickable { }
-                )
+                .clip(RoundedCornerShape(22.dp))
+                .background(Color.Black)
+                .border(1.dp, Color(0xFFFFFFFF).copy(alpha = border.value), RoundedCornerShape(22.dp))
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onPress = {
+                            press.animateTo(0.97f, tween(40))
+                            tryAwaitRelease()
+                            press.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = 700f))
+                        },
+                        onTap = { expanded = !expanded },
+                        onLongPress = { expanded = !expanded }
+                    )
+                },
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (expanded) {
+                Column(
+                    modifier = Modifier.fillMaxSize().graphicsLayer { alpha = contentAlpha.value },
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.mipmap.ic_launcher_foreground),
+                        contentDescription = null,
+                        modifier = Modifier.size(46.dp)
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(text = "小鱼儿", color = Color.White, fontSize = 20.sp)
+                    Text(text = "文件管理器", color = Color(0xFF9A9A9A), fontSize = 12.sp)
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxSize().graphicsLayer { alpha = contentAlpha.value },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Spacer(modifier = Modifier.width(3.dp))
+                    Image(
+                        painter = painterResource(id = R.mipmap.ic_launcher_foreground),
+                        contentDescription = null,
+                        modifier = Modifier.size(38.dp)
+                    )
+                }
             }
         }
     }
