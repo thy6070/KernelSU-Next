@@ -133,6 +133,7 @@ fun FileManagerScreen() {
 private fun DynamicIsland() {
     var expanded by remember { mutableStateOf(false) }
     val soft = spring<androidx.compose.ui.unit.Dp>(dampingRatio = 0.52f, stiffness = 420f)
+    val softF = spring<Float>(dampingRatio = 0.52f, stiffness = 420f)
 
     val tr = updateTransition(expanded, label = "island")
     val mainW by tr.animateDp(transitionSpec = { soft }) { if (it) 232.dp else 152.dp }
@@ -140,7 +141,7 @@ private fun DynamicIsland() {
     val radius by tr.animateDp(transitionSpec = { soft }) { if (it) 30.dp else 20.dp }
     val gap by tr.animateDp(transitionSpec = { soft }) { if (it) 0.dp else 6.dp }
     val iconSize by tr.animateDp(transitionSpec = { soft }) { if (it) 40.dp else 26.dp }
-    val borderAlpha by tr.animateFloat(transitionSpec = { soft }) { if (it) 0.10f else 0.22f }
+    val borderAlpha by tr.animateFloat(transitionSpec = { softF }) { if (it) 0.10f else 0.22f }
 
     val dotSize by tr.animateDp(
         transitionSpec = { tween(durationMillis = 200, delayMillis = if (targetState) 150 else 40) }
