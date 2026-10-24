@@ -157,15 +157,9 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
 private fun ProMaxIsland(navigator: DestinationsNavigator) {
     var expanded by remember { mutableStateOf(false) }
 
-    // side island position only: it hides under the pill and slides out when opened.
-    // The pill never changes width and is drawn ON TOP of the side island.
-    val dotX = remember { Animatable(128f) }
-    val dotScale = remember { Animatable(0.6f) }
-    val dotAlpha = remember { Animatable(0f) }
+    // v38 style: side island translates out of the pill while scaling 0.55 -> 1.0
+    val ball = remember { Animatable(0f) }
     val bounce = remember { Animatable(0f) }
-
-    val springy = spring<Float>(dampingRatio = 0.55f, stiffness = 260f)
-    val settle = spring<Float>(dampingRatio = 0.68f, stiffness = 300f)
 
     LaunchedEffect(expanded) {
         launch {
@@ -173,16 +167,14 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
             bounce.animateTo(1f, tween(700))
         }
         if (expanded) {
-            launch { dotX.animateTo(192f, springy) }
-            launch { dotScale.animateTo(1f, springy) }
-            dotAlpha.animateTo(1f, tween(150))
+            ball.animateTo(1f, spring(dampingRatio = 0.7f, stiffness = 130f))
         } else {
-            launch { dotX.animateTo(128f, settle) }
-            launch { dotScale.animateTo(0.6f, settle) }
-            dotAlpha.animateTo(0f, tween(120))
+            ball.animateTo(0f, spring(dampingRatio = 0.72f, stiffness = 120f))
         }
     }
 
+    val shift = ball.value
+    val ballScale = 0.55f + 0.45f * shift
     val t = bounce.value
     val bump = 1f + 0.05f * sin(t * PI.toFloat())
     val sway = 5f * sin(t * 9.424778f) * (1f - t)
@@ -194,16 +186,18 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
     ) {
         Box(modifier = Modifier.width(248.dp).height(52.dp)) {
 
-            // 1) side island drawn first (underneath)
+            // side island (underneath): fixed slot, slides out by translation
             Row(
                 modifier = Modifier
-                    .offset(x = dotX.value.dp, y = 4.dp)
+                    .offset(x = 192.dp, y = 4.dp)
                     .width(52.dp)
                     .height(44.dp)
                     .graphicsLayer {
-                        scaleX = dotScale.value
-                        scaleY = dotScale.value
-                        alpha = dotAlpha.value
+                        val travel = with(density) { 64.dp.toPx() }
+                        translationX = (shift - 1f) * travel
+                        scaleX = ballScale
+                        scaleY = ballScale
+                        alpha = (shift * 3f).coerceIn(0f, 1f)
                     }
                     .clip(RoundedCornerShape(22.dp))
                     .background(Color.Black)
@@ -219,7 +213,7 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
                 )
             }
 
-            // 2) main pill drawn second (on top), fixed width
+            // main pill on top, fixed width
             Row(
                 modifier = Modifier
                     .width(188.dp)
