@@ -135,54 +135,63 @@ fun FileManagerScreen() {
 
 @Composable
 private fun DynamicIsland() {
-    // iOS-like spring: response 0.32s ~ stiffness 385, dampingFraction 0.75
-    val springMain = spring<Float>(dampingRatio = 0.75f, stiffness = 385f)
-    val springSoft = spring<Float>(dampingRatio = 0.72f, stiffness = 380f)
+    val springMain = spring<Float>(dampingRatio = 0.72f, stiffness = 360f)
+    val springSoft = spring<Float>(dampingRatio = 0.78f, stiffness = 320f)
 
     var expanded by remember { mutableStateOf(false) }
 
-    val width = remember { Animatable(0f) }
-    val height = remember { Animatable(30f) }
+    val width = remember { Animatable(44f) }
+    val height = remember { Animatable(26f) }
     val gap = remember { Animatable(0f) }
     val dotW = remember { Animatable(0f) }
+    val dotOffset = remember { Animatable(-14f) }
+    val dotAlpha = remember { Animatable(0f) }
     val contentAlpha = remember { Animatable(0f) }
-    val contentScale = remember { Animatable(0.95f) }
+    val contentScale = remember { Animatable(0.92f) }
     val pressScale = remember { Animatable(1f) }
     val borderAlpha = remember { Animatable(0.22f) }
 
-    // fixed corner radius (iOS keeps 44pt regardless of morph)
     val radius = 22f
 
-    // entrance: pill stretches out of the punch-hole, content fades in 60ms later
     LaunchedEffect(Unit) {
         launch { width.animateTo(152f, springSoft) }
         launch { height.animateTo(44f, springSoft) }
-        delay(60)
-        launch { contentAlpha.animateTo(1f, tween(180)) }
+        delay(70)
+        launch { contentAlpha.animateTo(1f, tween(200)) }
         launch { contentScale.animateTo(1f, springSoft) }
-        delay(140)
+        delay(150)
         launch { dotW.animateTo(52f, springSoft) }
         launch { gap.animateTo(5f, springSoft) }
+        dotAlpha.animateTo(1f, tween(150))
+        dotOffset.animateTo(0f, springSoft)
     }
 
     LaunchedEffect(expanded) {
-        // content leaves first, then the shell morphs
-        launch { contentAlpha.animateTo(0f, tween(90)) }
-        delay(90)
         if (expanded) {
-            launch { width.animateTo(244f, springMain) }
-            launch { height.animateTo(92f, springMain) }
+            launch { dotAlpha.animateTo(0f, tween(90)) }
+            launch { dotOffset.animateTo(-18f, springMain) }
             launch { dotW.animateTo(0f, springMain) }
             launch { gap.animateTo(0f, springMain) }
+            launch { contentAlpha.animateTo(0f, tween(70)) }
+            delay(70)
+            launch { width.animateTo(248f, springMain) }
+            launch { height.animateTo(96f, springMain) }
             launch { borderAlpha.animateTo(0.10f, springMain) }
+            launch { contentAlpha.animateTo(1f, tween(160)) }
+            launch { contentScale.animateTo(1f, springMain) }
         } else {
+            launch { contentAlpha.animateTo(0f, tween(80)) }
+            delay(80)
             launch { width.animateTo(152f, springMain) }
             launch { height.animateTo(44f, springMain) }
-            launch { dotW.animateTo(52f, springMain) }
-            launch { gap.animateTo(5f, springMain) }
             launch { borderAlpha.animateTo(0.22f, springMain) }
+            launch { contentAlpha.animateTo(1f, tween(150)) }
+            delay(110)
+            launch { gap.animateTo(5f, springMain) }
+            launch { dotW.animateTo(52f, springMain) }
+            launch { dotOffset.animateTo(0f, springMain) }
+            dotAlpha.animateTo(1f, tween(150))
         }
-        launch { contentAlpha.animateTo(1f, tween(160)) }
     }
 
     Box(
@@ -209,7 +218,7 @@ private fun DynamicIsland() {
                             onPress = {
                                 pressScale.animateTo(0.97f, tween(40))
                                 tryAwaitRelease()
-                                pressScale.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = 700f))
+                                pressScale.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = 700f))
                             },
                             onLongPress = { expanded = !expanded },
                             onTap = { expanded = !expanded }
@@ -249,8 +258,10 @@ private fun DynamicIsland() {
             if (dotW.value > 0.5f) {
                 Box(
                     modifier = Modifier
+                        .offset(x = dotOffset.value.dp)
                         .width(dotW.value.dp)
                         .height(40.dp)
+                        .graphicsLayer { alpha = dotAlpha.value }
                         .clip(RoundedCornerShape(percent = 50))
                         .background(Color.Black)
                         .border(1.dp, Color(0xFFFFFFFF).copy(alpha = borderAlpha.value), RoundedCornerShape(percent = 50))
