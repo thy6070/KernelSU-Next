@@ -134,6 +134,45 @@ fun FileManagerScreen() {
         }
     }
 
+    ProMaxIsland()
+    }
+}
+
+@Composable
+private fun ProMaxIsland() {
+    // iPhone 15 Pro Max proportions: pill 126 x 37.5 dp, camera circle 37.5 dp
+    Box(
+        modifier = Modifier.fillMaxWidth().padding(top = 9.dp),
+        contentAlignment = Alignment.TopCenter
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .width(126.dp)
+                    .height(37.5.dp)
+                    .clip(RoundedCornerShape(18.75.dp))
+                    .background(Color.Black)
+                    .border(1.dp, Color(0xFFFFFFFF).copy(alpha = 0.16f), RoundedCornerShape(18.75.dp))
+                    .padding(horizontal = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Image(
+                    painter = painterResource(id = R.mipmap.ic_launcher_foreground),
+                    contentDescription = null,
+                    modifier = Modifier.size(25.dp)
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .size(37.5.dp)
+                    .clip(CircleShape)
+                    .background(Color.Black)
+                    .border(1.dp, Color(0xFFFFFFFF).copy(alpha = 0.16f), CircleShape)
+            )
+        }
     }
 }
 
