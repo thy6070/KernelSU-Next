@@ -20,6 +20,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -135,64 +138,28 @@ fun FileManagerScreen() {
 
 @Composable
 private fun DynamicIsland() {
-    val springMain = spring<Float>(dampingRatio = 0.72f, stiffness = 360f)
-    val springSoft = spring<Float>(dampingRatio = 0.78f, stiffness = 320f)
-
-    var expanded by remember { mutableStateOf(false) }
-
-    val width = remember { Animatable(44f) }
-    val height = remember { Animatable(26f) }
-    val gap = remember { Animatable(0f) }
-    val dotW = remember { Animatable(0f) }
-    val dotOffset = remember { Animatable(-14f) }
-    val dotAlpha = remember { Animatable(0f) }
+    // morph: 0 = punch hole, 1 = compact pill, 2 = expanded
+    val morph = remember { Animatable(0f) }
+    val press = remember { Animatable(1f) }
     val contentAlpha = remember { Animatable(0f) }
-    val contentScale = remember { Animatable(0.92f) }
-    val pressScale = remember { Animatable(1f) }
-    val borderAlpha = remember { Animatable(0.22f) }
+    val dotAlpha = remember { Animatable(0f) }
+    val borderAlpha = remember { Animatable(1f) }
 
-    val radius = 22f
+    val springMain = spring<Float>(dampingRatio = 0.75f, stiffness = 385f)
 
     LaunchedEffect(Unit) {
-        launch { width.animateTo(152f, springSoft) }
-        launch { height.animateTo(44f, springSoft) }
-        delay(70)
-        launch { contentAlpha.animateTo(1f, tween(200)) }
-        launch { contentScale.animateTo(1f, springSoft) }
-        delay(150)
-        launch { dotW.animateTo(52f, springSoft) }
-        launch { gap.animateTo(5f, springSoft) }
-        dotAlpha.animateTo(1f, tween(150))
-        dotOffset.animateTo(0f, springSoft)
+        launch { morph.animateTo(1f, springMain) }
+        delay(60)
+        contentAlpha.animateTo(1f, tween(180))
+        delay(200)
+        dotAlpha.animateTo(1f, tween(160))
     }
 
-    LaunchedEffect(expanded) {
-        if (expanded) {
-            launch { dotAlpha.animateTo(0f, tween(90)) }
-            launch { dotOffset.animateTo(-18f, springMain) }
-            launch { dotW.animateTo(0f, springMain) }
-            launch { gap.animateTo(0f, springMain) }
-            launch { contentAlpha.animateTo(0f, tween(70)) }
-            delay(70)
-            launch { width.animateTo(248f, springMain) }
-            launch { height.animateTo(96f, springMain) }
-            launch { borderAlpha.animateTo(0.10f, springMain) }
-            launch { contentAlpha.animateTo(1f, tween(160)) }
-            launch { contentScale.animateTo(1f, springMain) }
-        } else {
-            launch { contentAlpha.animateTo(0f, tween(80)) }
-            delay(80)
-            launch { width.animateTo(152f, springMain) }
-            launch { height.animateTo(44f, springMain) }
-            launch { borderAlpha.animateTo(0.22f, springMain) }
-            launch { contentAlpha.animateTo(1f, tween(150)) }
-            delay(110)
-            launch { gap.animateTo(5f, springMain) }
-            launch { dotW.animateTo(52f, springMain) }
-            launch { dotOffset.animateTo(0f, springMain) }
-            dotAlpha.animateTo(1f, tween(150))
-        }
-    }
+    val m = morph.value
+    val w = if (m <= 1f) 44f + 108f * m else 152f + 96f * (m - 1f)
+    val h = if (m <= 1f) 26f + 18f * m else 44f + 52f * (m - 1f)
+    val expanded = m > 1.5f
+    val radius = 22f
 
     Box(
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
@@ -200,72 +167,96 @@ private fun DynamicIsland() {
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(gap.value.dp)
+            horizontalArrangement = Arrangement.spacedBy(if (expanded) 0.dp else 5.dp)
         ) {
             Row(
                 modifier = Modifier
-                    .width(width.value.dp)
-                    .height(height.value.dp)
+                    .width(w.dp)
+                    .height(h.dp)
                     .graphicsLayer {
-                        scaleX = pressScale.value
-                        scaleY = pressScale.value
+                        scaleX = press.value
+                        scaleY = press.value
                     }
                     .clip(RoundedCornerShape(radius.dp))
                     .background(Color.Black)
-                    .border(1.dp, Color(0xFFFFFFFF).copy(alpha = borderAlpha.value), RoundedCornerShape(radius.dp))
+                    .border(
+                        1.dp,
+                        Color(0xFFFFFFFF).copy(alpha = if (expanded) 0.10f else 0.22f),
+                        RoundedCornerShape(radius.dp)
+                    )
                     .pointerInput(Unit) {
-                        detectTapGestures(
-                            onPress = {
-                                pressScale.animateTo(0.97f, tween(40))
-                                tryAwaitRelease()
-                                pressScale.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = 700f))
-                            },
-                            onLongPress = { expanded = !expanded },
-                            onTap = { expanded = !expanded }
-                        )
+                        awaitEachGesture {
+                            awaitFirstDown()
+                            press.animateTo(0.97f, tween(40))
+                            val base = if (morph.value > 1.5f) 2f else 1f
+                            var dy = 0f
+                            while (true) {
+                                val ev = awaitPointerEvent()
+                                val ch = ev.changes.firstOrNull() ?: break
+                                if (ch.pressed) {
+                                    dy += ch.positionChange().y
+                                    morph.stop()
+                                    morph.snapTo((base + dy / 240f).coerceIn(0f, 2f))
+                                } else {
+                                    break
+                                }
+                            }
+                            press.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = 700f))
+                            val target = if (morph.value > 1.5f) 2f else 1f
+                            morph.animateTo(target, springMain)
+                        }
                     },
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Image(
-                    painter = painterResource(id = R.mipmap.ic_launcher_foreground),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(38.dp)
-                        .padding(start = 3.dp)
-                        .graphicsLayer {
-                            alpha = contentAlpha.value
-                            scaleX = contentScale.value
-                            scaleY = contentScale.value
-                        }
-                )
-                if (contentAlpha.value > 0.01f) {
-                    Spacer(modifier = Modifier.width(12.dp))
+                if (expanded) {
                     Column(
-                        modifier = Modifier.graphicsLayer {
-                            alpha = contentAlpha.value
-                            scaleX = contentScale.value
-                            scaleY = contentScale.value
-                        }
+                        modifier = Modifier.fillMaxSize().graphicsLayer { alpha = contentAlpha.value },
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        Text(text = "小鱼儿", color = Color.White, fontSize = 18.sp)
-                        Spacer(modifier = Modifier.height(2.dp))
+                        Image(
+                            painter = painterResource(id = R.mipmap.ic_launcher_foreground),
+                            contentDescription = null,
+                            modifier = Modifier.size(46.dp)
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(text = "小鱼儿", color = Color.White, fontSize = 20.sp)
                         Text(text = "文件管理器", color = Color(0xFF9A9A9A), fontSize = 12.sp)
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxSize().graphicsLayer { alpha = contentAlpha.value },
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Image(
+                            painter = painterResource(id = R.mipmap.ic_launcher_foreground),
+                            contentDescription = null,
+                            modifier = Modifier.size(38.dp)
+                        )
+                        if (m > 1.05f) {
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(text = "小鱼儿", color = Color.White, fontSize = 18.sp)
+                            Spacer(modifier = Modifier.width(12.dp))
+                        }
+                    }
                 }
             }
 
-            if (dotW.value > 0.5f) {
+            if (!expanded) {
                 Box(
                     modifier = Modifier
-                        .offset(x = dotOffset.value.dp)
-                        .width(dotW.value.dp)
-                        .height(40.dp)
                         .graphicsLayer { alpha = dotAlpha.value }
+                        .width(52.dp)
+                        .height(40.dp)
                         .clip(RoundedCornerShape(percent = 50))
                         .background(Color.Black)
-                        .border(1.dp, Color(0xFFFFFFFF).copy(alpha = borderAlpha.value), RoundedCornerShape(percent = 50))
-                        .clickable { expanded = true }
+                        .border(
+                            1.dp,
+                            Color(0xFFFFFFFF).copy(alpha = 0.22f),
+                            RoundedCornerShape(percent = 50)
+                        )
+                        .clickable { }
                 )
             }
         }
