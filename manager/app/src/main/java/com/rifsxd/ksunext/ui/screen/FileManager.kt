@@ -35,6 +35,8 @@ import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.material3.Surface
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -155,7 +157,6 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
 private fun ProMaxIsland(navigator: DestinationsNavigator) {
     var expanded by remember { mutableStateOf(false) }
 
-    // ZySU-style bounce: 1s envelope with bump / sway / lift
     val bounce = remember { Animatable(0f) }
     LaunchedEffect(expanded) {
         bounce.snapTo(0f)
@@ -166,47 +167,75 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
     val sway = 6f * sin(t * 9.424778f) * (1f - t)
     val lift = -4f * sin(t * PI.toFloat())
 
-    // iOS-like easing used by ZySU: cubic-bezier(0.32, 0.72, 0, 1)
-    val ease = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)
-    val w by animateDpAsState(if (expanded) 264.dp else 156.dp, tween(360, easing = ease), label = "islandW")
-    val h by animateDpAsState(if (expanded) 96.dp else 42.dp, tween(360, easing = ease), label = "islandH")
+    val density = androidx.compose.ui.platform.LocalDensity.current
 
     Box(
-        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
         contentAlignment = Alignment.TopCenter
     ) {
-        Row(
-            modifier = Modifier
-                .offset(x = sway.dp, y = lift.dp)
-                .width(w)
-                .height(h)
-                .graphicsLayer {
-                    scaleX = bump
-                    scaleY = bump
-                }
-                .clip(RoundedCornerShape(h / 2))
-                .background(Color.Black)
-                .border(1.dp, Color(0xFFEDEDED).copy(alpha = 0.14f), RoundedCornerShape(h / 2))
-                .clickable { expanded = !expanded }
-                .padding(horizontal = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Image(
-                painter = painterResource(id = R.mipmap.ic_launcher_foreground),
-                contentDescription = null,
-                modifier = Modifier.size(if (expanded) 46.dp else 30.dp)
-            )
-            AnimatedVisibility(
-                visible = expanded,
-                enter = expandHorizontally(animationSpec = tween(320, easing = ease)) + fadeIn(tween(220)),
-                exit = shrinkHorizontally(animationSpec = tween(240, easing = ease)) + fadeOut(tween(160))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+
+            // main pill - ZySU proportions: 36% width, 34dp radius, 0.5dp keyline
+            Surface(
+                modifier = Modifier
+                    .width(if (expanded) 244.dp else 132.dp)
+                    .height(44.dp)
+                    .graphicsLayer {
+                        scaleX = bump
+                        scaleY = bump
+                        translationX = with(density) { sway.dp.toPx() }
+                        translationY = with(density) { lift.dp.toPx() }
+                    }
+                    .clickable { expanded = !expanded },
+                shape = RoundedCornerShape(34.dp),
+                color = Color.Black,
+                border = BorderStroke(0.5.dp, Color(0x47FFFFFF))
             ) {
-                Row {
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(text = "小鱼儿", color = Color.White, fontSize = 19.sp)
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(text = "文件管理器", color = Color(0xFF9A9A9A), fontSize = 12.sp)
+                Row(
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Image(
+                        painter = painterResource(id = R.mipmap.ic_launcher_foreground),
+                        contentDescription = null,
+                        modifier = Modifier.size(if (expanded) 36.dp else 28.dp)
+                    )
+                    if (expanded) {
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column {
+                            Text(text = "小鱼儿", color = Color.White, fontSize = 17.sp)
+                            Text(text = "文件管理器", color = Color(0xFF8E8E93), fontSize = 11.sp)
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.width(6.dp))
+
+            // blue action ball
+            Surface(
+                modifier = Modifier
+                    .size(42.dp)
+                    .graphicsLayer {
+                        scaleX = bump
+                        scaleY = bump
+                        translationX = with(density) { sway.dp.toPx() }
+                        translationY = with(density) { lift.dp.toPx() }
+                    }
+                    .clickable { navigator.navigate(InstallScreenDestination) },
+                shape = CircleShape,
+                color = Color.Black,
+                border = BorderStroke(0.5.dp, Color(0x47FFFFFF))
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Surface(
+                        modifier = Modifier.size(26.dp),
+                        shape = CircleShape,
+                        color = Color(0xFF0A84FF)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(text = "+", color = Color.White, fontSize = 17.sp)
+                        }
                     }
                 }
             }
