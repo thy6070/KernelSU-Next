@@ -151,32 +151,40 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
     val pillX = remember { Animatable(0f) }
     val pillScale = remember { Animatable(1f) }
     val iconAlpha = remember { Animatable(0f) }
+    val checkAlpha = remember { Animatable(1f) }
+    val dotX = remember { Animatable(172f) }
+    val dotScale = remember { Animatable(0f) }
 
-    // pure tween choreography (no parallel springs -> no stutter)
     val ease = FastOutSlowInEasing
 
     LaunchedEffect(open) {
         if (open) {
-            // 1) sides pull in while the pill scales up, content disappears
+            // gather + scale up, check mark fades out
             launch { pillW.animateTo(96f, tween(200, easing = ease)) }
             launch { pillX.animateTo(62f, tween(200, easing = ease)) }
-            launch { iconAlpha.animateTo(0f, tween(90)) }
+            launch { checkAlpha.animateTo(0f, tween(80)) }
             pillScale.animateTo(1.5f, tween(220, easing = ease))
-            // 2) slowly shrink back while the right edge opens up again
+            // slowly shrink back
+            pillScale.animateTo(1f, tween(430, easing = ease))
             launch { pillW.animateTo(168f, tween(430, easing = ease)) }
             launch { pillX.animateTo(0f, tween(430, easing = ease)) }
-            pillScale.animateTo(1f, tween(430, easing = ease))
-            // 3) app icon fades in on the left
-            launch { delay(180); iconAlpha.animateTo(1f, tween(220, easing = ease)) }
+            // reveal: check returns, side island fades up to full size
+            launch { checkAlpha.animateTo(1f, tween(200, easing = ease)) }
+            launch { dotScale.animateTo(1f, tween(320, easing = ease)) }
+            launch { dotX.animateTo(172f, tween(320, easing = ease)) }
+            launch { iconAlpha.animateTo(1f, tween(220, easing = ease)) }
         } else {
-            launch { iconAlpha.animateTo(0f, tween(140)) }
-            launch { pillW.animateTo(220f, tween(380, easing = ease)) }
-            launch { pillX.animateTo(0f, tween(380, easing = ease)) }
-            pillScale.animateTo(1f, tween(300, easing = ease))
+            // stretch to the right, icon gone
+            launch { iconAlpha.animateTo(0f, tween(120)) }
+            launch { pillW.animateTo(220f, tween(360, easing = ease)) }
+            // side island gets pushed right first...
+            launch { dotX.animateTo(202f, tween(170, easing = ease)) }
+            dotScale.animateTo(0.82f, tween(170, easing = ease))
+            // ...then retreats under the check mark while shrinking away
+            launch { dotX.animateTo(172f, tween(190, easing = ease)) }
+            dotScale.animateTo(0f, tween(190, easing = ease))
         }
     }
-
-    val dotX = 172f
 
     Box(
         modifier = Modifier.fillMaxWidth().height(58.dp).padding(top = 6.dp),
@@ -184,12 +192,15 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
     ) {
         Box(modifier = Modifier.width(220.dp).height(48.dp)) {
 
-            // side island, tucked exactly behind the check mark
             Row(
                 modifier = Modifier
-                    .offset(x = dotX.dp)
+                    .offset(x = dotX.value.dp)
                     .width(46.dp)
                     .height(37.5.dp)
+                    .graphicsLayer {
+                        scaleX = dotScale.value
+                        scaleY = dotScale.value
+                    }
                     .clip(RoundedCornerShape(18.75.dp))
                     .background(Color.Black)
                     .border(1.dp, Color(0xFFE6E6E6).copy(alpha = 0.30f), RoundedCornerShape(18.75.dp)),
@@ -204,7 +215,6 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
                 )
             }
 
-            // main pill: left edge pinned, right edge morphs
             Row(
                 modifier = Modifier
                     .offset(x = pillX.value.dp)
@@ -240,7 +250,7 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
                         imageVector = Icons.Filled.Check,
                         contentDescription = "install",
                         tint = Color.White,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(18.dp).graphicsLayer { alpha = checkAlpha.value }
                     )
                 }
             }
