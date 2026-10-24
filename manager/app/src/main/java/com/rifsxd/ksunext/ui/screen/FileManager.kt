@@ -155,89 +155,64 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
 
 @Composable
 private fun ProMaxIsland(navigator: DestinationsNavigator) {
-    var expanded by remember { mutableStateOf(false) }
-
-    val bounce = remember { Animatable(0f) }
-    LaunchedEffect(expanded) {
-        bounce.snapTo(0f)
-        bounce.animateTo(1f, tween(1000))
-    }
-    val t = bounce.value
-    val bump = 1f + 0.06f * sin(t * PI.toFloat())
-    val sway = 6f * sin(t * 9.424778f) * (1f - t)
-    val lift = -4f * sin(t * PI.toFloat())
-
-    val density = androidx.compose.ui.platform.LocalDensity.current
-
     Box(
         modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
         contentAlignment = Alignment.TopCenter
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-
-            // main pill - ZySU proportions: 36% width, 34dp radius, 0.5dp keyline
-            Surface(
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            // main pill: check on the left, app icon on the right
+            Row(
                 modifier = Modifier
-                    .width(if (expanded) 244.dp else 132.dp)
-                    .height(44.dp)
-                    .graphicsLayer {
-                        scaleX = bump
-                        scaleY = bump
-                        translationX = with(density) { sway.dp.toPx() }
-                        translationY = with(density) { lift.dp.toPx() }
-                    }
-                    .clickable { expanded = !expanded },
-                shape = RoundedCornerShape(34.dp),
-                color = Color.Black,
-                border = BorderStroke(0.5.dp, Color(0x47FFFFFF))
+                    .width(206.dp)
+                    .height(48.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(Color.Black)
+                    .border(0.5.dp, Color(0x47FFFFFF), RoundedCornerShape(24.dp))
+                    .padding(horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .clickable { navigator.navigate(InstallScreenDestination) },
+                    contentAlignment = Alignment.Center
                 ) {
-                    Image(
-                        painter = painterResource(id = R.mipmap.ic_launcher_foreground),
-                        contentDescription = null,
-                        modifier = Modifier.size(if (expanded) 36.dp else 28.dp)
+                    Icon(
+                        imageVector = Icons.Filled.Check,
+                        contentDescription = "install",
+                        tint = Color.White,
+                        modifier = Modifier.size(22.dp)
                     )
-                    if (expanded) {
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Column {
-                            Text(text = "小鱼儿", color = Color.White, fontSize = 17.sp)
-                            Text(text = "文件管理器", color = Color(0xFF8E8E93), fontSize = 11.sp)
-                        }
-                    }
                 }
+                Spacer(modifier = Modifier.weight(1f))
+                Image(
+                    painter = painterResource(id = R.mipmap.ic_launcher_foreground),
+                    contentDescription = null,
+                    modifier = Modifier.size(42.dp)
+                )
             }
 
-            Spacer(modifier = Modifier.width(6.dp))
-
-            // blue action ball
-            Surface(
+            // side island: capsule (not a circle) with the modules icon
+            Row(
                 modifier = Modifier
-                    .size(42.dp)
-                    .graphicsLayer {
-                        scaleX = bump
-                        scaleY = bump
-                        translationX = with(density) { sway.dp.toPx() }
-                        translationY = with(density) { lift.dp.toPx() }
-                    }
-                    .clickable { navigator.navigate(InstallScreenDestination) },
-                shape = CircleShape,
-                color = Color.Black,
-                border = BorderStroke(0.5.dp, Color(0x47FFFFFF))
+                    .width(58.dp)
+                    .height(48.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(Color.Black)
+                    .border(0.5.dp, Color(0x47FFFFFF), RoundedCornerShape(24.dp)),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Surface(
-                        modifier = Modifier.size(26.dp),
-                        shape = CircleShape,
-                        color = Color(0xFF0A84FF)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(text = "+", color = Color.White, fontSize = 17.sp)
-                        }
-                    }
-                }
+                Image(
+                    painter = painterResource(id = R.mipmap.ic_modules_foreground),
+                    contentDescription = null,
+                    colorFilter = ColorFilter.tint(Color.White),
+                    modifier = Modifier.size(42.dp)
+                )
             }
         }
     }
