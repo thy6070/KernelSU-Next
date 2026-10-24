@@ -23,10 +23,11 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.foundation.Image
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.ui.graphics.ColorFilter
 import com.ramcosta.composedestinations.generated.destinations.InstallScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -65,7 +66,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -152,7 +152,6 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            // main pill: app icon on the left, check action inside on the right
             Row(
                 modifier = Modifier
                     .width(168.dp)
@@ -160,7 +159,7 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
                     .clip(RoundedCornerShape(18.75.dp))
                     .background(Color.Black)
                     .border(1.dp, Color(0xFFFFFFFF).copy(alpha = 0.16f), RoundedCornerShape(18.75.dp))
-                    .padding(horizontal = 8.dp),
+                    .padding(horizontal = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Image(
@@ -168,7 +167,7 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
                     contentDescription = null,
                     modifier = Modifier.size(33.dp)
                 )
-                Spacer(modifier = Modifier.width(1.dp).weight(1f))
+                Spacer(modifier = Modifier.weight(1f))
                 Box(
                     modifier = Modifier
                         .size(30.dp)
@@ -186,7 +185,6 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
                 }
             }
 
-            // side island capsule with the modules icon
             Row(
                 modifier = Modifier
                     .width(46.dp)
@@ -207,3 +205,223 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
         }
     }
 }
+
+@Composable
+private fun BrowserPane(
+    path: String,
+    onNavigate: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var entries by remember { mutableStateOf<List<FsEntry>>(emptyList()) }
+
+    LaunchedEffect(path) {
+        entries = listDir(path)
+    }
+
+    val parent = parentOf(path)
+
+    LazyColumn(modifier = modifier.fillMaxSize().background(Color(BG_COLOR))) {
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(enabled = parent != path) { onNavigate(parent) }
+                    .padding(horizontal = 6.dp, vertical = 5.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(TILE_COLOR)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Folder,
+                        contentDescription = null,
+                        tint = Color(FOLDER_ICON),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "..", color = Color(TEXT_COLOR), fontSize = 15.sp)
+            }
+        }
+        items(entries) { entry ->
+            FsRow(
+                name = entry.name,
+                isDir = entry.isDir,
+                fullPath = joinPath(path, entry.name),
+                onClick = { if (entry.isDir) onNavigate(joinPath(path, entry.name)) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun FsRow(
+    name: String,
+    isDir: Boolean,
+    fullPath: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 6.dp, vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        RowIcon(isDir = isDir, name = name, fullPath = fullPath)
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = name,
+            color = Color(TEXT_COLOR),
+            fontSize = 15.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+@Composable
+private fun RowIcon(isDir: Boolean, name: String, fullPath: String) {
+    val ctx = LocalContext.current
+
+    val apkIcon by produceState<ImageBitmap?>(apkIconCache[fullPath], fullPath) {
+        if (value != null) return@produceState
+        if (isDir || !isApk(name)) return@produceState
+        value = withContext(Dispatchers.IO) {
+            apkIconMutex.withLock {
+                apkIconCache.getOrPut(fullPath) { loadApkIcon(ctx, fullPath) }
+            }
+        }
+    }
+
+    when {
+        isDir -> Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color(TILE_COLOR)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Folder,
+                contentDescription = null,
+                tint = Color(FOLDER_ICON),
+                modifier = Modifier.size(20.dp)
+            )
+        }
+
+        apkIcon != null -> Box(modifier = Modifier.size(32.dp), contentAlignment = Alignment.Center) {
+            Image(
+                bitmap = apkIcon!!,
+                contentDescription = null,
+                modifier = Modifier.size(28.dp),
+                contentScale = ContentScale.Fit
+            )
+        }
+
+        else -> Box(modifier = Modifier.size(32.dp), contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = Icons.Filled.InsertDriveFile,
+                contentDescription = null,
+                tint = Color(FILE_ICON),
+                modifier = Modifier.size(20.dp)
+            )
+        }
+    }
+}
+
+private fun loadApkIcon(ctx: Context, path: String): ImageBitmap? {
+    return try {
+        val pm = ctx.packageManager
+        var usedPath = path
+        var info = pm.getPackageArchiveInfo(path, 0)
+
+        if (info == null) {
+            val probe = ctx.cacheDir.absolutePath + "/icon_probe_" + Math.abs(path.hashCode()) + ".apk"
+            copyOutForIcon(path, probe)
+            usedPath = probe
+            info = pm.getPackageArchiveInfo(probe, 0)
+        }
+
+        val app = info?.applicationInfo
+        if (app == null) null else {
+            app.sourceDir = usedPath
+            app.publicSourceDir = usedPath
+            try {
+                val drawable = app.loadIcon(pm)
+                val bmp = if (drawable is android.graphics.drawable.BitmapDrawable && drawable.bitmap != null) {
+                    drawable.bitmap
+                } else {
+                    val w = drawable.intrinsicWidth.coerceAtLeast(1)
+                    val h = drawable.intrinsicHeight.coerceAtLeast(1)
+                    val b = android.graphics.Bitmap.createBitmap(w, h, android.graphics.Bitmap.Config.ARGB_8888)
+                    val canvas = android.graphics.Canvas(b)
+                    drawable.setBounds(0, 0, w, h)
+                    drawable.draw(canvas)
+                    b
+                }
+                bmp.asImageBitmap()
+            } catch (t: Throwable) {
+                null
+            }
+        }
+    } catch (t: Throwable) {
+        null
+    }
+}
+
+private fun copyOutForIcon(src: String, dest: String) {
+    try {
+        val p = Runtime.getRuntime().exec(
+            arrayOf("su", "-c", "cp " + shq(src) + " " + shq(dest) + " && chmod 644 " + shq(dest))
+        )
+        p.waitFor()
+    } catch (t: Throwable) {
+    }
+}
+
+private fun shq(s: String): String = "'" + s.replace("'", "'\\''") + "'"
+
+internal fun isApk(n: String): Boolean {
+    val lower = n.lowercase()
+    if (lower.endsWith(".apk")) return true
+    val tail = lower.substringAfterLast(".apk.", "")
+    return tail.isNotEmpty() && tail.all { it.isDigit() }
+}
+
+private suspend fun listDir(path: String): List<FsEntry> = withContext(Dispatchers.IO) {
+    val norm = if (path.endsWith("/")) path else "$path/"
+
+    val shellOut = runCatching {
+        Shell.cmd("ls -1p \"$norm\" 2>/dev/null").exec().out
+    }.getOrDefault(emptyList())
+
+    val fromShell = shellOut
+        .filter { it.isNotBlank() }
+        .map { line ->
+            val trimmed = line.trim()
+            FsEntry(trimmed.removeSuffix("/"), trimmed.endsWith("/"))
+        }
+
+    if (fromShell.isNotEmpty()) {
+        fromShell.sortedWith(compareByDescending<FsEntry> { it.isDir }.thenBy { it.name.lowercase() })
+    } else {
+        runCatching { File(norm).listFiles() }.getOrNull()
+            ?.map { FsEntry(it.name, it.isDirectory) }
+            ?.sortedWith(compareByDescending<FsEntry> { it.isDir }.thenBy { it.name.lowercase() })
+            ?: emptyList()
+    }
+}
+
+private fun parentOf(path: String): String {
+    val p = if (path.length > 1 && path.endsWith("/")) path.dropLast(1) else path
+    val i = p.lastIndexOf('/')
+    return if (i <= 0) "/" else p.substring(0, i)
+}
+
+private fun joinPath(base: String, name: String): String =
+    if (base.endsWith("/")) "$base$name" else "$base/$name"
