@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.ui.graphics.ColorFilter
 import com.ramcosta.composedestinations.generated.destinations.InstallScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -146,102 +147,79 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
 private fun ProMaxIsland(navigator: DestinationsNavigator) {
     var open by remember { mutableStateOf(false) }
 
-    val pillW = remember { Animatable(212f) }
-    val pillScale = remember { Animatable(1f) }
-    val iconAlpha = remember { Animatable(1f) }
-    val dotScale = remember { Animatable(0.5f) }
-    val dotX = remember { Animatable(133f) }
-    val dotY = remember { Animatable(18f) }
+    // one smooth driver for the whole morph: no parallel springs -> no stutter
+    val progress by animateFloatAsState(
+        targetValue = if (open) 1f else 0f,
+        animationSpec = tween(durationMillis = 460, easing = FastOutSlowInEasing),
+        label = "islandProgress"
+    )
 
-    // slow, eased shrink (no snappy spring)
-    val slow = spring<Float>(dampingRatio = 0.72f, stiffness = 110f)
-    val settle = spring<Float>(dampingRatio = 0.7f, stiffness = 280f)
+    // collapsed: pill right edge swallows the side island; open: right side retracts
+    val pillW = 220f + (168f - 220f) * progress
+    val iconAlpha = progress
 
-    LaunchedEffect(open) {
-        if (!open) {
-            launch { iconAlpha.animateTo(1f, tween(160)) }
-            launch { pillW.animateTo(212f, settle) }
-            launch { pillScale.animateTo(1f, settle) }
-            launch { dotX.animateTo(133f, settle) }
-            launch { dotScale.animateTo(0.5f, settle) }
-            dotY.animateTo(18f, settle)
-        } else {
-            launch { iconAlpha.animateTo(0f, tween(90)) }
-            launch { pillW.animateTo(96f, tween(170)) }
-            pillScale.animateTo(1.5f, tween(200))
-            pillScale.animateTo(1f, slow)
-            launch { pillW.animateTo(168f, slow) }
-            launch { dotX.animateTo(111f, slow) }
-            launch { dotScale.animateTo(1f, slow) }
-            dotY.animateTo(0f, slow)
-        }
-    }
+    val dotX = 172f
 
     Box(
-        modifier = Modifier.fillMaxWidth().height(58.dp).padding(top = 4.dp),
-        contentAlignment = Alignment.Center
+        modifier = Modifier.fillMaxWidth().height(58.dp).padding(top = 6.dp),
+        contentAlignment = Alignment.TopCenter
     ) {
-        // side island sits UNDER the pill, tucked beneath the check mark
-        Row(
-            modifier = Modifier
-                .offset(x = dotX.value.dp, y = dotY.value.dp)
-                .width(46.dp)
-                .height(37.5.dp)
-                .graphicsLayer {
-                    scaleX = dotScale.value
-                    scaleY = dotScale.value
-                }
-                .clip(RoundedCornerShape(18.75.dp))
-                .background(Color.Black)
-                .border(1.dp, Color(0xFFE6E6E6).copy(alpha = 0.30f), RoundedCornerShape(18.75.dp)),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Image(
-                painter = painterResource(id = R.mipmap.ic_modules_foreground),
-                contentDescription = null,
-                colorFilter = ColorFilter.tint(Color.White),
-                modifier = Modifier.size(32.dp)
-            )
-        }
+        Box(modifier = Modifier.width(220.dp).height(48.dp)) {
 
-        // main pill on top
-        Row(
-            modifier = Modifier
-                .width(pillW.value.dp)
-                .height(37.5.dp)
-                .graphicsLayer {
-                    scaleX = pillScale.value
-                    scaleY = pillScale.value
-                }
-                .clip(RoundedCornerShape(18.75.dp))
-                .background(Color.Black)
-                .border(1.dp, Color(0xFFE6E6E6).copy(alpha = 0.30f), RoundedCornerShape(18.75.dp))
-                .clickable { open = !open }
-                .padding(horizontal = 6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (iconAlpha.value > 0.01f) {
+            // side island tucked exactly behind the check mark area
+            Row(
+                modifier = Modifier
+                    .offset(x = dotX.dp)
+                    .width(46.dp)
+                    .height(37.5.dp)
+                    .clip(RoundedCornerShape(18.75.dp))
+                    .background(Color.Black)
+                    .border(1.dp, Color(0xFFE6E6E6).copy(alpha = 0.30f), RoundedCornerShape(18.75.dp)),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
                 Image(
-                    painter = painterResource(id = R.mipmap.ic_launcher_foreground),
+                    painter = painterResource(id = R.mipmap.ic_modules_foreground),
                     contentDescription = null,
-                    modifier = Modifier.size(33.dp).graphicsLayer { alpha = iconAlpha.value }
+                    colorFilter = ColorFilter.tint(Color.White),
+                    modifier = Modifier.size(32.dp)
                 )
             }
-            Spacer(modifier = Modifier.weight(1f))
-            Box(
+
+            // main pill: left edge pinned, right edge grows/shrinks over the island
+            Row(
                 modifier = Modifier
-                    .size(30.dp)
-                    .clip(CircleShape)
-                    .clickable { navigator.navigate(InstallScreenDestination) },
-                contentAlignment = Alignment.Center
+                    .width(pillW.dp)
+                    .height(37.5.dp)
+                    .clip(RoundedCornerShape(18.75.dp))
+                    .background(Color.Black)
+                    .border(1.dp, Color(0xFFE6E6E6).copy(alpha = 0.30f), RoundedCornerShape(18.75.dp))
+                    .clickable { open = !open }
+                    .padding(horizontal = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Filled.Check,
-                    contentDescription = "install",
-                    tint = Color.White,
-                    modifier = Modifier.size(18.dp)
-                )
+                if (iconAlpha > 0.01f) {
+                    Image(
+                        painter = painterResource(id = R.mipmap.ic_launcher_foreground),
+                        contentDescription = null,
+                        modifier = Modifier.size(33.dp).graphicsLayer { alpha = iconAlpha }
+                    )
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                Box(
+                    modifier = Modifier
+                        .size(30.dp)
+                        .clip(CircleShape)
+                        .clickable { navigator.navigate(InstallScreenDestination) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Check,
+                        contentDescription = "install",
+                        tint = Color.White,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             }
         }
     }
