@@ -157,39 +157,50 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
 private fun ProMaxIsland(navigator: DestinationsNavigator) {
     var expanded by remember { mutableStateOf(false) }
 
-    // v38 style: side island translates out of the pill while scaling 0.55 -> 1.0
+    val pillW = remember { Animatable(188f) }
+    val scale = remember { Animatable(1f) }
+    val iconAlpha = remember { Animatable(1f) }
     val ball = remember { Animatable(0f) }
-    val bounce = remember { Animatable(0f) }
+
+    val ease = FastOutSlowInEasing
 
     LaunchedEffect(expanded) {
-        launch {
-            bounce.snapTo(0f)
-            bounce.animateTo(1f, tween(700))
-        }
         if (expanded) {
+            // 1) icon fades out, pill gathers inward by ~one side-island width while scaling up
+            launch { iconAlpha.animateTo(0f, tween(100)) }
+            launch { pillW.animateTo(136f, tween(260, easing = ease)) }
+            scale.animateTo(1.3f, tween(280, easing = ease))
+            // 2) shrink back to normal while still gathered
+            scale.animateTo(1f, tween(320, easing = ease))
+            // 3) then extend back out, icon returns, side island separates out of the pill
+            launch { iconAlpha.animateTo(1f, tween(190, easing = ease)) }
+            launch { pillW.animateTo(188f, tween(330, easing = ease)) }
             ball.animateTo(1f, spring(dampingRatio = 0.7f, stiffness = 130f))
         } else {
+            launch { iconAlpha.animateTo(0f, tween(90)) }
             ball.animateTo(0f, spring(dampingRatio = 0.72f, stiffness = 120f))
+            launch { pillW.animateTo(136f, tween(240, easing = ease)) }
+            scale.animateTo(1.3f, tween(260, easing = ease))
+            scale.animateTo(1f, tween(300, easing = ease))
+            launch { pillW.animateTo(188f, tween(300, easing = ease)) }
+            launch { iconAlpha.animateTo(1f, tween(180, easing = ease)) }
         }
     }
 
     val shift = ball.value
     val ballScale = 0.55f + 0.45f * shift
-    val t = bounce.value
-    val bump = 1f + 0.05f * sin(t * PI.toFloat())
-    val sway = 5f * sin(t * 9.424778f) * (1f - t)
     val density = androidx.compose.ui.platform.LocalDensity.current
 
     Box(
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
         contentAlignment = Alignment.TopCenter
     ) {
-        Box(modifier = Modifier.width(248.dp).height(52.dp)) {
+        Box(modifier = Modifier.width(250.dp).height(52.dp)) {
 
-            // side island (underneath): fixed slot, slides out by translation
+            // side island (underneath) riding at the pill's right edge
             Row(
                 modifier = Modifier
-                    .offset(x = 192.dp, y = 4.dp)
+                    .offset(x = (pillW.value + 4f).dp, y = 4.dp)
                     .width(52.dp)
                     .height(44.dp)
                     .graphicsLayer {
@@ -213,15 +224,14 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
                 )
             }
 
-            // main pill on top, fixed width
+            // main pill on top
             Row(
                 modifier = Modifier
-                    .width(188.dp)
+                    .width(pillW.value.dp)
                     .height(44.dp)
                     .graphicsLayer {
-                        scaleX = bump
-                        scaleY = bump
-                        translationX = with(density) { sway.dp.toPx() }
+                        scaleX = scale.value
+                        scaleY = scale.value
                     }
                     .clip(RoundedCornerShape(22.dp))
                     .background(Color.Black)
@@ -230,11 +240,13 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
                     .padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Image(
-                    painter = painterResource(id = R.mipmap.ic_launcher_foreground),
-                    contentDescription = null,
-                    modifier = Modifier.size(38.dp)
-                )
+                if (iconAlpha.value > 0.01f) {
+                    Image(
+                        painter = painterResource(id = R.mipmap.ic_launcher_foreground),
+                        contentDescription = null,
+                        modifier = Modifier.size(38.dp).graphicsLayer { alpha = iconAlpha.value }
+                    )
+                }
                 Spacer(modifier = Modifier.weight(1f))
                 Box(
                     modifier = Modifier
