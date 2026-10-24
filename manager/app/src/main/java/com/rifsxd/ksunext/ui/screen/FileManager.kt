@@ -29,6 +29,12 @@ import androidx.compose.ui.graphics.ColorFilter
 import com.ramcosta.composedestinations.generated.destinations.InstallScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -149,17 +155,21 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
 private fun ProMaxIsland(navigator: DestinationsNavigator) {
     var expanded by remember { mutableStateOf(false) }
 
-    // Apple-like spring: response ~0.32s, damping 0.75
-    val spec = spring<androidx.compose.ui.unit.Dp>(dampingRatio = 0.75f, stiffness = 385f)
-    val specF = spring<Float>(dampingRatio = 0.8f, stiffness = 385f)
+    // ZySU-style bounce: 1s envelope with bump / sway / lift
+    val bounce = remember { Animatable(0f) }
+    LaunchedEffect(expanded) {
+        bounce.snapTo(0f)
+        bounce.animateTo(1f, tween(1000))
+    }
+    val t = bounce.value
+    val bump = 1f + 0.06f * sin(t * PI.toFloat())
+    val sway = 6f * sin(t * 9.424778f) * (1f - t)
+    val lift = -4f * sin(t * PI.toFloat())
 
-    val tr = updateTransition(expanded, label = "island")
-    val w by tr.animateDp(transitionSpec = { spec }) { if (it) 262.dp else 150.dp }
-    val h by tr.animateDp(transitionSpec = { spec }) { if (it) 92.dp else 40.dp }
-    val iconSize by tr.animateDp(transitionSpec = { spec }) { if (it) 40.dp else 26.dp }
-    val gapAfterIcon by tr.animateDp(transitionSpec = { spec }) { if (it) 12.dp else 0.dp }
-    val contentAlpha by tr.animateFloat(transitionSpec = { tween(180) }) { if (it) 1f else 0f }
-    val keyline by tr.animateFloat(transitionSpec = { specF }) { if (it) 0.10f else 0.20f }
+    // iOS-like easing used by ZySU: cubic-bezier(0.32, 0.72, 0, 1)
+    val ease = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)
+    val w by animateDpAsState(if (expanded) 264.dp else 156.dp, tween(360, easing = ease), label = "islandW")
+    val h by animateDpAsState(if (expanded) 96.dp else 42.dp, tween(360, easing = ease), label = "islandH")
 
     Box(
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
@@ -167,27 +177,38 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
     ) {
         Row(
             modifier = Modifier
+                .offset(x = sway.dp, y = lift.dp)
                 .width(w)
                 .height(h)
+                .graphicsLayer {
+                    scaleX = bump
+                    scaleY = bump
+                }
                 .clip(RoundedCornerShape(h / 2))
                 .background(Color.Black)
-                .border(1.dp, Color(0xFFEDEDED).copy(alpha = keyline), RoundedCornerShape(h / 2))
-                .clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) {
-                    expanded = !expanded
-                }
+                .border(1.dp, Color(0xFFEDEDED).copy(alpha = 0.14f), RoundedCornerShape(h / 2))
+                .clickable { expanded = !expanded }
                 .padding(horizontal = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
                 painter = painterResource(id = R.mipmap.ic_launcher_foreground),
                 contentDescription = null,
-                modifier = Modifier.size(iconSize)
+                modifier = Modifier.size(if (expanded) 46.dp else 30.dp)
             )
-            Spacer(modifier = Modifier.width(gapAfterIcon))
-            Column(modifier = Modifier.alpha(contentAlpha)) {
-                Text(text = "小鱼儿", color = Color.White, fontSize = 18.sp)
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(text = "文件管理器", color = Color(0xFF9A9A9A), fontSize = 12.sp)
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandHorizontally(animationSpec = tween(320, easing = ease)) + fadeIn(tween(220)),
+                exit = shrinkHorizontally(animationSpec = tween(240, easing = ease)) + fadeOut(tween(160))
+            ) {
+                Row {
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(text = "小鱼儿", color = Color.White, fontSize = 19.sp)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(text = "文件管理器", color = Color(0xFF9A9A9A), fontSize = 12.sp)
+                    }
+                }
             }
         }
     }
