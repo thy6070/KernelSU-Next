@@ -148,6 +148,7 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
     var open by remember { mutableStateOf(false) }
 
     val pillW = remember { Animatable(220f) }
+    val pillX = remember { Animatable(0f) }
     val pillScale = remember { Animatable(1f) }
     val iconAlpha = remember { Animatable(0f) }
 
@@ -158,16 +159,19 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
         if (open) {
             // 1) sides pull in while the pill scales up, content disappears
             launch { pillW.animateTo(96f, tween(200, easing = ease)) }
+            launch { pillX.animateTo(62f, tween(200, easing = ease)) }
             launch { iconAlpha.animateTo(0f, tween(90)) }
             pillScale.animateTo(1.5f, tween(220, easing = ease))
             // 2) slowly shrink back while the right edge opens up again
             launch { pillW.animateTo(168f, tween(430, easing = ease)) }
+            launch { pillX.animateTo(0f, tween(430, easing = ease)) }
             pillScale.animateTo(1f, tween(430, easing = ease))
             // 3) app icon fades in on the left
             launch { delay(180); iconAlpha.animateTo(1f, tween(220, easing = ease)) }
         } else {
             launch { iconAlpha.animateTo(0f, tween(140)) }
             launch { pillW.animateTo(220f, tween(380, easing = ease)) }
+            launch { pillX.animateTo(0f, tween(380, easing = ease)) }
             pillScale.animateTo(1f, tween(300, easing = ease))
         }
     }
@@ -203,6 +207,7 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
             // main pill: left edge pinned, right edge morphs
             Row(
                 modifier = Modifier
+                    .offset(x = pillX.value.dp)
                     .width(pillW.value.dp)
                     .height(37.5.dp)
                     .graphicsLayer {
