@@ -192,7 +192,7 @@ private fun DynamicIsland() {
                 }
             }
 
-            if (subW > 0.5f) {
+            if (subW > 0.5.dp) {
                 Box(
                     modifier = Modifier
                         .width(subW)
