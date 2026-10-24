@@ -6,6 +6,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.border
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.res.painterResource
 import com.rifsxd.ksunext.R
@@ -133,61 +134,26 @@ fun FileManagerScreen() {
 @Composable
 private fun DynamicIsland() {
     var expanded by remember { mutableStateOf(false) }
+    val spec = spring<androidx.compose.ui.unit.Dp>(dampingRatio = 0.82f, stiffness = 380f)
+    val specF = spring<Float>(dampingRatio = 0.85f, stiffness = 380f)
 
-    val w = remember { Animatable(152f) }
-    val h = remember { Animatable(44f) }
-    val r = remember { Animatable(22f) }
-    val gap = remember { Animatable(6f) }
-    val dw = remember { Animatable(44f) }
-    val dh = remember { Animatable(44f) }
-    val icon = remember { Animatable(38f) }
-    val border = remember { Animatable(0.22f) }
-
-    val springy = spring<Float>(dampingRatio = 0.55f, stiffness = 620f)
-    val quick = tween<Float>(110)
+    val tr = updateTransition(expanded, label = "island")
+    val mainW by tr.animateDp(transitionSpec = { spec }) { if (it) 244.dp else 152.dp }
+    val mainH by tr.animateDp(transitionSpec = { spec }) { if (it) 92.dp else 44.dp }
+    val radius by tr.animateDp(transitionSpec = { spec }) { if (it) 30.dp else 22.dp }
+    val gap by tr.animateDp(transitionSpec = { spec }) { if (it) 0.dp else 5.dp }
+    val subW by tr.animateDp(transitionSpec = { spec }) { if (it) 0.dp else 52.dp }
+    val subH by tr.animateDp(transitionSpec = { spec }) { if (it) 0.dp else 40.dp }
+    val borderAlpha by tr.animateFloat(transitionSpec = { specF }) { if (it) 0.10f else 0.22f }
+    val contentAlpha by tr.animateFloat(transitionSpec = { tween(140) }) { if (it) 1f else 0f }
 
     var blurTarget by remember { mutableStateOf(0.dp) }
     LaunchedEffect(expanded) {
         blurTarget = 2.5.dp
-        delay(120)
+        delay(110)
         blurTarget = 0.dp
     }
-    val blurPx by animateDpAsState(blurTarget, tween(160), label = "blur")
-
-    LaunchedEffect(expanded) {
-        if (expanded) {
-            launch { gap.animateTo(0f, quick) }
-            launch { dw.animateTo(0f, tween(130)); dh.animateTo(0f, tween(130)) }
-            launch { r.animateTo(30f, springy) }
-            launch { icon.animateTo(44f, springy) }
-            launch { border.animateTo(0.10f, quick) }
-            launch { w.animateTo(232f, springy) }
-            h.animateTo(92f, springy)
-        } else {
-            launch { border.animateTo(0.22f, quick) }
-            launch { r.animateTo(20f, quick) }
-            // 1) merge: two sides pull in, height bulges
-            launch { w.animateTo(198f, tween(110)) }
-            launch { h.animateTo(52f, tween(110)) }
-            // 2) dot peels off: tiny ellipse first, then grows
-            launch {
-                delay(70)
-                launch { dw.animateTo(14f, tween(70)) }
-                dh.animateTo(10f, tween(70))
-                launch { dw.animateTo(44f, springy) }
-                dh.animateTo(44f, springy)
-            }
-            // 3) gap opens as the dot separates
-            launch { delay(90); gap.animateTo(6f, tween(90)) }
-            // 4) main island returns, icon shrinks back
-            launch {
-                delay(120)
-                launch { w.animateTo(152f, springy) }
-                launch { icon.animateTo(38f, springy) }
-                h.animateTo(44f, springy)
-            }
-        }
-    }
+    val blurPx by animateDpAsState(blurTarget, tween(150), label = "blur")
 
     Box(
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
@@ -195,15 +161,15 @@ private fun DynamicIsland() {
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(gap.value.dp)
+            horizontalArrangement = Arrangement.spacedBy(gap)
         ) {
             Row(
                 modifier = Modifier
-                    .width(w.value.dp)
-                    .height(h.value.dp)
-                    .clip(RoundedCornerShape(r.value.dp))
+                    .width(mainW)
+                    .height(mainH)
+                    .clip(RoundedCornerShape(radius))
                     .background(Color.Black)
-                    .border(1.dp, Color(0xFFFFFFFF).copy(alpha = border.value), RoundedCornerShape(r.value.dp))
+                    .border(1.dp, Color(0xFFFFFFFF).copy(alpha = borderAlpha), RoundedCornerShape(radius))
                     .clickable { expanded = !expanded },
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -211,13 +177,13 @@ private fun DynamicIsland() {
                     painter = painterResource(id = R.mipmap.ic_launcher_foreground),
                     contentDescription = null,
                     modifier = Modifier
-                        .size(icon.value.dp)
+                        .size(38.dp)
                         .padding(start = 3.dp)
                         .blur(blurPx * 0.2f)
                 )
-                if (expanded) {
+                if (contentAlpha > 0.01f) {
                     Spacer(modifier = Modifier.width(12.dp))
-                    Column(modifier = Modifier.blur(blurPx)) {
+                    Column(modifier = Modifier.alpha(contentAlpha).blur(blurPx)) {
                         Text(text = "小鱼儿", color = Color.White, fontSize = 18.sp)
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(text = "文件管理器", color = Color(0xFF9A9A9A), fontSize = 12.sp)
@@ -226,14 +192,14 @@ private fun DynamicIsland() {
                 }
             }
 
-            if (dw.value > 0.5f) {
+            if (subW > 0.5f) {
                 Box(
                     modifier = Modifier
-                        .width(dw.value.dp)
-                        .height(dh.value.dp)
+                        .width(subW)
+                        .height(subH)
                         .clip(RoundedCornerShape(percent = 50))
                         .background(Color.Black)
-                        .border(1.dp, Color(0xFFFFFFFF).copy(alpha = border.value), RoundedCornerShape(percent = 50))
+                        .border(1.dp, Color(0xFFFFFFFF).copy(alpha = borderAlpha), RoundedCornerShape(percent = 50))
                         .clickable { expanded = true }
                 )
             }
