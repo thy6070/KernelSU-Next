@@ -158,7 +158,9 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
     var expanded by remember { mutableStateOf(false) }
 
     val pillW = remember { Animatable(188f) }
+    val pillX = remember { Animatable(0f) }
     val scale = remember { Animatable(1f) }
+    val sway = remember { Animatable(0f) }
     val iconAlpha = remember { Animatable(1f) }
     val ball = remember { Animatable(0f) }
 
@@ -166,24 +168,36 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
 
     LaunchedEffect(expanded) {
         if (expanded) {
-            // 1) icon fades out, pill gathers inward by ~one side-island width while scaling up
+            // everything concurrent: icon fade, gather from BOTH sides, ball separates
             launch { iconAlpha.animateTo(0f, tween(100)) }
             launch { pillW.animateTo(136f, tween(260, easing = ease)) }
+            launch { pillX.animateTo(26f, tween(260, easing = ease)) }
+            launch { ball.animateTo(1f, spring(dampingRatio = 0.7f, stiffness = 130f)) }
+            // scale up while leaning right
+            launch { sway.animateTo(9f, tween(170, easing = ease)) }
             scale.animateTo(1.3f, tween(280, easing = ease))
-            // 2) shrink back to normal while still gathered
+            launch { sway.animateTo(0f, tween(150, easing = ease)) }
+            // scale back down while leaning left
+            launch { sway.animateTo(-9f, tween(170, easing = ease)) }
             scale.animateTo(1f, tween(320, easing = ease))
-            // 3) then extend back out, icon returns, side island separates out of the pill
+            launch { sway.animateTo(0f, tween(150, easing = ease)) }
+            // extend back out, icon returns
             launch { iconAlpha.animateTo(1f, tween(190, easing = ease)) }
             launch { pillW.animateTo(188f, tween(330, easing = ease)) }
-            ball.animateTo(1f, spring(dampingRatio = 0.7f, stiffness = 130f))
+            launch { pillX.animateTo(0f, tween(330, easing = ease)) }
         } else {
             launch { iconAlpha.animateTo(0f, tween(90)) }
-            ball.animateTo(0f, spring(dampingRatio = 0.72f, stiffness = 120f))
+            launch { ball.animateTo(0f, spring(dampingRatio = 0.72f, stiffness = 120f)) }
             launch { pillW.animateTo(136f, tween(240, easing = ease)) }
+            launch { pillX.animateTo(26f, tween(240, easing = ease)) }
+            launch { sway.animateTo(9f, tween(160, easing = ease)) }
             scale.animateTo(1.3f, tween(260, easing = ease))
+            launch { sway.animateTo(-9f, tween(160, easing = ease)) }
             scale.animateTo(1f, tween(300, easing = ease))
-            launch { pillW.animateTo(188f, tween(300, easing = ease)) }
+            launch { sway.animateTo(0f, tween(140, easing = ease)) }
             launch { iconAlpha.animateTo(1f, tween(180, easing = ease)) }
+            launch { pillW.animateTo(188f, tween(300, easing = ease)) }
+            launch { pillX.animateTo(0f, tween(300, easing = ease)) }
         }
     }
 
@@ -197,7 +211,6 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
     ) {
         Box(modifier = Modifier.width(250.dp).height(52.dp)) {
 
-            // side island (underneath) riding at the pill's right edge
             Row(
                 modifier = Modifier
                     .offset(x = (pillW.value + 4f).dp, y = 4.dp)
@@ -224,9 +237,9 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
                 )
             }
 
-            // main pill on top
             Row(
                 modifier = Modifier
+                    .offset(x = (pillX.value + sway.value).dp)
                     .width(pillW.value.dp)
                     .height(44.dp)
                     .graphicsLayer {
