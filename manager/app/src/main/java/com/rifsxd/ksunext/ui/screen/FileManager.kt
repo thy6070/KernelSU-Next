@@ -45,6 +45,7 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Smartphone
 import androidx.compose.material.icons.outlined.Hotel
 import androidx.compose.material.icons.outlined.MoreHoriz
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -138,7 +139,14 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
     var leftPath by remember { mutableStateOf("/storage/emulated/0") }
     var rightPath by remember { mutableStateOf("/data") }
 
+    var panel by remember { mutableStateOf(false) }
+
     Box(modifier = Modifier.fillMaxSize().background(Color(BG_COLOR))) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .blur(if (panel) 26.dp else 0.dp)
+        ) {
     Row(modifier = Modifier.fillMaxSize()) {
         key(leftPath) {
             BrowserPane(
@@ -157,14 +165,18 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
         }
     }
 
-    ProMaxIsland(navigator)
+    ProMaxIsland(navigator) { panel = true }
+        }
+
+        if (panel) {
+            ModePanel(onDismiss = { panel = false })
+        }
     }
 }
 
 @Composable
-private fun ProMaxIsland(navigator: DestinationsNavigator) {
+private fun ProMaxIsland(navigator: DestinationsNavigator, onOpen: () -> Unit) {
     var expanded by remember { mutableStateOf(false) }
-    var panel by remember { mutableStateOf(false) }
 
     val curve = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)
     val p = remember { Animatable(0f) }
@@ -219,7 +231,7 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
                     .clip(RoundedCornerShape(22.dp))
                     .background(Color.Black)
                     .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = keyline), RoundedCornerShape(22.dp))
-                    .clickable { panel = true },
+                    .clickable { onOpen() },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
@@ -280,22 +292,33 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
         }
     }
 
-    if (panel) {
-        Dialog(onDismissRequest = { panel = false }) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(32.dp))
-                    .background(Color(0xF21A1A1C))
-                    .padding(horizontal = 12.dp, vertical = 18.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                ModeButton(Icons.Outlined.DarkMode, "勿扰模式", "静音所有通知", 0.42f)
-                ModeButton(Icons.Outlined.AcUnit, "小鱼儿", "", 0.16f)
-                ModeButton(Icons.Outlined.Person, "个人", "停下工作，专注自身", 0.10f)
-                ModeButton(Icons.Outlined.Smartphone, "工作", "专心工作", 0.46f)
-                ModeButton(Icons.Outlined.Hotel, "睡眠", "好好休息，放松一下", 0.08f)
-            }
+
+}
+
+@Composable
+private fun ModePanel(onDismiss: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0x38000000))
+            .clickable { onDismiss() },
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 18.dp)
+                .clip(RoundedCornerShape(34.dp))
+                .background(Color(0xB3121214))
+                .clickable { }
+                .padding(horizontal = 12.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            ModeButton(Icons.Outlined.DarkMode, "勿扰模式", "静音所有通知")
+            ModeButton(Icons.Outlined.AcUnit, "小鱼儿", "")
+            ModeButton(Icons.Outlined.Person, "个人", "停下工作，专注自身")
+            ModeButton(Icons.Outlined.Smartphone, "工作", "专心工作")
+            ModeButton(Icons.Outlined.Hotel, "睡眠", "好好休息，放松一下")
         }
     }
 }
@@ -304,16 +327,17 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
 private fun ModeButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
-    subtitle: String,
-    glow: Float
+    subtitle: String
 ) {
+    var on by remember { mutableStateOf(false) }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(74.dp)
             .clip(RoundedCornerShape(37.dp))
-            .background(Color(0xFF141416))
-            .clickable { }
+            .background(Color(0xCC0E0E10))
+            .clickable { on = !on }
             .padding(horizontal = 22.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -331,12 +355,22 @@ private fun ModeButton(
             }
         }
         Spacer(modifier = Modifier.weight(1f))
-        Icon(
-            imageVector = Icons.Outlined.MoreHoriz,
-            contentDescription = null,
-            tint = Color(0xFFB0B0B4),
-            modifier = Modifier.size(22.dp)
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(text = "|", color = Color(0xFF6A6A6E), fontSize = 15.sp)
+            Text(
+                text = "开",
+                color = if (on) Color.White else Color(0xFF5A5A5E),
+                fontSize = 15.sp,
+                fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal
+            )
+            Text(text = "|", color = Color(0xFF6A6A6E), fontSize = 15.sp)
+            Text(
+                text = "关",
+                color = if (!on) Color.White else Color(0xFF5A5A5E),
+                fontSize = 15.sp,
+                fontWeight = if (!on) FontWeight.SemiBold else FontWeight.Normal
+            )
+        }
     }
 }
 
