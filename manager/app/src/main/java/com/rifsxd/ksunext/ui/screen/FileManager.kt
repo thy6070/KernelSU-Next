@@ -175,6 +175,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
     var runMessage by remember { mutableStateOf<String?>(null) }
     var runOk by remember { mutableStateOf(true) }
     var running by remember { mutableStateOf(false) }
+    var activeProc by remember { mutableStateOf<Process?>(null) }
     val panelP = remember { Animatable(0f) }
     val uiScope = rememberCoroutineScope()
 
@@ -234,10 +235,21 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
             val cmd = termInput
             if (cmd.isNotBlank()) {
                 termInput = ""
-                termText = termText + "\n$ " + cmd + "\n"
-                uiScope.launch {
-                    val out = withContext(Dispatchers.IO) { Shell.cmd(cmd).exec() }
-                    termText = termText + out.out.joinToString("\n") + out.err.joinToString("\n") + "\n"
+                val alive = activeProc
+                if (alive != null && alive.isAlive) {
+                    try {
+                        alive.outputStream.write((cmd + "\n").toByteArray())
+                        alive.outputStream.flush()
+                        termText = termText + cmd + "\n"
+                    } catch (t: Throwable) {
+                        termText = termText + "写入失败: " + (t.message ?: "") + "\n"
+                    }
+                } else {
+                    termText = termText + "\n$ " + cmd + "\n"
+                    uiScope.launch {
+                        val out = withContext(Dispatchers.IO) { Shell.cmd(cmd).exec() }
+                        termText = termText + out.out.joinToString("\n") + out.err.joinToString("\n") + "\n"
+                    }
                 }
             }
         },
@@ -268,6 +280,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                             pb.environment()["HOME"] = "/data"
                             pb.environment()["TMPDIR"] = "/data/local/tmp"
                             val proc = pb.start()
+                            withContext(Dispatchers.Main) { activeProc = proc }
                             proc.inputStream.bufferedReader().useLines { seq ->
                                 seq.forEach { line ->
                                     withContext(Dispatchers.Main) {
@@ -444,7 +457,10 @@ private fun ProMaxIsland(
                 .border(0.5.dp, Color(0x47FFFFFF), RoundedCornerShape(34.dp))
                 .combinedClickable(
                     onClick = {
-                        if (terminalMode) onTermClose()
+                        if (terminalMode) {
+                            onTermClose()
+                            expanded = false
+                        }
                         else if (sel == null) expanded = !expanded
                         else onClearSelection()
                     },
@@ -484,7 +500,7 @@ private fun ProMaxIsland(
                         modifier = Modifier.weight(1f)
                     )
                 }
-                if (sel != null) {
+                if (sel != null && !running) {
                     Text(
                         text = selName,
                         modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
