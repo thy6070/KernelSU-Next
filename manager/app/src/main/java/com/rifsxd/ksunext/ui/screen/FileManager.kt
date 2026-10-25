@@ -154,6 +154,10 @@ private const val FILE_ICON = 0xFF9A9A9A.toInt()
 private val apkIconCache = ConcurrentHashMap<String, ImageBitmap?>()
 private val apkIconMutex = Mutex()
 
+data class ModItem(val id: String, val name: String, val version: String, val desc: String, val disabled: Boolean)
+
+data class SuApp(val pkg: String, val label: String, val uid: Int, val allowed: Boolean)
+
 data class FsEntry(val name: String, val isDir: Boolean)
 
 @Composable
@@ -391,12 +395,60 @@ private fun ProMaxIsland(
     var showWave by remember { mutableStateOf(false) }
     var navMode by remember { mutableStateOf(false) }
     var navTarget by remember { mutableStateOf<String?>(null) }
-    var moduleNames by remember { mutableStateOf<List<String>>(emptyList()) }
+    var modules by remember { mutableStateOf<List<ModItem>>(emptyList()) }
+    var modSel by remember { mutableStateOf(-1) }
+    var suApps by remember { mutableStateOf<List<SuApp>>(emptyList()) }
+    var suSel by remember { mutableStateOf(-1) }
+    val navCtx = LocalContext.current
+    val navScope = rememberCoroutineScope()
     LaunchedEffect(navTarget) {
+        modSel = -1
+        suSel = -1
         if (navTarget == "module") {
-            moduleNames = withContext(Dispatchers.IO) {
+            modules = withContext(Dispatchers.IO) {
                 try {
-                    java.io.File("/data/adb/modules").list()?.toList() ?: emptyList()
+                    java.io.File("/data/adb/modules").listFiles()
+                        ?.filter { it.isDirectory }
+                        ?.mapNotNull { dir ->
+                            val prop = java.io.File(dir, "module.prop")
+                            if (!prop.exists()) null else {
+                                val map = prop.readLines().mapNotNull { line ->
+                                    val i = line.indexOf('=')
+                                    if (i > 0) line.substring(0, i).trim() to line.substring(i + 1).trim() else null
+                                }.toMap()
+                                ModItem(
+                                    id = dir.name,
+                                    name = map["name"] ?: dir.name,
+                                    version = map["version"] ?: "",
+                                    desc = map["description"] ?: "",
+                                    disabled = java.io.File(dir, "disable").exists()
+                                )
+                            }
+                        } ?: emptyList()
+                } catch (t: Throwable) {
+                    emptyList()
+                }
+            }
+        }
+        if (navTarget == "su") {
+            suApps = withContext(Dispatchers.IO) {
+                try {
+                    val pm = navCtx.packageManager
+                    val intent = android.content.Intent(android.content.Intent.ACTION_MAIN)
+                        .addCategory(android.content.Intent.CATEGORY_LAUNCHER)
+                    pm.queryIntentActivities(intent, 0)
+                        .map { it.activityInfo.applicationInfo }
+                        .distinctBy { it.packageName }
+                        .map { ai ->
+                            val allowed = try {
+                                com.rifsxd.ksunext.Natives.getAppProfile(null, ai.uid)?.allowSu == true
+                            } catch (t: Throwable) {
+                                false
+                            }
+                            SuApp(ai.packageName, pm.getApplicationLabel(ai).toString(), ai.uid, allowed)
+                        }
+                        .sortedByDescending { it.allowed }
+                        .take(24)
                 } catch (t: Throwable) {
                     emptyList()
                 }
