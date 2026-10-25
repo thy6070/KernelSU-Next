@@ -391,8 +391,10 @@ private fun ProMaxIsland(
     var showWave by remember { mutableStateOf(false) }
     var navMode by remember { mutableStateOf(false) }
     var soInput by remember { mutableStateOf("") }
+    var soPanel by remember { mutableStateOf(false) }
     LaunchedEffect(selectedFile) {
         if (selectedFile != null) navMode = false
+        soPanel = false
     }
     LaunchedEffect(running) {
         if (running) {
@@ -665,51 +667,56 @@ private fun ProMaxIsland(
                     shrinkTowards = Alignment.CenterVertically
                 ) + fadeOut(tween(160))
             ) {
-                if (lowerSel.endsWith(".so")) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                Column(modifier = Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        androidx.compose.foundation.text.BasicTextField(
-                            value = soInput,
-                            onValueChange = { soInput = it },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(Color(0xFF1C1C1E), RoundedCornerShape(8.dp))
-                                .padding(8.dp),
-                            textStyle = androidx.compose.ui.text.TextStyle(
-                                color = Color.White,
-                                fontSize = 12.sp
-                            ),
-                            singleLine = true
-                        )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Box(modifier = Modifier.weight(1f)) {
-                                IslandActionButton("启动", Color(0xFF0A84FF)) { onAction(soInput) }
-                            }
-                            Box(modifier = Modifier.weight(1f)) {
-                                IslandActionButton("取消", Color(0xFF3A3A3C)) { onClearSelection() }
+                        Box(modifier = Modifier.weight(1f)) {
+                            IslandActionButton("删除", Color(0xFFFF3B30)) { onDelete() }
+                        }
+                        Box(modifier = Modifier.weight(1f)) {
+                            IslandActionButton(actionLabel, actionColor) {
+                                if (lowerSel.endsWith(".so")) soPanel = true else onAction("")
                             }
                         }
                     }
-                } else {
-                    Column(modifier = Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Box(modifier = Modifier.weight(1f)) {
-                                IslandActionButton("删除", Color(0xFFFF3B30)) { onDelete() }
-                            }
-                            Box(modifier = Modifier.weight(1f)) {
-                                IslandActionButton(actionLabel, actionColor) { onAction("") }
-                            }
-                        }
+                }
+            }
+
+            AnimatedVisibility(
+                visible = soPanel && sel != null && !terminalMode && !navMode,
+                enter = expandVertically(
+                    animationSpec = tween(320, easing = zyEase),
+                    expandFrom = Alignment.CenterVertically
+                ) + fadeIn(tween(180)),
+                exit = shrinkVertically(
+                    animationSpec = tween(240, easing = zyEase),
+                    shrinkTowards = Alignment.CenterVertically
+                ) + fadeOut(tween(140))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    androidx.compose.foundation.text.BasicTextField(
+                        value = soInput,
+                        onValueChange = { soInput = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xFF1C1C1E), RoundedCornerShape(8.dp))
+                            .padding(8.dp),
+                        textStyle = androidx.compose.ui.text.TextStyle(
+                            color = Color.White,
+                            fontSize = 12.sp
+                        ),
+                        singleLine = true
+                    )
+                    IslandActionButton("启动", Color(0xFF0A84FF)) {
+                        onAction(soInput)
+                        soPanel = false
                     }
                 }
             }
