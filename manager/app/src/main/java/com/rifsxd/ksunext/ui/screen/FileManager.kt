@@ -320,7 +320,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                         scaleX = s
                         scaleY = s
                         alpha = panelP.value
-                        transformOrigin = TransformOrigin(0.62f, 0.055f)
+                        transformOrigin = TransformOrigin(0.735f, 0.075f)
                     }
             ) {
                 ModePanel(onDismiss = {
@@ -882,7 +882,7 @@ private fun BrowserPane(
 
         LazyColumn(
             modifier = modifier.fillMaxSize().background(Color(BG_COLOR)),
-            verticalArrangement = Arrangement.spacedBy(5.dp)
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
         item {
             Row(
