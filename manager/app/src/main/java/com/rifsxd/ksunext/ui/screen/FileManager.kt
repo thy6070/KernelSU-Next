@@ -141,6 +141,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
     var rightPath by remember { mutableStateOf("/data") }
 
     var panel by remember { mutableStateOf(false) }
+    var selectedFile by remember { mutableStateOf<String?>(null) }
     val panelP = remember { Animatable(0f) }
     val uiScope = rememberCoroutineScope()
 
@@ -156,6 +157,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
             BrowserPane(
                 path = leftPath,
                 onNavigate = { leftPath = it },
+                onFileClick = { selectedFile = it },
                 modifier = Modifier.weight(1f)
             )
         }
@@ -164,12 +166,13 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
             BrowserPane(
                 path = rightPath,
                 onNavigate = { rightPath = it },
+                onFileClick = { selectedFile = it },
                 modifier = Modifier.weight(1f)
             )
         }
     }
 
-    ProMaxIsland(navigator, panel) {
+    ProMaxIsland(navigator, panel, selectedFile, onClearSelection = { selectedFile = null }) {
         uiScope.launch {
             panelP.snapTo(0f)
             panel = true
@@ -398,6 +401,7 @@ private fun ModeButton(
 private fun BrowserPane(
     path: String,
     onNavigate: (String) -> Unit,
+    onFileClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var entries by remember { mutableStateOf<List<FsEntry>>(emptyList()) }
@@ -440,7 +444,9 @@ private fun BrowserPane(
                 name = entry.name,
                 isDir = entry.isDir,
                 fullPath = joinPath(path, entry.name),
-                onClick = { if (entry.isDir) onNavigate(joinPath(path, entry.name)) }
+                onClick = {
+                    if (entry.isDir) onNavigate(joinPath(path, entry.name)) else onFileClick(entry.name)
+                }
             )
         }
     }
