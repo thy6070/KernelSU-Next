@@ -158,14 +158,14 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
 private fun ProMaxIsland(navigator: DestinationsNavigator) {
     var expanded by remember { mutableStateOf(false) }
 
-    // soft material-style curve instead of piecewise linear
-    val curve = CubicBezierEasing(0.37f, 0f, 0.2f, 1f)
+    // iOS-style ease: cubic-bezier(0.32, 0.72, 0, 1)
+    val curve = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)
     val p = remember { Animatable(0f) }
     LaunchedEffect(expanded) {
         if (expanded) {
-            p.animateTo(1f, tween(1300, easing = curve))
+            p.animateTo(1f, tween(1250, easing = curve))
         } else {
-            p.animateTo(0f, tween(1100, easing = curve))
+            p.animateTo(0f, tween(1050, easing = curve))
         }
     }
 
@@ -173,7 +173,8 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
     fun smooth(t: Float): Float = (1f - kotlin.math.cos(t * PI.toFloat())) / 2f
 
     val v = p.value
-    val iconAlpha = 1f - smooth(seg(v, 0f, 0.14f))
+    val iconAlpha = 1f - smooth(seg(v, 0f, 0.14f)) + smooth(seg(v, 0.74f, 1f))
+    val iconScale = 0.92f + 0.08f * smooth(seg(v, 0.74f, 1f))
     val gather = smooth(seg(v, 0f, 0.26f)) - smooth(seg(v, 0.74f, 1f))
     val pillW = 188f + (138f - 188f) * gather
     val pillX = 25f * gather
@@ -182,16 +183,12 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
     } else {
         1.28f - 0.28f * smooth(seg(v, 0.32f, 0.64f))
     }
-    val sway = when {
-        v < 0.30f -> 7f * smooth(seg(v, 0f, 0.30f))
-        v < 0.48f -> 7f * (1f - smooth(seg(v, 0.30f, 0.48f)))
-        v < 0.66f -> -7f * smooth(seg(v, 0.48f, 0.66f))
-        else -> -7f * (1f - smooth(seg(v, 0.66f, 0.80f)))
-    }
-    // side island stays visible (never hidden), but keeps its own motion:
-    // grows slightly and drifts right as the pill settles
-    val dotScale = 0.82f + 0.18f * smooth(seg(v, 0.10f, 0.70f))
-    val dotX = 192f + 4f * smooth(seg(v, 0.10f, 0.70f))
+    // keyline gets a touch brighter during the morph, like iOS does
+    val keyline = 0.30f + 0.12f * smooth(seg(v, 0f, 0.5f)) * (1f - smooth(seg(v, 0.6f, 1f)))
+    // v43 side island: stays hidden until the pill finishes, then slides out and grows
+    val ball = smooth(seg(v, 0.76f, 1f))
+    val ballScale = 0.55f + 0.45f * ball
+    val density = androidx.compose.ui.platform.LocalDensity.current
 
     Box(
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
@@ -199,19 +196,21 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
     ) {
         Box(modifier = Modifier.width(250.dp).height(52.dp)) {
 
-            // side island: always shown
             Row(
                 modifier = Modifier
-                    .offset(x = dotX.dp, y = 4.dp)
+                    .offset(x = (pillW + 4f).dp, y = 4.dp)
                     .width(52.dp)
                     .height(44.dp)
                     .graphicsLayer {
-                        scaleX = dotScale
-                        scaleY = dotScale
+                        val travel = with(density) { 64.dp.toPx() }
+                        translationX = (ball - 1f) * travel
+                        scaleX = ballScale
+                        scaleY = ballScale
+                        alpha = (ball * 3f).coerceIn(0f, 1f)
                     }
                     .clip(RoundedCornerShape(22.dp))
                     .background(Color.Black)
-                    .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = 0.30f), RoundedCornerShape(22.dp)),
+                    .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = keyline), RoundedCornerShape(22.dp)),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
@@ -225,7 +224,7 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
 
             Row(
                 modifier = Modifier
-                    .offset(x = (pillX + sway).dp)
+                    .offset(x = pillX.dp)
                     .width(pillW.dp)
                     .height(44.dp)
                     .graphicsLayer {
@@ -234,7 +233,7 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
                     }
                     .clip(RoundedCornerShape(22.dp))
                     .background(Color.Black)
-                    .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = 0.30f), RoundedCornerShape(22.dp))
+                    .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = keyline), RoundedCornerShape(22.dp))
                     .clickable { expanded = !expanded }
                     .padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -243,7 +242,13 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
                     Image(
                         painter = painterResource(id = R.mipmap.ic_launcher_foreground),
                         contentDescription = null,
-                        modifier = Modifier.size(38.dp).graphicsLayer { alpha = iconAlpha }
+                        modifier = Modifier
+                            .size(38.dp)
+                            .graphicsLayer {
+                                alpha = iconAlpha.coerceIn(0f, 1f)
+                                scaleX = iconScale
+                                scaleY = iconScale
+                            }
                     )
                 }
                 Spacer(modifier = Modifier.weight(1f))
