@@ -470,7 +470,7 @@ private fun ProMaxIsland(
         contentAlignment = Alignment.TopCenter
     ) {
         // wing sits UNDER the pill and slides out of it
-        Row(
+        if (sel == null && !navMode && !terminalMode) Row(
             modifier = Modifier
                 .offset(x = (pillW.value / 2f + 30f).dp, y = 0.dp)
                 .width(52.dp)
@@ -657,7 +657,7 @@ private fun ProMaxIsland(
             }
 
             AnimatedVisibility(
-                visible = sel != null && !terminalMode && !navMode,
+                visible = sel != null && !terminalMode && !navMode && !soPanel,
                 enter = expandVertically(
                     animationSpec = tween(360, easing = zyEase),
                     expandFrom = Alignment.CenterVertically
