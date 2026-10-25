@@ -217,21 +217,16 @@ private fun ProMaxIsland(
     var expanded by remember { mutableStateOf(false) }
     val dotPulse = remember { Animatable(0f) }
     LaunchedEffect(panelOpen) {
-        if (panelOpen) {
-            dotPulse.animateTo(1f, tween(340, easing = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)))
-        } else {
-            dotPulse.animateTo(0f, tween(280, easing = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)))
-        }
+        dotPulse.animateTo(
+            if (panelOpen) 1f else 0f,
+            tween(320, easing = CubicBezierEasing(0.32f, 0.72f, 0f, 1f))
+        )
     }
 
     val curve = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)
     val p = remember { Animatable(0f) }
     LaunchedEffect(expanded) {
-        if (expanded) {
-            p.animateTo(1f, tween(1650, easing = curve))
-        } else {
-            p.animateTo(0f, tween(1450, easing = curve))
-        }
+        p.animateTo(if (expanded) 1f else 0f, tween(if (expanded) 1650 else 1450, easing = curve))
     }
 
     fun seg(v: Float, a: Float, b: Float): Float = ((v - a) / (b - a)).coerceIn(0f, 1f)
@@ -245,7 +240,6 @@ private fun ProMaxIsland(
     val overshoot = 4f * sin(seg(v, 0f, 0.42f) * PI.toFloat()) * (1f - seg(v, 0.30f, 0.5f))
     val pillW = 188f + (138f - 188f) * gather + overshoot
     val pillX = 25f * gather
-    val radius = 22f
     val scale = if (v < 0.32f) {
         1f + 0.28f * smooth(seg(v, 0f, 0.30f))
     } else {
@@ -258,107 +252,83 @@ private fun ProMaxIsland(
 
     val sel = selectedFile
     val accent = sel?.let { fileAccent(it) } ?: Color(0xFFEDEDED)
+    val lowerSel = sel?.lowercase() ?: ""
     val actionLabel = when {
         sel == null -> ""
-        sel.lowercase().endsWith(".apk") -> "安装"
-        sel.lowercase().endsWith(".so") -> "启动"
-        sel.lowercase().let {
-            it.endsWith(".zip") || it.endsWith(".tar") || it.endsWith(".gz") ||
-                it.endsWith(".7z") || it.endsWith(".rar") || it.endsWith(".xz")
-        } -> "挂载"
+        lowerSel.endsWith(".apk") -> "安装"
+        lowerSel.endsWith(".so") -> "启动"
+        lowerSel.endsWith(".zip") || lowerSel.endsWith(".tar") || lowerSel.endsWith(".gz") ||
+            lowerSel.endsWith(".7z") || lowerSel.endsWith(".rar") || lowerSel.endsWith(".xz") -> "挂载"
         else -> "执行"
     }
-    val actionColor = if (actionLabel == "挂载") Color(0xFFFFCA28) else Color(0xFF0A84FF)
+    val actionColor = if (actionLabel == "挂载") Color(0xFFFFCA24) else Color(0xFF0A84FF)
 
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(modifier = Modifier.width(250.dp).height(52.dp)) {
+    Column(
+        modifier = Modifier.width(250.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        if (sel == null) {
+            Box(modifier = Modifier.width(250.dp).height(52.dp)) {
 
-            Row(
-                modifier = Modifier
-                    .offset(x = (pillW + 4f).dp, y = 0.dp)
-                    .width(52.dp)
-                    .height(44.dp)
-                    .graphicsLayer {
-                        val travel = with(density) { 64.dp.toPx() }
-                        translationX = (ball - 1f) * travel
-                        val pulse = 1f - 0.18f * dotPulse.value
-                        scaleX = ballScale * pulse
-                        scaleY = ballScale * pulse
-                        alpha = (ball * 3f).coerceIn(0f, 1f) * (1f - 0.45f * dotPulse.value)
-                    }
-                    .clip(RoundedCornerShape(22.dp))
-                    .background(Color.Black)
-                    .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = keyline), RoundedCornerShape(22.dp))
-                    .clickable { onOpen() },
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Image(
-                    painter = painterResource(id = R.mipmap.ic_modules_foreground),
-                    contentDescription = null,
-                    colorFilter = ColorFilter.tint(Color.White),
-                    modifier = Modifier.size(38.dp)
-                )
-            }
-
-            Row(
-                modifier = Modifier
-                    .offset(x = pillX.dp)
-                    .width(pillW.dp)
-                    .height(44.dp)
-                    .graphicsLayer {
-                        scaleX = scale
-                        scaleY = scale
-                    }
-                    .clip(RoundedCornerShape(radius.dp))
-                    .background(Color.Black)
-                    .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = keyline), RoundedCornerShape(radius.dp))
-                    .clickable { expanded = !expanded }
-                    .padding(horizontal = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (iconAlpha > 0.01f) {
+                Row(
+                    modifier = Modifier
+                        .offset(x = (pillW + 4f).dp, y = 0.dp)
+                        .width(52.dp)
+                        .height(44.dp)
+                        .graphicsLayer {
+                            val travel = with(density) { 64.dp.toPx() }
+                            translationX = (ball - 1f) * travel
+                            val pulse = 1f - 0.18f * dotPulse.value
+                            scaleX = ballScale * pulse
+                            scaleY = ballScale * pulse
+                            alpha = (ball * 3f).coerceIn(0f, 1f) * (1f - 0.45f * dotPulse.value)
+                        }
+                        .clip(RoundedCornerShape(22.dp))
+                        .background(Color.Black)
+                        .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = keyline), RoundedCornerShape(22.dp))
+                        .clickable { onOpen() },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
                     Image(
-                        painter = painterResource(id = R.mipmap.ic_launcher_foreground),
+                        painter = painterResource(id = R.mipmap.ic_modules_foreground),
                         contentDescription = null,
-                        modifier = Modifier
-                            .size(38.dp)
-                            .graphicsLayer {
-                                alpha = iconAlpha
-                                scaleX = iconScale
-                                scaleY = iconScale
-                                translationX = with(density) { iconShift.dp.toPx() }
-                            }
+                        colorFilter = ColorFilter.tint(Color.White),
+                        modifier = Modifier.size(38.dp)
                     )
                 }
-                if (sel != null) {
-                    Spacer(modifier = Modifier.width(7.dp))
-                    Text(
-                        text = sel,
-                        color = Color.White,
-                        fontSize = 12.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false)
-                    )
-                }
-                Spacer(modifier = Modifier.weight(1f))
-                if (sel != null) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .clickable { onClearSelection() },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.InsertDriveFile,
+
+                Row(
+                    modifier = Modifier
+                        .offset(x = pillX.dp)
+                        .width(pillW.dp)
+                        .height(44.dp)
+                        .graphicsLayer {
+                            scaleX = scale
+                            scaleY = scale
+                        }
+                        .clip(RoundedCornerShape(22.dp))
+                        .background(Color.Black)
+                        .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = keyline), RoundedCornerShape(22.dp))
+                        .clickable { expanded = !expanded }
+                        .padding(horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (iconAlpha > 0.01f) {
+                        Image(
+                            painter = painterResource(id = R.mipmap.ic_launcher_foreground),
                             contentDescription = null,
-                            tint = accent,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier
+                                .size(38.dp)
+                                .graphicsLayer {
+                                    alpha = iconAlpha
+                                    scaleX = iconScale
+                                    scaleY = iconScale
+                                    translationX = with(density) { iconShift.dp.toPx() }
+                                }
                         )
                     }
-                } else {
+                    Spacer(modifier = Modifier.weight(1f))
                     Box(
                         modifier = Modifier
                             .size(40.dp)
@@ -375,37 +345,77 @@ private fun ProMaxIsland(
                     }
                 }
             }
-        }
-
-        AnimatedVisibility(
-            visible = sel != null,
-            enter = expandVertically(animationSpec = tween(300, easing = curve)) + fadeIn(tween(200)),
-            exit = shrinkVertically(animationSpec = tween(220, easing = curve)) + fadeOut(tween(140))
-        ) {
-            Row(
-                modifier = Modifier.padding(top = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+        } else {
+            // expanded card: file name + file icon + two solid actions
+            Column(
+                modifier = Modifier
+                    .width(250.dp)
+                    .height(100.dp)
+                    .clip(RoundedCornerShape(26.dp))
+                    .background(Color.Black)
+                    .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = 0.28f), RoundedCornerShape(26.dp))
+                    .padding(horizontal = 12.dp, vertical = 10.dp)
             ) {
-                ActionPill(text = "删除", color = Color(0xFFFF453A)) { onClearSelection() }
-                ActionPill(text = actionLabel, color = actionColor) { onClearSelection() }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Image(
+                        painter = painterResource(id = R.mipmap.ic_launcher_foreground),
+                        contentDescription = null,
+                        modifier = Modifier.size(30.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = sel,
+                        color = Color.White,
+                        fontSize = 13.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Icon(
+                        imageVector = Icons.Filled.InsertDriveFile,
+                        contentDescription = null,
+                        tint = accent,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    ActionPill(
+                        text = "删除",
+                        color = Color(0xFFFF453A),
+                        modifier = Modifier.weight(1f)
+                    ) { onClearSelection() }
+                    ActionPill(
+                        text = actionLabel,
+                        color = actionColor,
+                        modifier = Modifier.weight(1f)
+                    ) { onClearSelection() }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun ActionPill(text: String, color: Color, onClick: () -> Unit) {
+private fun ActionPill(
+    text: String,
+    color: Color,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
     Box(
-        modifier = Modifier
-            .height(40.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(color.copy(alpha = 0.16f))
-            .border(1.dp, color.copy(alpha = 0.65f), RoundedCornerShape(20.dp))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 26.dp),
+        modifier = modifier
+            .height(36.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .background(color)
+            .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        Text(text = text, color = color, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+        Text(text = text, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 
