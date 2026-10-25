@@ -265,7 +265,7 @@ private fun ProMaxIsland(
 
     // width never changes; only the height grows downwards
     val pillW2 by animateDpAsState(if (sel != null) 292.dp else compactW.dp, tween(420, easing = curve), label = "pw")
-    val pillH by animateDpAsState(if (sel != null) 118.dp else 44.dp, tween(420, easing = curve), label = "ph")
+    val pillH by animateDpAsState(if (sel != null) 128.dp else 44.dp, tween(420, easing = curve), label = "ph")
     val pillRadius by animateDpAsState(if (sel != null) 30.dp else 22.dp, tween(420, easing = curve), label = "pr")
 
     Row(
@@ -350,7 +350,7 @@ private fun ProMaxIsland(
                 exit = shrinkVertically(animationSpec = tween(220, easing = curve)) + fadeOut(tween(140))
             ) {
                 Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(18.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -412,13 +412,13 @@ private fun ActionPill(
 ) {
     Box(
         modifier = modifier
-            .height(36.dp)
-            .clip(RoundedCornerShape(18.dp))
+            .height(44.dp)
+            .clip(RoundedCornerShape(22.dp))
             .background(color)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        Text(text = text, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+        Text(text = text, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 
