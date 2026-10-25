@@ -282,7 +282,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
             }
         },
         onTermClose = { showTerminal = false },
-        onAction = {
+        onAction = { soKey ->
             val p = selectedFile
             if (p != null) {
                 val lower = p.lowercase()
@@ -298,7 +298,12 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                             val file = p.substringAfterLast('/')
                             val cmd = when {
                                 lower.endsWith(".apk") -> "pm install -r \"$p\""
-                                lower.endsWith(".so") -> "chmod 777 \"$p\" && echo ok"
+                                lower.endsWith(".so") -> {
+                                    val key = soKey.trim()
+                                    "cd \"$dir\" ; export HOME=/data/local/tmp ; export TMPDIR=/data/local/tmp ; " +
+                                        "chmod 755 \"$p\" 2>/dev/null ; " +
+                                        (if (key.isEmpty()) "\"$p\"" else "\"$p\" -k \"$key\"") + " 2>&1"
+                                }
                                 else -> "chmod 777 \"$file\" 2>/dev/null; exec sh \"$file\""
                             }
                             val pb = ProcessBuilder("/system/bin/su", "-c", cmd)
@@ -379,7 +384,7 @@ private fun ProMaxIsland(
     onTermClose: () -> Unit,
     onClearSelection: () -> Unit,
     onDelete: () -> Unit,
-    onAction: () -> Unit,
+    onAction: (String) -> Unit,
     onOpen: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -512,7 +517,7 @@ private fun ProMaxIsland(
                         if (sel != null) onClearSelection()
                         expanded = false
                     },
-                    onLongClick = { navMode = true }
+                    onLongClick = { navMode = true; expanded = true }
                 )
         ) {
             Row(
@@ -660,16 +665,50 @@ private fun ProMaxIsland(
                     shrinkTowards = Alignment.CenterVertically
                 ) + fadeOut(tween(160))
             ) {
-                Column(modifier = Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                if (lowerSel.endsWith(".so")) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Box(modifier = Modifier.weight(1f)) {
-                            IslandActionButton("删除", Color(0xFFFF3B30)) { onDelete() }
+                        androidx.compose.foundation.text.BasicTextField(
+                            value = soInput,
+                            onValueChange = { soInput = it },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFF1C1C1E), RoundedCornerShape(8.dp))
+                                .padding(8.dp),
+                            textStyle = androidx.compose.ui.text.TextStyle(
+                                color = Color.White,
+                                fontSize = 12.sp
+                            ),
+                            singleLine = true
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Box(modifier = Modifier.weight(1f)) {
+                                IslandActionButton("启动", Color(0xFF0A84FF)) { onAction(soInput) }
+                            }
+                            Box(modifier = Modifier.weight(1f)) {
+                                IslandActionButton("取消", Color(0xFF3A3A3C)) { onClearSelection() }
+                            }
                         }
-                        Box(modifier = Modifier.weight(1f)) {
-                            IslandActionButton(actionLabel, actionColor) { onAction() }
+                    }
+                } else {
+                    Column(modifier = Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Box(modifier = Modifier.weight(1f)) {
+                                IslandActionButton("删除", Color(0xFFFF3B30)) { onDelete() }
+                            }
+                            Box(modifier = Modifier.weight(1f)) {
+                                IslandActionButton(actionLabel, actionColor) { onAction("") }
+                            }
                         }
                     }
                 }
