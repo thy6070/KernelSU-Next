@@ -346,8 +346,14 @@ private fun ProMaxIsland(
             // bottom: revealed content
             AnimatedVisibility(
                 visible = sel != null,
-                enter = expandVertically(animationSpec = tween(320, easing = curve)) + fadeIn(tween(220)),
-                exit = shrinkVertically(animationSpec = tween(220, easing = curve)) + fadeOut(tween(140))
+                enter = expandVertically(
+                    animationSpec = spring(dampingRatio = 0.78f, stiffness = 380f),
+                    expandFrom = Alignment.CenterVertically
+                ) + fadeIn(tween(220)),
+                exit = shrinkVertically(
+                    animationSpec = spring(dampingRatio = 1f, stiffness = 600f),
+                    shrinkTowards = Alignment.CenterVertically
+                ) + fadeOut(tween(150))
             ) {
                 Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
                     Spacer(modifier = Modifier.height(18.dp))
