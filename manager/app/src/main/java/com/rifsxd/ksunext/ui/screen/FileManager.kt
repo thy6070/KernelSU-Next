@@ -421,7 +421,17 @@ private fun ProMaxIsland(
     fun foldAndReopen() {
         reopenScope.launch {
             expanded = false
-            kotlinx.coroutines.delay(260)
+            kotlinx.coroutines.delay(280)
+            expanded = true
+        }
+    }
+
+    fun openNav(target: String?) {
+        reopenScope.launch {
+            expanded = false
+            kotlinx.coroutines.delay(280)
+            navTarget = target
+            navMode = target == null
             expanded = true
         }
     }
@@ -528,12 +538,13 @@ private fun ProMaxIsland(
                 .border(0.5.dp, Color(0x47FFFFFF), RoundedCornerShape(34.dp))
                 .combinedClickable(
                     onClick = {
-                        if (navMode) navMode = false
-                        else if (terminalMode) onTermClose()
+                        if (terminalMode) onTermClose()
+                        navMode = false
+                        navTarget = null
                         if (sel != null) onClearSelection()
                         expanded = false
                     },
-                    onLongClick = { navMode = true; expanded = true }
+                    onLongClick = { openNav(null) }
                 )
         ) {
             Row(
@@ -607,10 +618,10 @@ private fun ProMaxIsland(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    NavIcon(Icons.Outlined.Home) { navTarget = "home" }
-                    NavIcon(Icons.Outlined.AdminPanelSettings) { navTarget = "su" }
-                    NavIcon(Icons.Outlined.Layers) { navTarget = "module" }
-                    NavIcon(Icons.Outlined.Settings) { navTarget = "settings" }
+                    NavIcon(Icons.Outlined.Home) { openNav("home") }
+                    NavIcon(Icons.Outlined.AdminPanelSettings) { openNav("su") }
+                    NavIcon(Icons.Outlined.Layers) { openNav("module") }
+                    NavIcon(Icons.Outlined.Settings) { openNav("settings") }
                 }
             }
 
