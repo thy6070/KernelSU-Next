@@ -251,6 +251,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                     termText = ""
                     runMessage = null
                     showTerminal = true
+                    try {
                     withContext(Dispatchers.IO) {
                         try {
                             val dir = p.substringBeforeLast('/', "/")
@@ -281,7 +282,9 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                             }
                         }
                     }
-                    running = false
+                    } finally {
+                        running = false
+                    }
                     refreshTick += 1
                 }
             }
@@ -481,7 +484,7 @@ private fun ProMaxIsland(
                         modifier = Modifier.weight(1f)
                     )
                 }
-                if (sel != null && !running) {
+                if (sel != null) {
                     Text(
                         text = selName,
                         modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
