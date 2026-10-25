@@ -369,10 +369,23 @@ private fun ProMaxIsland(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                val logoCtx = LocalContext.current
+                val logoBmp = remember(logoCtx) {
+                    val d = logoCtx.applicationInfo.loadIcon(logoCtx.packageManager)
+                    val w = d.intrinsicWidth.coerceAtLeast(1)
+                    val h = d.intrinsicHeight.coerceAtLeast(1)
+                    val bmp = android.graphics.Bitmap.createBitmap(w, h, android.graphics.Bitmap.Config.ARGB_8888)
+                    val canvas = android.graphics.Canvas(bmp)
+                    d.setBounds(0, 0, w, h)
+                    d.draw(canvas)
+                    bmp.asImageBitmap()
+                }
                 Image(
-                    painter = painterResource(id = R.mipmap.ic_launcher_foreground),
+                    bitmap = logoBmp,
                     contentDescription = null,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier
+                        .size(26.dp)
+                        .clip(RoundedCornerShape(percent = 22))
                 )
                 if (sel != null) {
                     Text(
