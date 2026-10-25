@@ -81,6 +81,7 @@ import androidx.compose.material.icons.outlined.TaskAlt
 import androidx.compose.material.icons.outlined.InsertDriveFile
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.InsertDriveFile
@@ -159,6 +160,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
     var rightPath by remember { mutableStateOf("/data") }
 
     var panel by remember { mutableStateOf(false) }
+    var showTerminal by remember { mutableStateOf(false) }
     var selectedFile by remember { mutableStateOf<String?>(null) }
     var refreshTick by remember { mutableStateOf(0) }
     var runMessage by remember { mutableStateOf<String?>(null) }
@@ -246,6 +248,31 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
             panelP.animateTo(1f, tween(420, easing = FastOutSlowInEasing))
         }
     }
+        }
+
+        if (showTerminal) {
+            TerminalOverlay(onExit = { showTerminal = false })
+        }
+
+        Box(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(14.dp)
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xCC101012))
+                    .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = 0.25f), RoundedCornerShape(12.dp))
+                    .clickable { showTerminal = true },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Terminal,
+                    contentDescription = "terminal",
+                    tint = Color.White,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
         }
 
         if (panel) {
@@ -509,6 +536,85 @@ private fun IslandActionButton(
         maxLines = 1,
         color = Color.White
     )
+}
+
+@Composable
+private fun TerminalOverlay(onExit: () -> Unit) {
+    var input by remember { mutableStateOf("") }
+    val lines = remember { androidx.compose.runtime.mutableStateListOf<String>() }
+    val scope = rememberCoroutineScope()
+    var busy by remember { mutableStateOf(false) }
+
+    fun run(cmd: String) {
+        if (cmd.isBlank()) return
+        lines.add("> " + cmd)
+        busy = true
+        scope.launch {
+            val out = withContext(Dispatchers.IO) { Shell.cmd(cmd).exec() }
+            out.out.forEach { if (it.isNotBlank()) lines.add(it) }
+            if (out.err.isNotEmpty()) out.err.forEach { if (it.isNotBlank()) lines.add(it) }
+            busy = false
+        }
+    }
+
+    Column(modifier = Modifier.fillMaxSize().background(Color(0xF2000000)).padding(12.dp)) {
+        Row(modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(text = "终端", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            Spacer(modifier = Modifier.weight(1f))
+            Text(
+                text = "关闭",
+                color = Color(0xFF0A84FF),
+                fontSize = 13.sp,
+                modifier = Modifier.clickable { onExit() }
+            )
+        }
+        LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            items(lines) { line ->
+                Text(
+                    text = line,
+                    color = Color(0xFFDDDDDD),
+                    fontSize = 11.sp,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier.padding(vertical = 1.dp)
+                )
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(text = "\$", color = Color(0xFF4CAF50), fontSize = 12.sp, fontFamily = FontFamily.Monospace)
+            androidx.compose.foundation.text.BasicTextField(
+                value = input,
+                onValueChange = { input = it },
+                modifier = Modifier.weight(1f).padding(horizontal = 6.dp),
+                textStyle = androidx.compose.ui.text.TextStyle(
+                    color = Color.White,
+                    fontSize = 12.sp,
+                    fontFamily = FontFamily.Monospace
+                ),
+                singleLine = true,
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Go
+                ),
+                keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                    onGo = {
+                        run(input)
+                        input = ""
+                    }
+                )
+            )
+            Text(
+                text = if (busy) "…" else "运行",
+                color = Color(0xFF0A84FF),
+                fontSize = 12.sp,
+                modifier = Modifier.clickable {
+                    run(input)
+                    input = ""
+                }
+            )
+        }
+    }
 }
 
 @Composable
