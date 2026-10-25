@@ -66,6 +66,14 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
+import com.ramcosta.composedestinations.generated.destinations.HomeScreenDestination
+import com.ramcosta.composedestinations.generated.destinations.SuperUserScreenDestination
+import com.ramcosta.composedestinations.generated.destinations.ModuleScreenDestination
+import com.ramcosta.composedestinations.generated.destinations.SettingsScreenDestination
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.Extension
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -195,7 +203,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                     if (selectedFile != null && selectedFile != picked) {
                         selectedFile = null
                         uiScope.launch {
-                            kotlinx.coroutines.delay(340)
+                            kotlinx.coroutines.delay(280)
                             selectedFile = picked
                         }
                     } else {
@@ -216,7 +224,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                     if (selectedFile != null && selectedFile != picked) {
                         selectedFile = null
                         uiScope.launch {
-                            kotlinx.coroutines.delay(340)
+                            kotlinx.coroutines.delay(280)
                             selectedFile = picked
                         }
                     } else {
@@ -376,6 +384,7 @@ private fun ProMaxIsland(
 ) {
     var expanded by remember { mutableStateOf(false) }
     var showWave by remember { mutableStateOf(false) }
+    var navMode by remember { mutableStateOf(false) }
     LaunchedEffect(running) {
         if (running) {
             showWave = true
@@ -494,11 +503,12 @@ private fun ProMaxIsland(
                 .border(0.5.dp, Color(0x47FFFFFF), RoundedCornerShape(34.dp))
                 .combinedClickable(
                     onClick = {
-                        if (terminalMode) onTermClose()
+                        if (navMode) navMode = false
+                        else if (terminalMode) onTermClose()
                         if (sel != null) onClearSelection()
                         expanded = false
                     },
-                    onLongClick = { foldAndReopen() }
+                    onLongClick = { navMode = true }
                 )
         ) {
             Row(
@@ -559,6 +569,23 @@ private fun ProMaxIsland(
                             .size(22.dp)
                             .clickable { navigator.navigate(InstallScreenDestination) }
                     )
+                }
+            }
+
+            AnimatedVisibility(
+                visible = navMode,
+                enter = expandVertically(animationSpec = tween(320, easing = zyEase), expandFrom = Alignment.CenterVertically) + fadeIn(tween(180)),
+                exit = shrinkVertically(animationSpec = tween(240, easing = zyEase), shrinkTowards = Alignment.CenterVertically) + fadeOut(tween(140))
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    NavIcon(Icons.Outlined.Home) { navMode = false; navigator.navigate(HomeScreenDestination) }
+                    NavIcon(Icons.Outlined.Shield) { navMode = false; navigator.navigate(SuperUserScreenDestination) }
+                    NavIcon(Icons.Outlined.Extension) { navMode = false; navigator.navigate(ModuleScreenDestination) }
+                    NavIcon(Icons.Outlined.Settings) { navMode = false; navigator.navigate(SettingsScreenDestination) }
                 }
             }
 
@@ -644,6 +671,24 @@ private fun ProMaxIsland(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun NavIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(44.dp)
+            .clip(RoundedCornerShape(percent = 50))
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier.size(24.dp)
+        )
     }
 }
 
