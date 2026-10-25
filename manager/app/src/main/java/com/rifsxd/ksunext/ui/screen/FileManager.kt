@@ -94,6 +94,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -389,16 +390,18 @@ private fun ActionPill(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    Box(
+    // exactly the ZySU IslandActionButton look: solid capsule, 9dp vertical padding, 14sp white
+    Text(
+        text = text,
         modifier = modifier
-            .height(44.dp)
-            .clip(RoundedCornerShape(22.dp))
-            .background(color)
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(text = text, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-    }
+            .clickable(onClick = onClick)
+            .background(color, RoundedCornerShape(percent = 50))
+            .padding(vertical = 9.dp),
+        fontSize = 14.sp,
+        textAlign = TextAlign.Center,
+        maxLines = 1,
+        color = Color.White
+    )
 }
 
 @Composable
