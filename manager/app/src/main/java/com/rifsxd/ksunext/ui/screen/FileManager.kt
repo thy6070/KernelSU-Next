@@ -145,7 +145,8 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .blur(if (panel) 26.dp else 0.dp)
+                .background(Color(BG_COLOR))
+                .blur(if (panel) 30.dp else 0.dp)
         ) {
     Row(modifier = Modifier.fillMaxSize()) {
         key(leftPath) {
@@ -334,18 +335,18 @@ private fun ModeButton(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(74.dp)
-            .clip(RoundedCornerShape(37.dp))
+            .height(58.dp)
+            .clip(RoundedCornerShape(29.dp))
             .background(Color(0xCC0E0E10))
             .clickable { on = !on }
-            .padding(horizontal = 22.dp),
+            .padding(horizontal = 18.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
             tint = Color.White,
-            modifier = Modifier.size(26.dp)
+            modifier = Modifier.size(22.dp)
         )
         Spacer(modifier = Modifier.weight(1f))
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -356,7 +357,6 @@ private fun ModeButton(
         }
         Spacer(modifier = Modifier.weight(1f))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(text = "|", color = Color(0xFF6A6A6E), fontSize = 15.sp)
             Text(
                 text = "开",
                 color = if (on) Color.White else Color(0xFF5A5A5E),
