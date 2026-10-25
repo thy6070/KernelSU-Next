@@ -253,13 +253,19 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                     showTerminal = true
                     withContext(Dispatchers.IO) {
                         try {
+                            val dir = p.substringBeforeLast('/', "/")
+                            val file = p.substringAfterLast('/')
                             val cmd = when {
                                 lower.endsWith(".apk") -> "pm install -r \"$p\""
                                 lower.endsWith(".so") -> "chmod 777 \"$p\" && echo ok"
-                                else -> "chmod 777 \"$p\" 2>/dev/null; sh \"$p\""
+                                else -> "chmod 777 \"$file\" 2>/dev/null; sh \"$file\""
                             }
                             val pb = ProcessBuilder("/system/bin/su", "-c", cmd)
                             pb.redirectErrorStream(true)
+                            pb.directory(java.io.File(dir))
+                            pb.environment()["PATH"] = "/system/bin:/system/xbin:/sbin:/vendor/bin"
+                            pb.environment()["HOME"] = "/data"
+                            pb.environment()["TMPDIR"] = "/data/local/tmp"
                             val proc = pb.start()
                             proc.inputStream.bufferedReader().useLines { seq ->
                                 seq.forEach { line ->
@@ -468,7 +474,7 @@ private fun ProMaxIsland(
                         .size(26.dp)
                         .clip(RoundedCornerShape(percent = 22))
                 )
-                if (running && expanded) {
+                if (running && (expanded || terminalMode)) {
                     YukiWave(
                         color = Color(0xFFFFB6C8),
                         running = running,
