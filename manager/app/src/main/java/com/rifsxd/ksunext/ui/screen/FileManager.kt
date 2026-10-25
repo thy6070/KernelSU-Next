@@ -53,6 +53,8 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.ui.zIndex
 import android.content.Intent
 import android.widget.Toast
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -250,6 +252,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ProMaxIsland(
     navigator: DestinationsNavigator,
@@ -353,7 +356,10 @@ private fun ProMaxIsland(
                 .clip(RoundedCornerShape(34.dp))
                 .background(Color.Black)
                 .border(0.5.dp, Color(0x47FFFFFF), RoundedCornerShape(34.dp))
-                .clickable { if (sel == null) expanded = !expanded else onClearSelection() }
+                .combinedClickable(
+                    onClick = { if (sel == null) expanded = !expanded else onClearSelection() },
+                    onLongClick = { onOpen() }
+                )
         ) {
             Row(
                 modifier = Modifier
@@ -366,7 +372,7 @@ private fun ProMaxIsland(
                 Image(
                     painter = painterResource(id = R.mipmap.ic_launcher_foreground),
                     contentDescription = null,
-                    modifier = Modifier.size(26.dp)
+                    modifier = Modifier.size(32.dp)
                 )
                 if (sel != null) {
                     Text(
