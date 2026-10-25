@@ -77,6 +77,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.outlined.TaskAlt
 import androidx.compose.material.icons.outlined.InsertDriveFile
 import androidx.compose.material.icons.outlined.Folder
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.InsertDriveFile
@@ -157,6 +158,8 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
     var panel by remember { mutableStateOf(false) }
     var selectedFile by remember { mutableStateOf<String?>(null) }
     var refreshTick by remember { mutableStateOf(0) }
+    var runMessage by remember { mutableStateOf<String?>(null) }
+    var runOk by remember { mutableStateOf(true) }
     val panelP = remember { Animatable(0f) }
     val uiScope = rememberCoroutineScope()
 
@@ -205,6 +208,8 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                 refreshTick += 1
             }
         },
+        runMessage = runMessage,
+        runOk = runOk,
         onAction = {
             val p = selectedFile
             if (p != null) {
@@ -215,11 +220,14 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                             lower.endsWith(".apk") -> Shell.cmd("pm install -r \"$p\"").exec()
                             lower.endsWith(".sh") || lower.endsWith(".rc") -> Shell.cmd("sh \"$p\"").exec()
                             lower.endsWith(".so") -> Shell.cmd("chmod 755 \"$p\"").exec()
-                            else -> Shell.cmd("echo mount-not-implemented").exec()
+                            else -> Shell.cmd("echo 挂载未实现").exec()
                         }
                     }
-                    val msg = out.out.joinToString("\n").ifBlank { out.code.toString() }
-                    Toast.makeText(uiCtx, msg.take(120), Toast.LENGTH_SHORT).show()
+                    runOk = out.code == 0
+                    runMessage = out.out.joinToString(" ").ifBlank { "退出码 ${out.code}" }.take(120)
+                    refreshTick += 1
+                    kotlinx.coroutines.delay(2600)
+                    runMessage = null
                 }
             }
         }
@@ -261,6 +269,8 @@ private fun ProMaxIsland(
     navigator: DestinationsNavigator,
     panelOpen: Boolean,
     selectedFile: String?,
+    runMessage: String?,
+    runOk: Boolean,
     onClearSelection: () -> Unit,
     onDelete: () -> Unit,
     onAction: () -> Unit,
@@ -409,9 +419,9 @@ private fun ProMaxIsland(
                         textAlign = TextAlign.Center
                     )
                     Icon(
-                        imageVector = Icons.Outlined.InsertDriveFile,
+                        imageVector = if (runMessage != null && !runOk) Icons.Outlined.Lock else Icons.Outlined.InsertDriveFile,
                         contentDescription = null,
-                        tint = accent,
+                        tint = if (runMessage != null && !runOk) Color(0xFFFF3B30) else accent,
                         modifier = Modifier.size(22.dp).clickable { onClearSelection() }
                     )
                 } else {
@@ -438,8 +448,19 @@ private fun ProMaxIsland(
                     shrinkTowards = Alignment.CenterVertically
                 ) + fadeOut(tween(160))
             ) {
+                Column(modifier = Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp)) {
+                    if (runMessage != null) {
+                        Text(
+                            text = runMessage,
+                            modifier = Modifier.padding(top = 4.dp, bottom = 4.dp),
+                            fontSize = 10.sp,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            color = if (runOk) Color(0xFF4CAF50) else Color(0xFFFF3B30)
+                        )
+                    }
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Box(modifier = Modifier.weight(1f)) {
@@ -448,6 +469,7 @@ private fun ProMaxIsland(
                     Box(modifier = Modifier.weight(1f)) {
                         IslandActionButton(actionLabel, actionColor) { onAction() }
                     }
+                }
                 }
             }
         }
