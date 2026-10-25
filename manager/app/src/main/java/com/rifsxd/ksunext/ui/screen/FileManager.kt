@@ -498,7 +498,7 @@ private fun ProMaxIsland(
                         .size(26.dp)
                         .clip(RoundedCornerShape(percent = 22))
                 )
-                if (running || terminalMode) {
+                if (terminalMode || (running && expanded)) {
                     YukiWave(
                         color = Color(0xFFFFB6C8),
                         running = running,
@@ -758,9 +758,8 @@ private fun YukiWave(color: Color, running: Boolean, modifier: Modifier = Modifi
         if (running || finishing.value) {
             val seg = size.width * (0.62f + 0.10f * kotlin.math.min(round.value, 3).toFloat())
             val amp = 2.6.dp.toPx()
-            val waveCount = kotlin.math.min(round.value + 1, 4)
-            for (k in 0 until waveCount) {
-                val p = (phase.value + k * 0.30f) % 1f
+            for (k in 0 until 2) {
+                val p = (phase.value + k * 0.5f) % 1f
                 val x0 = -seg + p * (size.width + seg)
                 val path = Path()
                 var x = 0f
@@ -881,7 +880,10 @@ private fun BrowserPane(
 
     val parent = parentOf(path)
 
-    LazyColumn(modifier = modifier.fillMaxSize().background(Color(BG_COLOR))) {
+        LazyColumn(
+            modifier = modifier.fillMaxSize().background(Color(BG_COLOR)),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
         item {
             Row(
                 modifier = Modifier
