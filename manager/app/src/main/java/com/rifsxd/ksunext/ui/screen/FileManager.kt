@@ -440,27 +440,15 @@ private fun ProMaxIsland(
                     shrinkTowards = Alignment.CenterVertically
                 ) + fadeOut(tween(160))
             ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        ActionPill(
-                            text = "删除",
-                            color = Color(0xFFFF3B30),
-                            modifier = Modifier
-                        ) { onDelete() }
+                    Box(modifier = Modifier.weight(1f)) {
+                        IslandActionButton("删除", Color(0xFFFF3B30)) { onDelete() }
                     }
                     Box(modifier = Modifier.weight(1f)) {
-                        ActionPill(
-                            text = actionLabel,
-                            color = actionColor,
-                            modifier = Modifier
-                        ) { onAction() }
+                        IslandActionButton(actionLabel, actionColor) { onAction() }
                     }
                 }
             }
@@ -469,17 +457,16 @@ private fun ProMaxIsland(
 }
 
 @Composable
-private fun ActionPill(
-    text: String,
+private fun IslandActionButton(
+    label: String,
     color: Color,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
-    // exactly the ZySU IslandActionButton look: solid capsule, 9dp vertical padding, 14sp white
     Text(
-        text = text,
-        modifier = modifier
-            .clickable(onClick = onClick)
+        text = label,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
             .background(color, RoundedCornerShape(percent = 50))
             .padding(vertical = 9.dp),
         fontSize = 14.sp,
