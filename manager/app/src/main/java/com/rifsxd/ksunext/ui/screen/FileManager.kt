@@ -578,7 +578,8 @@ private fun ProMaxIsland(
     }
 }
 
-
+@Composable
+private fun IslandActionButton(
     label: String,
     color: Color,
     onClick: () -> Unit,
