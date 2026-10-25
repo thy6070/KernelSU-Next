@@ -195,7 +195,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                     if (selectedFile != null && selectedFile != picked) {
                         selectedFile = null
                         uiScope.launch {
-                            kotlinx.coroutines.delay(240)
+                            kotlinx.coroutines.delay(340)
                             selectedFile = picked
                         }
                     } else {
@@ -212,7 +212,17 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
             BrowserPane(
                 path = rightPath,
                 onNavigate = { rightPath = it },
-                onFileClick = { selectedFile = it },
+                onFileClick = { picked ->
+                    if (selectedFile != null && selectedFile != picked) {
+                        selectedFile = null
+                        uiScope.launch {
+                            kotlinx.coroutines.delay(340)
+                            selectedFile = picked
+                        }
+                    } else {
+                        selectedFile = picked
+                    }
+                },
                 refreshTick = refreshTick,
                 selectedPath = selectedFile,
                 modifier = Modifier.weight(1f)
