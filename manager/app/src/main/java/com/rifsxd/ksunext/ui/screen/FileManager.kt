@@ -424,9 +424,9 @@ private fun ProMaxIsland(
         // wing sits UNDER the pill and slides out of it
         Row(
             modifier = Modifier
-                .offset(x = (pillW.value / 2f + 32f).dp, y = 0.dp)
+                .offset(x = (pillW.value / 2f + 30f).dp, y = 0.dp)
                 .width(52.dp)
-                .height(44.dp)
+                .height(42.dp)
                 .graphicsLayer {
                     val travel = with(density) { (pillW.value / 2f + 3f).dp.toPx() }
                     translationX = (ballShift - 1f) * travel
@@ -434,9 +434,9 @@ private fun ProMaxIsland(
                     scaleY = ballScale * bump
                     alpha = (ballShift * 3f).coerceIn(0f, 1f)
                 }
-                .clip(RoundedCornerShape(22.dp))
+                .clip(RoundedCornerShape(21.dp))
                 .background(Color.Black)
-                .border(0.5.dp, Color(0x47FFFFFF), RoundedCornerShape(22.dp))
+                .border(0.5.dp, Color(0x47FFFFFF), RoundedCornerShape(21.dp))
                 .clickable { onOpen() },
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
@@ -882,7 +882,7 @@ private fun BrowserPane(
 
         LazyColumn(
             modifier = modifier.fillMaxSize().background(Color(BG_COLOR)),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(5.dp)
         ) {
         item {
             Row(
