@@ -147,6 +147,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
 
     var panel by remember { mutableStateOf(false) }
     var selectedFile by remember { mutableStateOf<String?>(null) }
+    var refreshTick by remember { mutableStateOf(0) }
     val panelP = remember { Animatable(0f) }
     val uiScope = rememberCoroutineScope()
 
@@ -163,6 +164,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                 path = leftPath,
                 onNavigate = { leftPath = it },
                 onFileClick = { selectedFile = it },
+                refreshTick = refreshTick,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -172,6 +174,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                 path = rightPath,
                 onNavigate = { rightPath = it },
                 onFileClick = { selectedFile = it },
+                refreshTick = refreshTick,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -472,11 +475,12 @@ private fun BrowserPane(
     path: String,
     onNavigate: (String) -> Unit,
     onFileClick: (String) -> Unit,
+    refreshTick: Int = 0,
     modifier: Modifier = Modifier
 ) {
     var entries by remember { mutableStateOf<List<FsEntry>>(emptyList()) }
 
-    LaunchedEffect(path) {
+    LaunchedEffect(path, refreshTick) {
         entries = listDir(path)
     }
 
