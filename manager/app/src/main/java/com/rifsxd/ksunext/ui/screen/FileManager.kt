@@ -182,7 +182,8 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
     val pillW = 188f + (138f - 188f) * gather + overshoot
     val pillX = 25f * gather
     // corner radius tightens while gathered and relaxes back out
-    val radius = 22f - 5f * gather
+    // keep radius at half the height so the pill never looks square mid-animation
+    val radius = 22f
     val scale = if (v < 0.32f) {
         1f + 0.28f * smooth(seg(v, 0f, 0.30f))
     } else {
