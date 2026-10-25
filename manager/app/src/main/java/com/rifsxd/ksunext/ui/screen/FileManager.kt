@@ -421,11 +421,12 @@ private fun ProMaxIsland(
         modifier = Modifier.fillMaxWidth().offset(y = 10.dp),
         contentAlignment = Alignment.TopCenter
     ) {
-        // ball sits UNDER the pill and slides out of it
-        Box(
+        // wing sits UNDER the pill and slides out of it
+        Row(
             modifier = Modifier
-                .offset(x = (pillW.value / 2f + 27f).dp, y = 0.dp)
-                .size(42.dp)
+                .offset(x = (pillW.value / 2f + 32f).dp, y = 0.dp)
+                .width(52.dp)
+                .height(44.dp)
                 .graphicsLayer {
                     val travel = with(density) { (pillW.value / 2f + 3f).dp.toPx() }
                     translationX = (ballShift - 1f) * travel
@@ -433,21 +434,19 @@ private fun ProMaxIsland(
                     scaleY = ballScale * bump
                     alpha = (ballShift * 3f).coerceIn(0f, 1f)
                 }
-                .clip(RoundedCornerShape(percent = 50))
+                .clip(RoundedCornerShape(22.dp))
                 .background(Color.Black)
-                .border(0.5.dp, Color(0x47FFFFFF), RoundedCornerShape(percent = 50))
+                .border(0.5.dp, Color(0x47FFFFFF), RoundedCornerShape(22.dp))
                 .clickable { onOpen() },
-            contentAlignment = Alignment.Center
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
         ) {
-            Box(
-                modifier = Modifier
-                    .size(26.dp)
-                    .clip(RoundedCornerShape(percent = 50))
-                    .background(Color(0xFF0A84FF)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(text = "＋", color = Color.White, fontSize = 17.sp)
-            }
+            Image(
+                painter = painterResource(id = R.mipmap.ic_modules_foreground),
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(Color.White),
+                modifier = Modifier.size(30.dp)
+            )
         }
 
         // main pill on top
@@ -759,8 +758,9 @@ private fun YukiWave(color: Color, running: Boolean, modifier: Modifier = Modifi
         if (running || finishing.value) {
             val seg = size.width * (0.62f + 0.10f * kotlin.math.min(round.value, 3).toFloat())
             val amp = 2.6.dp.toPx()
-            for (k in 0 until 2) {
-                val p = (phase.value + k * 0.5f) % 1f
+            val waveCount = kotlin.math.min(round.value + 1, 4)
+            for (k in 0 until waveCount) {
+                val p = (phase.value + k * 0.30f) % 1f
                 val x0 = -seg + p * (size.width + seg)
                 val path = Path()
                 var x = 0f
