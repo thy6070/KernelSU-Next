@@ -217,9 +217,9 @@ private fun ProMaxIsland(navigator: DestinationsNavigator, panelOpen: Boolean, o
     val p = remember { Animatable(0f) }
     LaunchedEffect(expanded) {
         if (expanded) {
-            p.animateTo(1f, tween(1250, easing = curve))
+            p.animateTo(1f, tween(1650, easing = curve))
         } else {
-            p.animateTo(0f, tween(1050, easing = curve))
+            p.animateTo(0f, tween(1450, easing = curve))
         }
     }
 
@@ -511,13 +511,33 @@ private fun RowIcon(isDir: Boolean, name: String, fullPath: String) {
             )
         }
 
-        else -> Box(modifier = Modifier.size(32.dp), contentAlignment = Alignment.Center) {
-            Icon(
-                imageVector = Icons.Filled.InsertDriveFile,
-                contentDescription = null,
-                tint = Color(FILE_ICON),
-                modifier = Modifier.size(20.dp)
-            )
+        else -> {
+            val lower = name.lowercase()
+            val accent = when {
+                lower.endsWith(".sh") || lower.endsWith(".rc") || lower.endsWith(".so") -> Color(0xFF26C6DA)
+                lower.endsWith(".zip") || lower.endsWith(".tar") || lower.endsWith(".gz") ||
+                    lower.endsWith(".7z") || lower.endsWith(".rar") || lower.endsWith(".xz") -> Color(0xFFFFCA28)
+                else -> null
+            }
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .then(
+                        if (accent != null) {
+                            Modifier
+                                .clip(RoundedCornerShape(7.dp))
+                                .border(1.dp, accent.copy(alpha = 0.85f), RoundedCornerShape(7.dp))
+                        } else Modifier
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.InsertDriveFile,
+                    contentDescription = null,
+                    tint = if (accent != null) accent else Color(FILE_ICON),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
         }
     }
 }
