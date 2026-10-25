@@ -318,7 +318,7 @@ private fun ProMaxIsland(
     val actionColor = if (actionLabel == "挂载") Color(0xFFFFB300) else Color(0xFF0A84FF)
 
     val zyEase = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)
-    val pillH by animateDpAsState(if (sel != null) 132.dp else 42.dp, tween(360, easing = zyEase), label = "ph")
+    val pillH by animateDpAsState(if (sel != null) 94.dp else 42.dp, tween(360, easing = zyEase), label = "ph")
 
 
     Box(
