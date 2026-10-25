@@ -71,6 +71,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.outlined.TaskAlt
+import androidx.compose.material.icons.outlined.InsertDriveFile
+import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.InsertDriveFile
@@ -340,7 +343,7 @@ private fun ProMaxIsland(
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
                     Icon(
-                        imageVector = Icons.Filled.InsertDriveFile,
+                        imageVector = Icons.Outlined.InsertDriveFile,
                         contentDescription = null,
                         tint = accent,
                         modifier = Modifier.size(22.dp).clickable { onClearSelection() }
@@ -348,7 +351,7 @@ private fun ProMaxIsland(
                 } else {
                     Spacer(modifier = Modifier.weight(1f))
                     Icon(
-                        imageVector = Icons.Filled.Check,
+                        imageVector = Icons.Outlined.TaskAlt,
                         contentDescription = "install",
                         tint = Color.White,
                         modifier = Modifier
@@ -541,7 +544,7 @@ private fun BrowserPane(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Filled.Folder,
+                        imageVector = Icons.Outlined.Folder,
                         contentDescription = null,
                         tint = Color(FOLDER_ICON),
                         modifier = Modifier.size(20.dp)
@@ -636,7 +639,7 @@ private fun RowIcon(isDir: Boolean, name: String, fullPath: String) {
         )
     } else {
         Icon(
-            imageVector = if (isDir) Icons.Filled.Folder else Icons.Filled.InsertDriveFile,
+            imageVector = if (isDir) Icons.Outlined.Folder else Icons.Outlined.InsertDriveFile,
             contentDescription = null,
             modifier = Modifier.size(18.dp),
             tint = if (isDir) Color(FOLDER_ICON) else (fileAccent(name) ?: Color(FILE_ICON))
