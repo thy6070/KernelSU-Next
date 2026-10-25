@@ -403,14 +403,6 @@ private fun ProMaxIsland(
             wingPress.animateTo(0f, spring(dampingRatio = 0.55f, stiffness = 420f))
         }
     }
-    val wingPress = remember { Animatable(0f) }
-    LaunchedEffect(panelOpen) {
-        if (panelOpen) {
-            wingPress.animateTo(1f, tween(220, easing = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)))
-        } else {
-            wingPress.animateTo(0f, spring(dampingRatio = 0.55f, stiffness = 420f))
-        }
-    }
     val ball = remember { Animatable(1f) }
     LaunchedEffect(selectedFile != null) {
         if (selectedFile != null) {
