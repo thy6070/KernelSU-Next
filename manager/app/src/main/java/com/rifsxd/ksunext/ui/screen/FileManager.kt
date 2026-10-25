@@ -421,7 +421,11 @@ private fun ProMaxIsland(
                 .background(Color.Black)
                 .border(0.5.dp, Color(0x47FFFFFF), RoundedCornerShape(34.dp))
                 .combinedClickable(
-                    onClick = { if (sel == null) expanded = !expanded else onClearSelection() },
+                    onClick = {
+                        if (terminalMode) onTermClose()
+                        else if (sel == null) expanded = !expanded
+                        else onClearSelection()
+                    },
                     onLongClick = { foldAndReopen() }
                 )
         ) {
@@ -531,6 +535,16 @@ private fun ProMaxIsland(
                                 .clickable { onTermRun() }
                                 .padding(start = 10.dp)
                                 .background(Color(0xFF0A84FF), RoundedCornerShape(percent = 50))
+                                .padding(horizontal = 10.dp, vertical = 3.dp),
+                            fontSize = 11.sp,
+                            color = Color.White
+                        )
+                        Text(
+                            "关闭",
+                            modifier = Modifier
+                                .clickable { onTermClose() }
+                                .padding(start = 10.dp)
+                                .background(Color(0xFFFF3B30), RoundedCornerShape(percent = 50))
                                 .padding(horizontal = 10.dp, vertical = 3.dp),
                             fontSize = 11.sp,
                             color = Color.White
