@@ -268,7 +268,7 @@ private fun ProMaxIsland(
     val cardRadius by animateDpAsState(if (sel != null) 28.dp else 22.dp, tween(420, easing = curve), label = "cr")
 
     Row(
-        modifier = Modifier.fillMaxWidth().height(110.dp),
+        modifier = Modifier.fillMaxWidth().height(110.dp).offset(y = 18.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.Top
     ) {
