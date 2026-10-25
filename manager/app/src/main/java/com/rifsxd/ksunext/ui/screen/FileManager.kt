@@ -238,7 +238,7 @@ private fun ProMaxIsland(
     val iconShift = -2.5f * (smooth(seg(v, 0f, 0.3f)) - smooth(seg(v, 0.7f, 1f)))
     val gather = smooth(seg(v, 0f, 0.26f)) - smooth(seg(v, 0.74f, 1f))
     val overshoot = 4f * sin(seg(v, 0f, 0.42f) * PI.toFloat()) * (1f - seg(v, 0.30f, 0.5f))
-    val pillW = 188f + (138f - 188f) * gather + overshoot
+    val compactW = 188f + (138f - 188f) * gather + overshoot
     val pillX = 25f * gather
     val scale = if (v < 0.32f) {
         1f + 0.28f * smooth(seg(v, 0f, 0.30f))
@@ -263,137 +263,146 @@ private fun ProMaxIsland(
     }
     val actionColor = if (actionLabel == "挂载") Color(0xFFFFCA24) else Color(0xFF0A84FF)
 
-    Column(
-        modifier = Modifier.width(250.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+    // iOS-style grow: the pill itself expands into a card
+    val cardW by animateDpAsState(
+        if (sel != null) 252.dp else compactW.dp,
+        tween(420, easing = curve),
+        label = "cardW"
+    )
+    val cardH by animateDpAsState(
+        if (sel != null) 104.dp else 44.dp,
+        tween(420, easing = curve),
+        label = "cardH"
+    )
+    val cardRadius by animateDpAsState(
+        if (sel != null) 28.dp else 22.dp,
+        tween(420, easing = curve),
+        label = "cardR"
+    )
+
+    Box(
+        modifier = Modifier.width(250.dp).height(110.dp),
+        contentAlignment = Alignment.TopCenter
     ) {
         if (sel == null) {
-            Box(modifier = Modifier.width(250.dp).height(52.dp)) {
-
-                Row(
-                    modifier = Modifier
-                        .offset(x = (pillW + 4f).dp, y = 0.dp)
-                        .width(52.dp)
-                        .height(44.dp)
-                        .graphicsLayer {
-                            val travel = with(density) { 64.dp.toPx() }
-                            translationX = (ball - 1f) * travel
-                            val pulse = 1f - 0.18f * dotPulse.value
-                            scaleX = ballScale * pulse
-                            scaleY = ballScale * pulse
-                            alpha = (ball * 3f).coerceIn(0f, 1f) * (1f - 0.45f * dotPulse.value)
-                        }
-                        .clip(RoundedCornerShape(22.dp))
-                        .background(Color.Black)
-                        .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = keyline), RoundedCornerShape(22.dp))
-                        .clickable { onOpen() },
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Image(
-                        painter = painterResource(id = R.mipmap.ic_modules_foreground),
-                        contentDescription = null,
-                        colorFilter = ColorFilter.tint(Color.White),
-                        modifier = Modifier.size(38.dp)
-                    )
-                }
-
-                Row(
-                    modifier = Modifier
-                        .offset(x = pillX.dp)
-                        .width(pillW.dp)
-                        .height(44.dp)
-                        .graphicsLayer {
-                            scaleX = scale
-                            scaleY = scale
-                        }
-                        .clip(RoundedCornerShape(22.dp))
-                        .background(Color.Black)
-                        .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = keyline), RoundedCornerShape(22.dp))
-                        .clickable { expanded = !expanded }
-                        .padding(horizontal = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (iconAlpha > 0.01f) {
-                        Image(
-                            painter = painterResource(id = R.mipmap.ic_launcher_foreground),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(38.dp)
-                                .graphicsLayer {
-                                    alpha = iconAlpha
-                                    scaleX = iconScale
-                                    scaleY = iconScale
-                                    translationX = with(density) { iconShift.dp.toPx() }
-                                }
-                        )
-                    }
-                    Spacer(modifier = Modifier.weight(1f))
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .clickable { navigator.navigate(InstallScreenDestination) },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Check,
-                            contentDescription = "install",
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-            }
-        } else {
-            // expanded card: file name + file icon + two solid actions
-            Column(
+            Row(
                 modifier = Modifier
-                    .width(250.dp)
-                    .height(100.dp)
-                    .clip(RoundedCornerShape(26.dp))
+                    .offset(x = (compactW + 4f).dp, y = 0.dp)
+                    .width(52.dp)
+                    .height(44.dp)
+                    .graphicsLayer {
+                        val travel = with(density) { 64.dp.toPx() }
+                        translationX = (ball - 1f) * travel
+                        val pulse = 1f - 0.18f * dotPulse.value
+                        scaleX = ballScale * pulse
+                        scaleY = ballScale * pulse
+                        alpha = (ball * 3f).coerceIn(0f, 1f) * (1f - 0.45f * dotPulse.value)
+                    }
+                    .clip(RoundedCornerShape(22.dp))
                     .background(Color.Black)
-                    .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = 0.28f), RoundedCornerShape(26.dp))
-                    .padding(horizontal = 12.dp, vertical = 10.dp)
+                    .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = keyline), RoundedCornerShape(22.dp))
+                    .clickable { onOpen() },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Image(
+                    painter = painterResource(id = R.mipmap.ic_modules_foreground),
+                    contentDescription = null,
+                    colorFilter = ColorFilter.tint(Color.White),
+                    modifier = Modifier.size(38.dp)
+                )
+            }
+        }
+
+        Row(
+            modifier = Modifier
+                .offset(x = if (sel == null) pillX.dp else 0.dp)
+                .width(cardW)
+                .height(cardH)
+                .graphicsLayer {
+                    if (sel == null) {
+                        scaleX = scale
+                        scaleY = scale
+                    }
+                }
+                .clip(RoundedCornerShape(cardRadius))
+                .background(Color.Black)
+                .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = keyline), RoundedCornerShape(cardRadius))
+                .clickable { if (sel == null) expanded = !expanded }
+                .padding(horizontal = if (sel == null) 4.dp else 12.dp, vertical = if (sel == null) 0.dp else 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (sel == null) {
+                if (iconAlpha > 0.01f) {
                     Image(
                         painter = painterResource(id = R.mipmap.ic_launcher_foreground),
                         contentDescription = null,
-                        modifier = Modifier.size(30.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = sel,
-                        color = Color.White,
-                        fontSize = 13.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Icon(
-                        imageVector = Icons.Filled.InsertDriveFile,
-                        contentDescription = null,
-                        tint = accent,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier
+                            .size(38.dp)
+                            .graphicsLayer {
+                                alpha = iconAlpha
+                                scaleX = iconScale
+                                scaleY = iconScale
+                                translationX = with(density) { iconShift.dp.toPx() }
+                            }
                     )
                 }
                 Spacer(modifier = Modifier.weight(1f))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .clickable { navigator.navigate(InstallScreenDestination) },
+                    contentAlignment = Alignment.Center
                 ) {
-                    ActionPill(
-                        text = "删除",
-                        color = Color(0xFFFF453A),
-                        modifier = Modifier.weight(1f)
-                    ) { onClearSelection() }
-                    ActionPill(
-                        text = actionLabel,
-                        color = actionColor,
-                        modifier = Modifier.weight(1f)
-                    ) { onClearSelection() }
+                    Icon(
+                        imageVector = Icons.Filled.Check,
+                        contentDescription = "install",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            } else {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Image(
+                            painter = painterResource(id = R.mipmap.ic_launcher_foreground),
+                            contentDescription = null,
+                            modifier = Modifier.size(30.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = sel,
+                            color = Color.White,
+                            fontSize = 13.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Icon(
+                            imageVector = Icons.Filled.InsertDriveFile,
+                            contentDescription = null,
+                            tint = accent,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        ActionPill(
+                            text = "删除",
+                            color = Color(0xFFFF453A),
+                            modifier = Modifier.weight(1f)
+                        ) { onClearSelection() }
+                        ActionPill(
+                            text = actionLabel,
+                            color = actionColor,
+                            modifier = Modifier.weight(1f)
+                        ) { onClearSelection() }
+                    }
                 }
             }
         }
