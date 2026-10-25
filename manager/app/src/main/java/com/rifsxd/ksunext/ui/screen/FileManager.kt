@@ -191,7 +191,17 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
             BrowserPane(
                 path = leftPath,
                 onNavigate = { leftPath = it },
-                onFileClick = { selectedFile = it },
+                onFileClick = { picked ->
+                    if (selectedFile != null && selectedFile != picked) {
+                        selectedFile = null
+                        uiScope.launch {
+                            kotlinx.coroutines.delay(240)
+                            selectedFile = picked
+                        }
+                    } else {
+                        selectedFile = picked
+                    }
+                },
                 refreshTick = refreshTick,
                 selectedPath = selectedFile,
                 modifier = Modifier.weight(1f)
@@ -385,6 +395,14 @@ private fun ProMaxIsland(
     val lift = -4f * sin(bt * PI.toFloat())
 
     // Island.kt ball choreography
+    val wingPress = remember { Animatable(0f) }
+    LaunchedEffect(panelOpen) {
+        if (panelOpen) {
+            wingPress.animateTo(1f, tween(220, easing = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)))
+        } else {
+            wingPress.animateTo(0f, spring(dampingRatio = 0.55f, stiffness = 420f))
+        }
+    }
     val wingPress = remember { Animatable(0f) }
     LaunchedEffect(panelOpen) {
         if (panelOpen) {
