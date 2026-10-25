@@ -158,39 +158,42 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
 private fun ProMaxIsland(navigator: DestinationsNavigator) {
     var expanded by remember { mutableStateOf(false) }
 
-    // single timeline drives every property -> perfectly in sync, no stutter
+    // soft material-style curve instead of piecewise linear
+    val curve = CubicBezierEasing(0.37f, 0f, 0.2f, 1f)
     val p = remember { Animatable(0f) }
     LaunchedEffect(expanded) {
         if (expanded) {
-            p.animateTo(1f, tween(1150, easing = LinearEasing))
+            p.animateTo(1f, tween(1300, easing = curve))
         } else {
-            p.animateTo(0f, tween(1000, easing = LinearEasing))
+            p.animateTo(0f, tween(1100, easing = curve))
         }
     }
 
     fun seg(v: Float, a: Float, b: Float): Float = ((v - a) / (b - a)).coerceIn(0f, 1f)
-    fun smooth(t: Float): Float = t * t * (3f - 2f * t)
+    fun smooth(t: Float): Float = (1f - kotlin.math.cos(t * PI.toFloat())) / 2f
 
     val v = p.value
-    val iconAlpha = 1f - smooth(seg(v, 0f, 0.10f))
-    val gather = smooth(seg(v, 0f, 0.22f)) - smooth(seg(v, 0.74f, 1f))
-    val pillW = 188f + (136f - 188f) * gather
-    val pillX = 26f * gather
-    val scale = if (v < 0.30f) {
-        1f + 0.3f * smooth(seg(v, 0f, 0.28f))
+    val iconAlpha = 1f - smooth(seg(v, 0f, 0.14f))
+    val gather = smooth(seg(v, 0f, 0.26f)) - smooth(seg(v, 0.74f, 1f))
+    val pillW = 188f + (138f - 188f) * gather
+    val pillX = 25f * gather
+    val scale = if (v < 0.32f) {
+        1f + 0.28f * smooth(seg(v, 0f, 0.30f))
     } else {
-        1.3f - 0.3f * smooth(seg(v, 0.30f, 0.60f))
+        1.28f - 0.28f * smooth(seg(v, 0.32f, 0.64f))
     }
     val sway = when {
-        v < 0.28f -> 9f * smooth(seg(v, 0f, 0.28f))
-        v < 0.45f -> 9f * (1f - smooth(seg(v, 0.28f, 0.45f)))
-        v < 0.62f -> -9f * smooth(seg(v, 0.45f, 0.62f))
-        else -> -9f * (1f - smooth(seg(v, 0.62f, 0.75f)))
+        v < 0.30f -> 7f * smooth(seg(v, 0f, 0.30f))
+        v < 0.48f -> 7f * (1f - smooth(seg(v, 0.30f, 0.48f)))
+        v < 0.66f -> -7f * smooth(seg(v, 0.48f, 0.66f))
+        else -> -7f * (1f - smooth(seg(v, 0.66f, 0.80f)))
     }
-    // side island only leaves AFTER the pill finishes its own choreography
-    val ball = smooth(seg(v, 0.76f, 1f))
-    val ballScale = 0.55f + 0.45f * ball
-    val density = androidx.compose.ui.platform.LocalDensity.current
+    // side island is always visible; it only nudges outwards during the morph
+    val dotNudge = when {
+        v < 0.30f -> 0f
+        v < 0.62f -> 6f * smooth(seg(v, 0.30f, 0.62f))
+        else -> 6f * (1f - smooth(seg(v, 0.62f, 0.95f)))
+    }
 
     Box(
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
@@ -198,18 +201,12 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
     ) {
         Box(modifier = Modifier.width(250.dp).height(52.dp)) {
 
+            // side island: always shown
             Row(
                 modifier = Modifier
-                    .offset(x = (pillW + 4f).dp, y = 4.dp)
+                    .offset(x = (192f + dotNudge).dp, y = 4.dp)
                     .width(52.dp)
                     .height(44.dp)
-                    .graphicsLayer {
-                        val travel = with(density) { 64.dp.toPx() }
-                        translationX = (ball - 1f) * travel
-                        scaleX = ballScale
-                        scaleY = ballScale
-                        alpha = (ball * 3f).coerceIn(0f, 1f)
-                    }
                     .clip(RoundedCornerShape(22.dp))
                     .background(Color.Black)
                     .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = 0.30f), RoundedCornerShape(22.dp)),
