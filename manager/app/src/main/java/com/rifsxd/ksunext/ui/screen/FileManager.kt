@@ -91,6 +91,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.style.TextOverflow
@@ -218,37 +219,22 @@ private fun ProMaxIsland(
     var expanded by remember { mutableStateOf(false) }
     val dotPulse = remember { Animatable(0f) }
     LaunchedEffect(panelOpen) {
-        dotPulse.animateTo(
-            if (panelOpen) 1f else 0f,
-            tween(320, easing = CubicBezierEasing(0.32f, 0.72f, 0f, 1f))
-        )
+        dotPulse.animateTo(if (panelOpen) 1f else 0f, tween(320))
     }
 
-    val curve = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)
-    val p = remember { Animatable(0f) }
-    LaunchedEffect(expanded) {
-        p.animateTo(if (expanded) 1f else 0f, tween(if (expanded) 1650 else 1450, easing = curve))
+    // ZySU island motion: 1s bump / sway / lift envelope
+    val bounce = remember { Animatable(0f) }
+    LaunchedEffect(expanded, selectedFile) {
+        bounce.snapTo(0f)
+        bounce.animateTo(1f, tween(1000))
     }
+    val bt = bounce.value
+    val bump = 1f + 0.06f * sin(bt * PI.toFloat())
+    val sway = 6f * sin(bt * 9.424778f) * (1f - bt)
+    val lift = -4f * sin(bt * PI.toFloat())
 
-    fun seg(v: Float, a: Float, b: Float): Float = ((v - a) / (b - a)).coerceIn(0f, 1f)
-    fun smooth(t: Float): Float = (1f - kotlin.math.cos(t * PI.toFloat())) / 2f
-
-    val v = p.value
-    val iconAlpha = (1f - smooth(seg(v, 0f, 0.14f)) + smooth(seg(v, 0.74f, 1f))).coerceIn(0f, 1f)
-    val iconScale = 0.92f + 0.08f * smooth(seg(v, 0.74f, 1f))
-    val iconShift = -2.5f * (smooth(seg(v, 0f, 0.3f)) - smooth(seg(v, 0.7f, 1f)))
-    val gather = smooth(seg(v, 0f, 0.26f)) - smooth(seg(v, 0.74f, 1f))
-    val overshoot = 4f * sin(seg(v, 0f, 0.42f) * PI.toFloat()) * (1f - seg(v, 0.30f, 0.5f))
-    val compactW = 188f + (138f - 188f) * gather + overshoot
-    val scale = if (v < 0.32f) {
-        1f + 0.28f * smooth(seg(v, 0f, 0.30f))
-    } else {
-        1.28f - 0.28f * smooth(seg(v, 0.32f, 0.64f))
-    }
-    val keyline = 0.30f + 0.14f * smooth(seg(v, 0f, 0.5f)) * (1f - smooth(seg(v, 0.6f, 1f)))
-    val ball = smooth(seg(v, 0.76f, 1f))
-    val ballScale = 0.55f + 0.45f * ball
-    val density = androidx.compose.ui.platform.LocalDensity.current
+    val config = LocalConfiguration.current
+    val pillW = (config.screenWidthDp * 0.36f).dp
 
     val sel = selectedFile
     val accent = sel?.let { fileAccent(it) } ?: Color(0xFFEDEDED)
@@ -263,100 +249,88 @@ private fun ProMaxIsland(
     }
     val actionColor = if (actionLabel == "挂载") Color(0xFFFFCA24) else Color(0xFF0A84FF)
 
-    // width never changes; only the height grows downwards
-    val pillW2 by animateDpAsState(if (sel != null) 292.dp else compactW.dp, tween(420, easing = curve), label = "pw")
-    val pillH by animateDpAsState(if (sel != null) 128.dp else 44.dp, tween(420, easing = curve), label = "ph")
-    val pillRadius by animateDpAsState(if (sel != null) 30.dp else 22.dp, tween(420, easing = curve), label = "pr")
+    // ZySU expand spec: 360ms, cubic-bezier(0.32, 0.72, 0, 1)
+    val zyEase = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)
+    val pillH by animateDpAsState(if (sel != null) 138.dp else 44.dp, tween(360, easing = zyEase), label = "ph")
 
     Row(
-        modifier = Modifier.fillMaxWidth().height(120.dp).offset(y = 10.dp),
+        modifier = Modifier.fillMaxWidth().height(150.dp).offset(y = 10.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.Top
     ) {
         Column(
             modifier = Modifier
-                .zIndex(1f)
-                .width(pillW2)
+                .width(pillW)
                 .height(pillH)
                 .graphicsLayer {
-                    if (sel == null) {
-                        scaleX = scale
-                        scaleY = scale
-                    }
+                    scaleX = bump
+                    scaleY = bump
+                    translationX = with(densityPx()) { sway.dp.toPx() }
+                    translationY = with(densityPx()) { lift.dp.toPx() }
                 }
-                .clip(RoundedCornerShape(pillRadius))
+                .clip(RoundedCornerShape(34.dp))
                 .background(Color.Black)
-                .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = keyline), RoundedCornerShape(pillRadius))
+                .border(0.5.dp, Color(0x47FFFFFF), RoundedCornerShape(34.dp))
                 .clickable { if (sel == null) expanded = !expanded else onClearSelection() }
         ) {
-            // top row: app icon + check, exactly as before
             Row(
-                modifier = Modifier.fillMaxWidth().height(44.dp).padding(horizontal = 4.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(44.dp)
+                    .padding(start = 12.dp, end = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (iconAlpha > 0.01f) {
-                    Image(
-                        painter = painterResource(id = R.mipmap.ic_launcher_foreground),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(38.dp)
-                            .graphicsLayer {
-                                alpha = iconAlpha
-                                scaleX = iconScale / scale
-                                scaleY = iconScale / scale
-                                translationX = with(density) { iconShift.dp.toPx() }
-                            }
-                    )
-                }
+                Image(
+                    painter = painterResource(id = R.mipmap.ic_launcher_foreground),
+                    contentDescription = null,
+                    modifier = Modifier.size(26.dp)
+                )
                 if (sel != null) {
-                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = sel,
-                        color = Color.White,
-                        fontSize = 13.sp,
+                        modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+                        fontSize = 12.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
+                        color = Color.White,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
-                }
-                Spacer(modifier = Modifier.weight(1f))
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .clickable {
-                            if (sel == null) navigator.navigate(InstallScreenDestination) else onClearSelection()
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
                     Icon(
-                        imageVector = if (sel == null) Icons.Filled.Check else Icons.Filled.InsertDriveFile,
+                        imageVector = Icons.Filled.InsertDriveFile,
+                        contentDescription = null,
+                        tint = accent,
+                        modifier = Modifier.size(22.dp).clickable { onClearSelection() }
+                    )
+                } else {
+                    Spacer(modifier = Modifier.weight(1f))
+                    Icon(
+                        imageVector = Icons.Filled.Check,
                         contentDescription = "install",
-                        tint = if (sel == null) Color.White else accent,
+                        tint = Color.White,
                         modifier = Modifier
-                            .size(20.dp)
-                            .graphicsLayer {
-                                scaleX = 1f / scale
-                                scaleY = 1f / scale
-                            }
+                            .size(22.dp)
+                            .clickable { navigator.navigate(InstallScreenDestination) }
                     )
                 }
             }
 
-            // bottom: revealed content
             AnimatedVisibility(
                 visible = sel != null,
                 enter = expandVertically(
-                    animationSpec = spring(dampingRatio = 0.78f, stiffness = 380f),
+                    animationSpec = tween(360, easing = zyEase),
                     expandFrom = Alignment.CenterVertically
-                ) + fadeIn(tween(220)),
+                ) + fadeIn(tween(200)),
                 exit = shrinkVertically(
-                    animationSpec = spring(dampingRatio = 1f, stiffness = 600f),
+                    animationSpec = tween(260, easing = zyEase),
                     shrinkTowards = Alignment.CenterVertically
-                ) + fadeOut(tween(150))
+                ) + fadeOut(tween(160))
             ) {
-                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
-                    Spacer(modifier = Modifier.height(18.dp))
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Spacer(modifier = Modifier.height(12.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -372,42 +346,43 @@ private fun ProMaxIsland(
                             modifier = Modifier.weight(1f)
                         ) { onClearSelection() }
                     }
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
             }
         }
 
         if (sel == null) {
-            Spacer(modifier = Modifier.width(4.dp))
-            Row(
+            Spacer(modifier = Modifier.width(6.dp))
+            Box(
                 modifier = Modifier
-                    .width(52.dp)
-                    .height(44.dp)
+                    .size(42.dp)
                     .graphicsLayer {
-                        val travel = with(density) { 64.dp.toPx() }
-                        translationX = (ball - 1f) * travel
-                        val pulse = 1f - 0.18f * dotPulse.value
-                        scaleX = ballScale * pulse
-                        scaleY = ballScale * pulse
-                        alpha = (ball * 3f).coerceIn(0f, 1f) * (1f - 0.45f * dotPulse.value)
+                        scaleX = bump * (0.55f + 0.45f * (1f - dotPulse.value))
+                        scaleY = bump * (0.55f + 0.45f * (1f - dotPulse.value))
+                        alpha = 1f - 0.45f * dotPulse.value
                     }
-                    .clip(RoundedCornerShape(22.dp))
+                    .clip(RoundedCornerShape(percent = 50))
                     .background(Color.Black)
-                    .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = keyline), RoundedCornerShape(22.dp))
+                    .border(0.5.dp, Color(0x47FFFFFF), RoundedCornerShape(percent = 50))
                     .clickable { onOpen() },
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
+                contentAlignment = Alignment.Center
             ) {
-                Image(
-                    painter = painterResource(id = R.mipmap.ic_modules_foreground),
-                    contentDescription = null,
-                    colorFilter = ColorFilter.tint(Color.White),
-                    modifier = Modifier.size(38.dp)
-                )
+                Box(
+                    modifier = Modifier
+                        .size(26.dp)
+                        .clip(RoundedCornerShape(percent = 50))
+                        .background(Color(0xFF0A84FF)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(text = "＋", color = Color.White, fontSize = 17.sp)
+                }
             }
         }
     }
 }
+
+private fun densityPx(): androidx.compose.ui.unit.Density =
+    androidx.compose.ui.unit.Density(1f, 1f)
 
 @Composable
 private fun ActionPill(
