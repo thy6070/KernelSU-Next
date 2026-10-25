@@ -38,6 +38,13 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.material3.Surface
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.window.Dialog
+import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.AcUnit
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Smartphone
+import androidx.compose.material.icons.outlined.Hotel
+import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -157,6 +164,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
 @Composable
 private fun ProMaxIsland(navigator: DestinationsNavigator) {
     var expanded by remember { mutableStateOf(false) }
+    var panel by remember { mutableStateOf(false) }
 
     val curve = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)
     val p = remember { Animatable(0f) }
@@ -175,14 +183,10 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
     val iconAlpha = (1f - smooth(seg(v, 0f, 0.14f)) + smooth(seg(v, 0.74f, 1f))).coerceIn(0f, 1f)
     val iconScale = 0.92f + 0.08f * smooth(seg(v, 0.74f, 1f))
     val iconShift = -2.5f * (smooth(seg(v, 0f, 0.3f)) - smooth(seg(v, 0.7f, 1f)))
-
     val gather = smooth(seg(v, 0f, 0.26f)) - smooth(seg(v, 0.74f, 1f))
-    // overshoot pulse so the width settles like a spring instead of a ruler
     val overshoot = 4f * sin(seg(v, 0f, 0.42f) * PI.toFloat()) * (1f - seg(v, 0.30f, 0.5f))
     val pillW = 188f + (138f - 188f) * gather + overshoot
     val pillX = 25f * gather
-    // corner radius tightens while gathered and relaxes back out
-    // keep radius at half the height so the pill never looks square mid-animation
     val radius = 22f
     val scale = if (v < 0.32f) {
         1f + 0.28f * smooth(seg(v, 0f, 0.30f))
@@ -214,7 +218,8 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
                     }
                     .clip(RoundedCornerShape(22.dp))
                     .background(Color.Black)
-                    .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = keyline), RoundedCornerShape(22.dp)),
+                    .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = keyline), RoundedCornerShape(22.dp))
+                    .clickable { panel = true },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
@@ -273,6 +278,65 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
                 }
             }
         }
+    }
+
+    if (panel) {
+        Dialog(onDismissRequest = { panel = false }) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(32.dp))
+                    .background(Color(0xF21A1A1C))
+                    .padding(horizontal = 12.dp, vertical = 18.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                ModeButton(Icons.Outlined.DarkMode, "勿扰模式", "静音所有通知", 0.42f)
+                ModeButton(Icons.Outlined.AcUnit, "小鱼儿", "", 0.16f)
+                ModeButton(Icons.Outlined.Person, "个人", "停下工作，专注自身", 0.10f)
+                ModeButton(Icons.Outlined.Smartphone, "工作", "专心工作", 0.46f)
+                ModeButton(Icons.Outlined.Hotel, "睡眠", "好好休息，放松一下", 0.08f)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ModeButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+    glow: Float
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(74.dp)
+            .clip(RoundedCornerShape(37.dp))
+            .background(Color(0xFF141416))
+            .clickable { }
+            .padding(horizontal = 22.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier.size(26.dp)
+        )
+        Spacer(modifier = Modifier.weight(1f))
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(text = title, color = Color.White, fontSize = 17.sp)
+            if (subtitle.isNotEmpty()) {
+                Text(text = subtitle, color = Color(0xFFB0B0B4), fontSize = 12.sp)
+            }
+        }
+        Spacer(modifier = Modifier.weight(1f))
+        Icon(
+            imageVector = Icons.Outlined.MoreHoriz,
+            contentDescription = null,
+            tint = Color(0xFFB0B0B4),
+            modifier = Modifier.size(22.dp)
+        )
     }
 }
 
