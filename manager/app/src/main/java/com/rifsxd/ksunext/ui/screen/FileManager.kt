@@ -251,22 +251,32 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                     termText = ""
                     runMessage = null
                     showTerminal = true
-                    val out = withContext(Dispatchers.IO) {
-                        when {
-                            lower.endsWith(".apk") -> Shell.cmd("pm install -r \"$p\"").exec()
-                            lower.endsWith(".sh") || lower.endsWith(".rc") ->
-                                Shell.cmd("chmod 777 \"$p\" && sh \"$p\"").exec()
-                            lower.endsWith(".so") -> Shell.cmd("chmod 777 \"$p\"").exec()
-                            else -> Shell.cmd("echo 挂载未实现").exec()
+                    withContext(Dispatchers.IO) {
+                        try {
+                            val cmd = when {
+                                lower.endsWith(".apk") -> "pm install -r \"$p\""
+                                lower.endsWith(".so") -> "chmod 777 \"$p\" && echo ok"
+                                else -> "chmod 777 \"$p\" 2>/dev/null; sh \"$p\""
+                            }
+                            val pb = ProcessBuilder("su", "-c", cmd)
+                            pb.redirectErrorStream(true)
+                            val proc = pb.start()
+                            proc.inputStream.bufferedReader().useLines { seq ->
+                                seq.forEach { line ->
+                                    withContext(Dispatchers.Main) {
+                                        termText = termText + line + "\n"
+                                    }
+                                }
+                            }
+                            proc.waitFor()
+                        } catch (t: Throwable) {
+                            withContext(Dispatchers.Main) {
+                                termText = termText + "执行失败: " + (t.message ?: "") + "\n"
+                            }
                         }
                     }
                     running = false
-                    termText = termText + "\n$ " + p + "\n" + out.out.joinToString("\n") + out.err.joinToString("\n") + "\n"
-                    runOk = out.code == 0
-                    runMessage = out.out.joinToString(" ").ifBlank { "退出码 ${out.code}" }.take(120)
                     refreshTick += 1
-                    kotlinx.coroutines.delay(2600)
-                    runMessage = null
                 }
             }
         }
@@ -562,16 +572,6 @@ private fun ProMaxIsland(
                 ) + fadeOut(tween(160))
             ) {
                 Column(modifier = Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp)) {
-                    if (runMessage != null) {
-                        Text(
-                            text = runMessage,
-                            modifier = Modifier.padding(top = 4.dp, bottom = 4.dp),
-                            fontSize = 10.sp,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            color = if (runOk) Color(0xFF4CAF50) else Color(0xFFFF3B30)
-                        )
-                    }
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -727,7 +727,7 @@ private fun YukiWave(color: Color, running: Boolean, modifier: Modifier = Modifi
             cap = StrokeCap.Round
         )
         if (running || finishing.value) {
-            val seg = size.width * (0.62f + 0.10f * kotlin.math.min(round.value, 3).toFloat())
+            val seg = size.width
             val amp = 2.6.dp.toPx()
             for (k in 0 until 2) {
                 val p = (phase.value + k * 0.5f) % 1f
