@@ -174,6 +174,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                 onNavigate = { leftPath = it },
                 onFileClick = { selectedFile = it },
                 refreshTick = refreshTick,
+                selectedPath = selectedFile,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -184,6 +185,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                 onNavigate = { rightPath = it },
                 onFileClick = { selectedFile = it },
                 refreshTick = refreshTick,
+                selectedPath = selectedFile,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -265,6 +267,14 @@ private fun ProMaxIsland(
     onOpen: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val reopenScope = rememberCoroutineScope()
+    fun foldAndReopen() {
+        reopenScope.launch {
+            expanded = false
+            kotlinx.coroutines.delay(260)
+            expanded = true
+        }
+    }
 
     // Island.kt motion: 1s bump/sway/lift envelope
     val bounce = remember { Animatable(0f) }
@@ -361,7 +371,7 @@ private fun ProMaxIsland(
                 .border(0.5.dp, Color(0x47FFFFFF), RoundedCornerShape(34.dp))
                 .combinedClickable(
                     onClick = { if (sel == null) expanded = !expanded else onClearSelection() },
-                    onLongClick = { onOpen() }
+                    onLongClick = { foldAndReopen() }
                 )
         ) {
             Row(
@@ -547,6 +557,7 @@ private fun BrowserPane(
     onNavigate: (String) -> Unit,
     onFileClick: (String) -> Unit,
     refreshTick: Int = 0,
+    selectedPath: String? = null,
     modifier: Modifier = Modifier
 ) {
     var entries by remember { mutableStateOf<List<FsEntry>>(emptyList()) }
@@ -585,10 +596,12 @@ private fun BrowserPane(
             }
         }
         items(entries) { entry ->
+            val rowPath = joinPath(path, entry.name)
             FsRow(
                 name = entry.name,
                 isDir = entry.isDir,
-                fullPath = joinPath(path, entry.name),
+                fullPath = rowPath,
+                selected = selectedPath == rowPath,
                 onClick = {
                     if (entry.isDir) onNavigate(joinPath(path, entry.name)) else onFileClick(joinPath(path, entry.name))
                 }
@@ -602,6 +615,7 @@ private fun FsRow(
     name: String,
     isDir: Boolean,
     fullPath: String,
+    selected: Boolean = false,
     onClick: () -> Unit
 ) {
     // ZySU row: rounded 14dp, no tile behind the glyph, 12sp monospace, outline on the row
@@ -612,6 +626,7 @@ private fun FsRow(
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
             .clickable(onClick = onClick)
+            .background(if (selected) Color(0x3300BCD4) else Color.Transparent)
             .then(
                 if (accent != null) {
                     Modifier.border(1.dp, accent.copy(alpha = 0.38f), RoundedCornerShape(14.dp))
