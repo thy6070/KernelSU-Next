@@ -50,6 +50,8 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.ui.zIndex
+import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -180,7 +182,39 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
         }
     }
 
-    ProMaxIsland(navigator, panel, selectedFile, onClearSelection = { selectedFile = null }) {
+    val uiCtx = androidx.compose.ui.platform.LocalContext.current
+    ProMaxIsland(
+        navigator = navigator,
+        panelOpen = panel,
+        selectedFile = selectedFile,
+        onClearSelection = { selectedFile = null },
+        onDelete = {
+            val p = selectedFile
+            if (p != null) uiScope.launch {
+                withContext(Dispatchers.IO) { Shell.cmd("rm -rf \"$p\"").exec() }
+                selectedFile = null
+                refreshTick += 1
+            }
+        },
+        onAction = {
+            val p = selectedFile
+            if (p != null) {
+                val lower = p.lowercase()
+                uiScope.launch {
+                    val out = withContext(Dispatchers.IO) {
+                        when {
+                            lower.endsWith(".apk") -> Shell.cmd("pm install -r \"$p\"").exec()
+                            lower.endsWith(".sh") || lower.endsWith(".rc") -> Shell.cmd("sh \"$p\"").exec()
+                            lower.endsWith(".so") -> Shell.cmd("chmod 755 \"$p\"").exec()
+                            else -> Shell.cmd("echo mount-not-implemented").exec()
+                        }
+                    }
+                    val msg = out.out.joinToString("\n").ifBlank { out.code.toString() }
+                    Toast.makeText(uiCtx, msg.take(120), Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    ) {
         uiScope.launch {
             panelP.snapTo(0f)
             panel = true
@@ -218,6 +252,8 @@ private fun ProMaxIsland(
     panelOpen: Boolean,
     selectedFile: String?,
     onClearSelection: () -> Unit,
+    onDelete: () -> Unit,
+    onAction: () -> Unit,
     onOpen: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -242,6 +278,7 @@ private fun ProMaxIsland(
     val pillW = (config.screenWidthDp * 0.36f).dp
 
     val sel = selectedFile
+    val selName = sel?.substringAfterLast('/') ?: ""
     val accent = sel?.let { fileAccent(it) } ?: Color(0xFFEDEDED)
     val lowerSel = sel?.lowercase() ?: ""
     val actionLabel = when {
@@ -293,7 +330,7 @@ private fun ProMaxIsland(
                 )
                 if (sel != null) {
                     Text(
-                        text = sel,
+                        text = selName,
                         modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
                         fontSize = 12.sp,
                         maxLines = 1,
@@ -344,12 +381,12 @@ private fun ProMaxIsland(
                             text = "删除",
                             color = Color(0xFFFF453A),
                             modifier = Modifier.weight(1f)
-                        ) { onClearSelection() }
+                        ) { onDelete() }
                         ActionPill(
                             text = actionLabel,
                             color = actionColor,
                             modifier = Modifier.weight(1f)
-                        ) { onClearSelection() }
+                        ) { onAction() }
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                 }
@@ -519,7 +556,7 @@ private fun BrowserPane(
                 isDir = entry.isDir,
                 fullPath = joinPath(path, entry.name),
                 onClick = {
-                    if (entry.isDir) onNavigate(joinPath(path, entry.name)) else onFileClick(entry.name)
+                    if (entry.isDir) onNavigate(joinPath(path, entry.name)) else onFileClick(joinPath(path, entry.name))
                 }
             )
         }
