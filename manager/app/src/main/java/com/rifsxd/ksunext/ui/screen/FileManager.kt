@@ -13,6 +13,7 @@ import com.rifsxd.ksunext.R
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.animation.core.tween
