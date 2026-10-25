@@ -433,6 +433,17 @@ private fun ProMaxIsland(
             wingPress.animateTo(0f, spring(dampingRatio = 0.55f, stiffness = 420f))
         }
     }
+    val wingShown = sel == null && !navMode && !terminalMode
+    val wingFade by animateFloatAsState(
+        targetValue = if (wingShown) 1f else 0f,
+        animationSpec = tween(220, easing = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)),
+        label = "wingFade"
+    )
+    val wingScaleOut by animateFloatAsState(
+        targetValue = if (wingShown) 1f else 0.55f,
+        animationSpec = tween(240, easing = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)),
+        label = "wingScale"
+    )
     val ball = remember { Animatable(1f) }
     LaunchedEffect(selectedFile != null) {
         if (selectedFile != null) {
@@ -470,7 +481,7 @@ private fun ProMaxIsland(
         contentAlignment = Alignment.TopCenter
     ) {
         // wing sits UNDER the pill and slides out of it
-        if (sel == null && !navMode && !terminalMode) Row(
+        Row(
             modifier = Modifier
                 .offset(x = (pillW.value / 2f + 30f).dp, y = 0.dp)
                 .width(52.dp)
@@ -479,9 +490,9 @@ private fun ProMaxIsland(
                     val travel = with(density) { (pillW.value / 2f + 3f).dp.toPx() }
                     val press = 1f - 0.16f * wingPress.value
                     translationX = (ballShift - 1f) * travel
-                    scaleX = ballScale * bump * press
-                    scaleY = ballScale * bump * press
-                    alpha = (ballShift * 3f).coerceIn(0f, 1f)
+                    scaleX = ballScale * bump * press * wingScaleOut
+                    scaleY = ballScale * bump * press * wingScaleOut
+                    alpha = (ballShift * 3f).coerceIn(0f, 1f) * wingFade
                 }
                 .clip(RoundedCornerShape(21.dp))
                 .background(Color.Black)
