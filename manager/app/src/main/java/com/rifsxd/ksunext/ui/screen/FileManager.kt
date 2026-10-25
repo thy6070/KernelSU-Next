@@ -280,14 +280,17 @@ private fun ProMaxIsland(
         label = "cardR"
     )
 
+    val groupW = compactW + 4f + 52f
+    val groupX = (260f - groupW) / 2f
+
     Box(
-        modifier = Modifier.width(250.dp).height(110.dp),
+        modifier = Modifier.width(260.dp).height(110.dp),
         contentAlignment = Alignment.TopCenter
     ) {
         if (sel == null) {
             Row(
                 modifier = Modifier
-                    .offset(x = (compactW + 4f).dp, y = 0.dp)
+                    .offset(x = (groupX + compactW + 4f).dp, y = 0.dp)
                     .width(52.dp)
                     .height(44.dp)
                     .graphicsLayer {
@@ -316,7 +319,7 @@ private fun ProMaxIsland(
 
         Row(
             modifier = Modifier
-                .offset(x = if (sel == null) pillX.dp else 0.dp)
+                .offset(x = if (sel == null) (groupX + pillX).dp else 0.dp)
                 .width(cardW)
                 .height(cardH)
                 .graphicsLayer {
