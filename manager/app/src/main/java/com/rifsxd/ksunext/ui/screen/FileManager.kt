@@ -59,6 +59,11 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -447,6 +452,7 @@ private fun ProMaxIsland(
                 if (running) {
                     YukiWave(
                         color = Color(0xFFFFB6C8),
+                        running = running,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -618,29 +624,86 @@ private fun TerminalOverlay(onExit: () -> Unit) {
 }
 
 @Composable
-private fun YukiWave(color: Color, modifier: Modifier = Modifier) {
+private fun YukiWave(color: Color, running: Boolean, modifier: Modifier = Modifier) {
     val phase = remember { Animatable(0f) }
-    LaunchedEffect(Unit) {
-        while (true) {
+    val fill = remember { Animatable(0f) }
+    val finishing = remember { mutableStateOf(false) }
+    val round = remember { mutableStateOf(0) }
+    LaunchedEffect(running) {
+        if (running) {
+            fill.snapTo(0f)
+            while (true) {
+                phase.snapTo(0f)
+                phase.animateTo(1f, tween(900, easing = LinearEasing))
+                round.value = round.value + 1
+            }
+        } else {
+            finishing.value = true
+            phase.animateTo(1f, tween(450, easing = LinearEasing))
             phase.snapTo(0f)
-            phase.animateTo(1f, tween(900, easing = LinearEasing))
+            phase.animateTo(1f, tween(320, easing = LinearEasing))
+            round.value = round.value + 1
+            finishing.value = false
+            fill.animateTo(1f, tween(220, easing = LinearEasing))
         }
     }
-    Canvas(modifier = modifier.height(14.dp)) {
-        val w = size.width
-        val h = size.height
-        if (w <= 0f || h <= 0f) return@Canvas
-        val mid = h / 2f
-        val amp = h * 0.30f
-        val path = Path()
-        val steps = 48
-        path.moveTo(0f, mid)
-        for (i in 0..steps) {
-            val t = i.toFloat() / steps
-            val y = mid + kotlin.math.sin((t * 2f - phase.value * 2f) * PI.toFloat()) * amp
-            path.lineTo(w * t, y)
+    Canvas(
+        modifier = modifier
+            .padding(horizontal = 16.dp)
+            .height(12.dp)
+            .clipToBounds()
+    ) {
+        val cy = size.height / 2f
+        drawLine(
+            color = Color.White.copy(alpha = 0.45f),
+            start = Offset(0f, cy),
+            end = Offset(size.width, cy),
+            strokeWidth = 1.6.dp.toPx(),
+            cap = StrokeCap.Round
+        )
+        if (running || finishing.value) {
+            val seg = size.width * (0.30f + 0.10f * kotlin.math.min(round.value, 4).toFloat())
+            val amp = 2.6.dp.toPx()
+            for (k in 0 until 2) {
+                val p = (phase.value + k * 0.5f) % 1f
+                val x0 = -seg + p * (size.width + seg)
+                val path = Path()
+                var x = 0f
+                while (x <= seg) {
+                    val px = x0 + x
+                    val py = cy + amp * kotlin.math.sin(x / 26.dp.toPx() * 6.2831855f - phase.value * 6.2831855f)
+                    if (x <= 0f) path.moveTo(px, py) else path.lineTo(px, py)
+                    x += 1f
+                }
+                val ribbon = Brush.horizontalGradient(
+                    0f to color.copy(alpha = 0.05f),
+                    0.14f to color,
+                    0.86f to color,
+                    1f to color.copy(alpha = 0.05f)
+                )
+                drawPath(
+                    path = path,
+                    brush = ribbon,
+                    alpha = 0.18f,
+                    style = Stroke(width = 5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+                )
+                drawPath(
+                    path = path,
+                    brush = ribbon,
+                    style = Stroke(width = 1.8.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+                )
+            }
         }
-        drawPath(path = path, color = color, style = Stroke(width = 1.5f))
+        if (fill.value > 0.001f) {
+            val fw = size.width * fill.value.coerceIn(0f, 1f)
+            drawLine(
+                color = color,
+                start = Offset(0f, cy),
+                end = Offset(fw, cy),
+                strokeWidth = 2.4.dp.toPx(),
+                cap = StrokeCap.Round
+            )
+        }
     }
 }
 
