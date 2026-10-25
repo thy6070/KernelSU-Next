@@ -263,34 +263,36 @@ private fun ProMaxIsland(
     }
     val actionColor = if (actionLabel == "挂载") Color(0xFFFFCA24) else Color(0xFF0A84FF)
 
-    val cardW by animateDpAsState(if (sel != null) 252.dp else compactW.dp, tween(420, easing = curve), label = "cw")
-    val cardH by animateDpAsState(if (sel != null) 104.dp else 44.dp, tween(420, easing = curve), label = "ch")
-    val cardRadius by animateDpAsState(if (sel != null) 28.dp else 22.dp, tween(420, easing = curve), label = "cr")
+    // width never changes; only the height grows downwards
+    val pillH by animateDpAsState(if (sel != null) 118.dp else 44.dp, tween(420, easing = curve), label = "ph")
+    val pillRadius by animateDpAsState(if (sel != null) 30.dp else 22.dp, tween(420, easing = curve), label = "pr")
 
     Row(
-        modifier = Modifier.fillMaxWidth().height(110.dp).offset(y = 10.dp),
+        modifier = Modifier.fillMaxWidth().height(120.dp).offset(y = 10.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.Top
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .zIndex(1f)
-                .width(cardW)
-                .height(cardH)
+                .width(compactW.dp)
+                .height(pillH)
                 .graphicsLayer {
                     if (sel == null) {
                         scaleX = scale
                         scaleY = scale
                     }
                 }
-                .clip(RoundedCornerShape(cardRadius))
+                .clip(RoundedCornerShape(pillRadius))
                 .background(Color.Black)
-                .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = keyline), RoundedCornerShape(cardRadius))
+                .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = keyline), RoundedCornerShape(pillRadius))
                 .clickable { if (sel == null) expanded = !expanded else onClearSelection() }
-                .padding(horizontal = if (sel == null) 4.dp else 12.dp, vertical = if (sel == null) 0.dp else 10.dp),
-            verticalAlignment = Alignment.CenterVertically
         ) {
-            if (sel == null) {
+            // top row: app icon + check, exactly as before
+            Row(
+                modifier = Modifier.fillMaxWidth().height(44.dp).padding(horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 if (iconAlpha > 0.01f) {
                     Image(
                         painter = painterResource(id = R.mipmap.ic_launcher_foreground),
@@ -310,13 +312,15 @@ private fun ProMaxIsland(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(CircleShape)
-                        .clickable { navigator.navigate(InstallScreenDestination) },
+                        .clickable {
+                            if (sel == null) navigator.navigate(InstallScreenDestination) else onClearSelection()
+                        },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Filled.Check,
+                        imageVector = if (sel == null) Icons.Filled.Check else Icons.Filled.InsertDriveFile,
                         contentDescription = "install",
-                        tint = Color.White,
+                        tint = if (sel == null) Color.White else accent,
                         modifier = Modifier
                             .size(20.dp)
                             .graphicsLayer {
@@ -325,32 +329,24 @@ private fun ProMaxIsland(
                             }
                     )
                 }
-            } else {
-                Column(modifier = Modifier.fillMaxSize()) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Image(
-                            painter = painterResource(id = R.mipmap.ic_launcher_foreground),
-                            contentDescription = null,
-                            modifier = Modifier.size(30.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = sel,
-                            color = Color.White,
-                            fontSize = 13.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Icon(
-                            imageVector = Icons.Filled.InsertDriveFile,
-                            contentDescription = null,
-                            tint = accent,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.weight(1f))
+            }
+
+            // bottom: revealed content
+            AnimatedVisibility(
+                visible = sel != null,
+                enter = expandVertically(animationSpec = tween(320, easing = curve)) + fadeIn(tween(220)),
+                exit = shrinkVertically(animationSpec = tween(220, easing = curve)) + fadeOut(tween(140))
+            ) {
+                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
+                    Text(
+                        text = sel ?: "",
+                        color = Color.White,
+                        fontSize = 13.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -366,6 +362,7 @@ private fun ProMaxIsland(
                             modifier = Modifier.weight(1f)
                         ) { onClearSelection() }
                     }
+                    Spacer(modifier = Modifier.height(10.dp))
                 }
             }
         }
