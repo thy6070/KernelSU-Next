@@ -353,12 +353,7 @@ private fun ProMaxIsland(
                 .clip(RoundedCornerShape(34.dp))
                 .background(Color.Black)
                 .border(0.5.dp, Color(0x47FFFFFF), RoundedCornerShape(34.dp))
-                .pointerInput(sel) {
-                    detectTapGestures(
-                        onTap = { if (sel == null) expanded = !expanded else onClearSelection() },
-                        onLongPress = { onOpen() }
-                    )
-                }
+                .clickable { if (sel == null) expanded = !expanded else onClearSelection() }
         ) {
             Row(
                 modifier = Modifier
@@ -369,7 +364,7 @@ private fun ProMaxIsland(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Image(
-                    painter = painterResource(id = R.mipmap.ic_launcher),
+                    painter = painterResource(id = R.mipmap.ic_launcher_foreground),
                     contentDescription = null,
                     modifier = Modifier.size(26.dp)
                 )
