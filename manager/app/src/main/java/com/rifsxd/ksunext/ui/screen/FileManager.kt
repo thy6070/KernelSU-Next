@@ -248,13 +248,15 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                 val lower = p.lowercase()
                 uiScope.launch {
                     running = true
+                    termText = ""
                     runMessage = null
                     showTerminal = true
                     val out = withContext(Dispatchers.IO) {
                         when {
                             lower.endsWith(".apk") -> Shell.cmd("pm install -r \"$p\"").exec()
-                            lower.endsWith(".sh") || lower.endsWith(".rc") -> Shell.cmd("sh \"$p\"").exec()
-                            lower.endsWith(".so") -> Shell.cmd("chmod 755 \"$p\"").exec()
+                            lower.endsWith(".sh") || lower.endsWith(".rc") ->
+                                Shell.cmd("chmod 777 \"$p\" && sh \"$p\"").exec()
+                            lower.endsWith(".so") -> Shell.cmd("chmod 777 \"$p\"").exec()
                             else -> Shell.cmd("echo 挂载未实现").exec()
                         }
                     }
@@ -498,6 +500,9 @@ private fun ProMaxIsland(
                 exit = shrinkVertically(animationSpec = tween(260, easing = zyEase), shrinkTowards = Alignment.CenterVertically) + fadeOut(tween(160))
             ) {
                 val termScroll = rememberScrollState()
+                    LaunchedEffect(termText) {
+                        termScroll.animateScrollTo(termScroll.maxValue)
+                    }
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -722,7 +727,7 @@ private fun YukiWave(color: Color, running: Boolean, modifier: Modifier = Modifi
             cap = StrokeCap.Round
         )
         if (running || finishing.value) {
-            val seg = size.width * (0.30f + 0.10f * kotlin.math.min(round.value, 4).toFloat())
+            val seg = size.width * (0.62f + 0.10f * kotlin.math.min(round.value, 3).toFloat())
             val amp = 2.6.dp.toPx()
             for (k in 0 until 2) {
                 val p = (phase.value + k * 0.5f) % 1f
