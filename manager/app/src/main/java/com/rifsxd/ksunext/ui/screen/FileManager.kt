@@ -234,6 +234,7 @@ private fun ProMaxIsland(
     val lift = -4f * sin(bt * PI.toFloat())
 
     val config = LocalConfiguration.current
+    val density = androidx.compose.ui.platform.LocalDensity.current
     val pillW = (config.screenWidthDp * 0.36f).dp
 
     val sel = selectedFile
@@ -265,8 +266,8 @@ private fun ProMaxIsland(
                 .graphicsLayer {
                     scaleX = bump
                     scaleY = bump
-                    translationX = with(densityPx()) { sway.dp.toPx() }
-                    translationY = with(densityPx()) { lift.dp.toPx() }
+                    translationX = with(density) { sway.dp.toPx() }
+                    translationY = with(density) { lift.dp.toPx() }
                 }
                 .clip(RoundedCornerShape(34.dp))
                 .background(Color.Black)
@@ -380,9 +381,6 @@ private fun ProMaxIsland(
         }
     }
 }
-
-private fun densityPx(): androidx.compose.ui.unit.Density =
-    androidx.compose.ui.unit.Density(1f, 1f)
 
 @Composable
 private fun ActionPill(
