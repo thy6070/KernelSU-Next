@@ -259,6 +259,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                         }
                     }
                     running = false
+                    termText = termText + "\n$ " + p + "\n" + out.out.joinToString("\n") + out.err.joinToString("\n") + "\n"
                     runOk = out.code == 0
                     runMessage = out.out.joinToString(" ").ifBlank { "退出码 ${out.code}" }.take(120)
                     refreshTick += 1
@@ -539,16 +540,7 @@ private fun ProMaxIsland(
                             fontSize = 11.sp,
                             color = Color.White
                         )
-                        Text(
-                            "关闭",
-                            modifier = Modifier
-                                .clickable { onTermClose() }
-                                .padding(start = 10.dp)
-                                .background(Color(0xFFFF3B30), RoundedCornerShape(percent = 50))
-                                .padding(horizontal = 10.dp, vertical = 3.dp),
-                            fontSize = 11.sp,
-                            color = Color.White
-                        )
+
                     }
                 }
             }
