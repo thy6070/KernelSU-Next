@@ -258,7 +258,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                 lower.endsWith(".so") -> "chmod 777 \"$p\" && echo ok"
                                 else -> "chmod 777 \"$p\" 2>/dev/null; sh \"$p\""
                             }
-                            val pb = ProcessBuilder("su", "-c", cmd)
+                            val pb = ProcessBuilder("/system/bin/su", "-c", cmd)
                             pb.redirectErrorStream(true)
                             val proc = pb.start()
                             proc.inputStream.bufferedReader().useLines { seq ->
@@ -468,7 +468,7 @@ private fun ProMaxIsland(
                         .size(26.dp)
                         .clip(RoundedCornerShape(percent = 22))
                 )
-                if (running) {
+                if (running && expanded) {
                     YukiWave(
                         color = Color(0xFFFFB6C8),
                         running = running,
