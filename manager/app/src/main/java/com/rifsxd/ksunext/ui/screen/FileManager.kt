@@ -69,10 +69,10 @@ import androidx.compose.foundation.rememberScrollState
 import com.ramcosta.composedestinations.generated.destinations.HomeScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.SuperUserScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.ModuleScreenDestination
-import com.ramcosta.composedestinations.generated.destinations.SettingsScreenDestination
+import com.ramcosta.composedestinations.generated.destinations.SettingScreenDestination
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Shield
-import androidx.compose.material.icons.outlined.Extension
+import androidx.compose.material.icons.outlined.AdminPanelSettings
+import androidx.compose.material.icons.outlined.Layers
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -583,9 +583,9 @@ private fun ProMaxIsland(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     NavIcon(Icons.Outlined.Home) { navMode = false; navigator.navigate(HomeScreenDestination) }
-                    NavIcon(Icons.Outlined.Shield) { navMode = false; navigator.navigate(SuperUserScreenDestination) }
-                    NavIcon(Icons.Outlined.Extension) { navMode = false; navigator.navigate(ModuleScreenDestination) }
-                    NavIcon(Icons.Outlined.Settings) { navMode = false; navigator.navigate(SettingsScreenDestination) }
+                    NavIcon(Icons.Outlined.AdminPanelSettings) { navMode = false; navigator.navigate(SuperUserScreenDestination) }
+                    NavIcon(Icons.Outlined.Layers) { navMode = false; navigator.navigate(ModuleScreenDestination) }
+                    NavIcon(Icons.Outlined.Settings) { navMode = false; navigator.navigate(SettingScreenDestination) }
                 }
             }
 
