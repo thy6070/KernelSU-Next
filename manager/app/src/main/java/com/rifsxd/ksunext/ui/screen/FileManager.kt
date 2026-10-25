@@ -157,52 +157,38 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
 private fun ProMaxIsland(navigator: DestinationsNavigator) {
     var expanded by remember { mutableStateOf(false) }
 
-    val pillW = remember { Animatable(188f) }
-    val pillX = remember { Animatable(0f) }
-    val scale = remember { Animatable(1f) }
-    val sway = remember { Animatable(0f) }
-    val iconAlpha = remember { Animatable(1f) }
-    val ball = remember { Animatable(0f) }
-
-    val ease = FastOutSlowInEasing
-
+    // single timeline drives every property -> perfectly in sync, no stutter
+    val p = remember { Animatable(0f) }
     LaunchedEffect(expanded) {
         if (expanded) {
-            // everything concurrent: icon fade, gather from BOTH sides, ball separates
-            launch { iconAlpha.animateTo(0f, tween(100)) }
-            launch { pillW.animateTo(136f, tween(260, easing = ease)) }
-            launch { pillX.animateTo(26f, tween(260, easing = ease)) }
-            launch { ball.animateTo(1f, spring(dampingRatio = 0.7f, stiffness = 130f)) }
-            // scale up while leaning right
-            launch { sway.animateTo(9f, tween(170, easing = ease)) }
-            scale.animateTo(1.3f, tween(280, easing = ease))
-            launch { sway.animateTo(0f, tween(150, easing = ease)) }
-            // scale back down while leaning left
-            launch { sway.animateTo(-9f, tween(170, easing = ease)) }
-            scale.animateTo(1f, tween(320, easing = ease))
-            launch { sway.animateTo(0f, tween(150, easing = ease)) }
-            // extend back out, icon returns
-            launch { iconAlpha.animateTo(1f, tween(190, easing = ease)) }
-            launch { pillW.animateTo(188f, tween(330, easing = ease)) }
-            launch { pillX.animateTo(0f, tween(330, easing = ease)) }
+            p.animateTo(1f, tween(1150, easing = LinearEasing))
         } else {
-            launch { iconAlpha.animateTo(0f, tween(90)) }
-            launch { ball.animateTo(0f, spring(dampingRatio = 0.72f, stiffness = 120f)) }
-            launch { pillW.animateTo(136f, tween(240, easing = ease)) }
-            launch { pillX.animateTo(26f, tween(240, easing = ease)) }
-            launch { sway.animateTo(9f, tween(160, easing = ease)) }
-            scale.animateTo(1.3f, tween(260, easing = ease))
-            launch { sway.animateTo(-9f, tween(160, easing = ease)) }
-            scale.animateTo(1f, tween(300, easing = ease))
-            launch { sway.animateTo(0f, tween(140, easing = ease)) }
-            launch { iconAlpha.animateTo(1f, tween(180, easing = ease)) }
-            launch { pillW.animateTo(188f, tween(300, easing = ease)) }
-            launch { pillX.animateTo(0f, tween(300, easing = ease)) }
+            p.animateTo(0f, tween(1000, easing = LinearEasing))
         }
     }
 
-    val shift = ball.value
-    val ballScale = 0.55f + 0.45f * shift
+    fun seg(v: Float, a: Float, b: Float): Float = ((v - a) / (b - a)).coerceIn(0f, 1f)
+    fun smooth(t: Float): Float = t * t * (3f - 2f * t)
+
+    val v = p.value
+    val iconAlpha = 1f - smooth(seg(v, 0f, 0.10f))
+    val gather = smooth(seg(v, 0f, 0.22f)) - smooth(seg(v, 0.74f, 1f))
+    val pillW = 188f + (136f - 188f) * gather
+    val pillX = 26f * gather
+    val scale = if (v < 0.30f) {
+        1f + 0.3f * smooth(seg(v, 0f, 0.28f))
+    } else {
+        1.3f - 0.3f * smooth(seg(v, 0.30f, 0.60f))
+    }
+    val sway = when {
+        v < 0.28f -> 9f * smooth(seg(v, 0f, 0.28f))
+        v < 0.45f -> 9f * (1f - smooth(seg(v, 0.28f, 0.45f)))
+        v < 0.62f -> -9f * smooth(seg(v, 0.45f, 0.62f))
+        else -> -9f * (1f - smooth(seg(v, 0.62f, 0.75f)))
+    }
+    // side island only leaves AFTER the pill finishes its own choreography
+    val ball = smooth(seg(v, 0.76f, 1f))
+    val ballScale = 0.55f + 0.45f * ball
     val density = androidx.compose.ui.platform.LocalDensity.current
 
     Box(
@@ -213,15 +199,15 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
 
             Row(
                 modifier = Modifier
-                    .offset(x = (pillW.value + 4f).dp, y = 4.dp)
+                    .offset(x = (pillW + 4f).dp, y = 4.dp)
                     .width(52.dp)
                     .height(44.dp)
                     .graphicsLayer {
                         val travel = with(density) { 64.dp.toPx() }
-                        translationX = (shift - 1f) * travel
+                        translationX = (ball - 1f) * travel
                         scaleX = ballScale
                         scaleY = ballScale
-                        alpha = (shift * 3f).coerceIn(0f, 1f)
+                        alpha = (ball * 3f).coerceIn(0f, 1f)
                     }
                     .clip(RoundedCornerShape(22.dp))
                     .background(Color.Black)
@@ -239,12 +225,12 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
 
             Row(
                 modifier = Modifier
-                    .offset(x = (pillX.value + sway.value).dp)
-                    .width(pillW.value.dp)
+                    .offset(x = (pillX + sway).dp)
+                    .width(pillW.dp)
                     .height(44.dp)
                     .graphicsLayer {
-                        scaleX = scale.value
-                        scaleY = scale.value
+                        scaleX = scale
+                        scaleY = scale
                     }
                     .clip(RoundedCornerShape(22.dp))
                     .background(Color.Black)
@@ -253,11 +239,11 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
                     .padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (iconAlpha.value > 0.01f) {
+                if (iconAlpha > 0.01f) {
                     Image(
                         painter = painterResource(id = R.mipmap.ic_launcher_foreground),
                         contentDescription = null,
-                        modifier = Modifier.size(38.dp).graphicsLayer { alpha = iconAlpha.value }
+                        modifier = Modifier.size(38.dp).graphicsLayer { alpha = iconAlpha }
                     )
                 }
                 Spacer(modifier = Modifier.weight(1f))
