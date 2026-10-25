@@ -469,10 +469,7 @@ private fun ProMaxIsland(
                         if (terminalMode) onTermClose()
                         if (sel != null) onClearSelection()
                         expanded = false
-                    }
-                    val unusedTap = {
-                    }
-                    unusedTap()
+                    },
                     onLongClick = { foldAndReopen() }
                 )
         ) {
