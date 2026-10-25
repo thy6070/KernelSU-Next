@@ -169,7 +169,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
         }
     }
 
-    ProMaxIsland(navigator) {
+    ProMaxIsland(navigator, panel) {
         uiScope.launch {
             panelP.snapTo(0f)
             panel = true
@@ -187,7 +187,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                         scaleX = s
                         scaleY = s
                         alpha = panelP.value
-                        transformOrigin = TransformOrigin(0.5f, 0.06f)
+                        transformOrigin = TransformOrigin(0.62f, 0.055f)
                     }
             ) {
                 ModePanel(onDismiss = {
@@ -202,10 +202,16 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
 }
 
 @Composable
-private fun ProMaxIsland(navigator: DestinationsNavigator, onOpen: () -> Unit) {
+private fun ProMaxIsland(navigator: DestinationsNavigator, panelOpen: Boolean, onOpen: () -> Unit) {
     var expanded by remember { mutableStateOf(false) }
-    val shake = remember { Animatable(0f) }
-    val shakeScope = rememberCoroutineScope()
+    val dotPulse = remember { Animatable(0f) }
+    LaunchedEffect(panelOpen) {
+        if (panelOpen) {
+            dotPulse.animateTo(1f, tween(340, easing = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)))
+        } else {
+            dotPulse.animateTo(0f, tween(280, easing = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)))
+        }
+    }
 
     val curve = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)
     val p = remember { Animatable(0f) }
@@ -252,22 +258,16 @@ private fun ProMaxIsland(navigator: DestinationsNavigator, onOpen: () -> Unit) {
                     .height(44.dp)
                     .graphicsLayer {
                         val travel = with(density) { 64.dp.toPx() }
-                        val wobble = sin(shake.value * PI.toFloat() * 10f) * 4f * (1f - shake.value)
-                        translationX = (ball - 1f) * travel + with(density) { wobble.dp.toPx() }
-                        scaleX = ballScale
-                        scaleY = ballScale
-                        alpha = (ball * 3f).coerceIn(0f, 1f)
+                        translationX = (ball - 1f) * travel
+                        val pulse = 1f - 0.18f * dotPulse.value
+                        scaleX = ballScale * pulse
+                        scaleY = ballScale * pulse
+                        alpha = (ball * 3f).coerceIn(0f, 1f) * (1f - 0.45f * dotPulse.value)
                     }
                     .clip(RoundedCornerShape(22.dp))
                     .background(Color.Black)
                     .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = keyline), RoundedCornerShape(22.dp))
-                    .clickable {
-                        shakeScope.launch {
-                            shake.snapTo(0f)
-                            shake.animateTo(1f, tween(300, easing = LinearEasing))
-                            onOpen()
-                        }
-                    },
+                    .clickable { onOpen() },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
