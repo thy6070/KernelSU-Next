@@ -284,6 +284,10 @@ private fun ProMaxIsland(
     val groupX = (260f - groupW) / 2f
 
     Box(
+        modifier = Modifier.fillMaxWidth().height(110.dp),
+        contentAlignment = Alignment.TopCenter
+    ) {
+    Box(
         modifier = Modifier.width(260.dp).height(110.dp),
         contentAlignment = Alignment.TopCenter
     ) {
@@ -409,6 +413,7 @@ private fun ProMaxIsland(
                 }
             }
         }
+    }
     }
 }
 
