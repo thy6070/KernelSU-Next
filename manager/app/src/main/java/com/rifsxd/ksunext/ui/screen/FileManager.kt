@@ -355,6 +355,15 @@ private fun ProMaxIsland(
     onOpen: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var showWave by remember { mutableStateOf(false) }
+    LaunchedEffect(running) {
+        if (running) {
+            showWave = true
+        } else {
+            kotlinx.coroutines.delay(650)
+            showWave = false
+        }
+    }
     val reopenScope = rememberCoroutineScope()
     fun foldAndReopen() {
         reopenScope.launch {
@@ -457,13 +466,13 @@ private fun ProMaxIsland(
                 .border(0.5.dp, Color(0x47FFFFFF), RoundedCornerShape(34.dp))
                 .combinedClickable(
                     onClick = {
-                        if (terminalMode) {
-                            onTermClose()
-                            expanded = false
-                        }
-                        else if (sel == null) expanded = !expanded
-                        else onClearSelection()
-                    },
+                        if (terminalMode) onTermClose()
+                        if (sel != null) onClearSelection()
+                        expanded = false
+                    }
+                    val unusedTap = {
+                    }
+                    unusedTap()
                     onLongClick = { foldAndReopen() }
                 )
         ) {
@@ -493,14 +502,13 @@ private fun ProMaxIsland(
                         .size(26.dp)
                         .clip(RoundedCornerShape(percent = 22))
                 )
-                if (running && (expanded || terminalMode)) {
+                if (showWave) {
                     YukiWave(
                         color = Color(0xFFFFB6C8),
                         running = running,
                         modifier = Modifier.weight(1f)
                     )
-                }
-                if (sel != null && !running) {
+                } else if (sel != null) {
                     Text(
                         text = selName,
                         modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
@@ -717,24 +725,15 @@ private fun TerminalOverlay(onExit: () -> Unit) {
 private fun YukiWave(color: Color, running: Boolean, modifier: Modifier = Modifier) {
     val phase = remember { Animatable(0f) }
     val fill = remember { Animatable(0f) }
-    val finishing = remember { mutableStateOf(false) }
-    val round = remember { mutableStateOf(0) }
     LaunchedEffect(running) {
         if (running) {
             fill.snapTo(0f)
             while (true) {
                 phase.snapTo(0f)
                 phase.animateTo(1f, tween(900, easing = LinearEasing))
-                round.value = round.value + 1
             }
         } else {
-            finishing.value = true
-            phase.animateTo(1f, tween(450, easing = LinearEasing))
-            phase.snapTo(0f)
-            phase.animateTo(1f, tween(320, easing = LinearEasing))
-            round.value = round.value + 1
-            finishing.value = false
-            fill.animateTo(1f, tween(220, easing = LinearEasing))
+            fill.animateTo(1f, tween(340, easing = LinearEasing))
         }
     }
     Canvas(
@@ -751,45 +750,32 @@ private fun YukiWave(color: Color, running: Boolean, modifier: Modifier = Modifi
             strokeWidth = 1.6.dp.toPx(),
             cap = StrokeCap.Round
         )
-        if (running || finishing.value) {
-            val seg = size.width
+        if (running) {
             val amp = 2.6.dp.toPx()
-            for (k in 0 until 2) {
-                val p = (phase.value + k * 0.5f) % 1f
-                val x0 = -seg + p * (size.width + seg)
-                val path = Path()
-                var x = 0f
-                while (x <= seg) {
-                    val px = x0 + x
-                    val py = cy + amp * kotlin.math.sin(x / 26.dp.toPx() * 6.2831855f - phase.value * 6.2831855f)
-                    if (x <= 0f) path.moveTo(px, py) else path.lineTo(px, py)
-                    x += 1f
-                }
-                val ribbon = Brush.horizontalGradient(
-                    0f to color.copy(alpha = 0.05f),
-                    0.14f to color,
-                    0.86f to color,
-                    1f to color.copy(alpha = 0.05f)
-                )
-                drawPath(
-                    path = path,
-                    brush = ribbon,
-                    alpha = 0.18f,
-                    style = Stroke(width = 5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
-                )
-                drawPath(
-                    path = path,
-                    brush = ribbon,
-                    style = Stroke(width = 1.8.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
-                )
+            val path = Path()
+            var x = 0f
+            while (x <= size.width) {
+                val y = cy + kotlin.math.sin(x / 26.dp.toPx() * 6.2831855f - phase.value * 6.2831855f) * amp
+                if (x == 0f) path.moveTo(x, y) else path.lineTo(x, y)
+                x += 1f
             }
+            drawPath(
+                path = path,
+                color = color,
+                alpha = 0.18f,
+                style = Stroke(width = 5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+            )
+            drawPath(
+                path = path,
+                color = color,
+                style = Stroke(width = 1.8.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+            )
         }
         if (fill.value > 0.001f) {
-            val fw = size.width * fill.value.coerceIn(0f, 1f)
             drawLine(
                 color = color,
                 start = Offset(0f, cy),
-                end = Offset(fw, cy),
+                end = Offset(size.width * fill.value.coerceIn(0f, 1f), cy),
                 strokeWidth = 2.4.dp.toPx(),
                 cap = StrokeCap.Round
             )
