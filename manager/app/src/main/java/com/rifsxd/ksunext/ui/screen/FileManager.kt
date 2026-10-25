@@ -315,7 +315,7 @@ private fun ProMaxIsland(
             lowerSel.endsWith(".7z") || lowerSel.endsWith(".rar") || lowerSel.endsWith(".xz") -> "挂载"
         else -> "执行"
     }
-    val actionColor = if (actionLabel == "挂载") Color(0xFFFFCA24) else Color(0xFF0A84FF)
+    val actionColor = if (actionLabel == "挂载") Color(0xFFFFB300) else Color(0xFF0A84FF)
 
     val zyEase = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)
     val pillH by animateDpAsState(if (sel != null) 132.dp else 42.dp, tween(360, easing = zyEase), label = "ph")
@@ -451,7 +451,7 @@ private fun ProMaxIsland(
                     ) {
                         ActionPill(
                             text = "删除",
-                            color = Color(0xFFFF453A),
+                            color = Color(0xFFFF3B30),
                             modifier = Modifier.weight(1f)
                         ) { onDelete() }
                         ActionPill(
@@ -460,7 +460,7 @@ private fun ProMaxIsland(
                             modifier = Modifier.weight(1f)
                         ) { onAction() }
                     }
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
                 }
             }
         }
