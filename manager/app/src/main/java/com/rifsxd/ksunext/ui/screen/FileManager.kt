@@ -385,6 +385,14 @@ private fun ProMaxIsland(
     val lift = -4f * sin(bt * PI.toFloat())
 
     // Island.kt ball choreography
+    val wingPress = remember { Animatable(0f) }
+    LaunchedEffect(panelOpen) {
+        if (panelOpen) {
+            wingPress.animateTo(1f, tween(220, easing = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)))
+        } else {
+            wingPress.animateTo(0f, spring(dampingRatio = 0.55f, stiffness = 420f))
+        }
+    }
     val ball = remember { Animatable(1f) }
     LaunchedEffect(selectedFile != null) {
         if (selectedFile != null) {
@@ -429,9 +437,10 @@ private fun ProMaxIsland(
                 .height(42.dp)
                 .graphicsLayer {
                     val travel = with(density) { (pillW.value / 2f + 3f).dp.toPx() }
+                    val press = 1f - 0.16f * wingPress.value
                     translationX = (ballShift - 1f) * travel
-                    scaleX = ballScale * bump
-                    scaleY = ballScale * bump
+                    scaleX = ballScale * bump * press
+                    scaleY = ballScale * bump * press
                     alpha = (ballShift * 3f).coerceIn(0f, 1f)
                 }
                 .clip(RoundedCornerShape(21.dp))
@@ -756,11 +765,10 @@ private fun YukiWave(color: Color, running: Boolean, modifier: Modifier = Modifi
             cap = StrokeCap.Round
         )
         if (running || finishing.value) {
-            val seg = size.width * (0.62f + 0.10f * kotlin.math.min(round.value, 3).toFloat())
+            val seg = size.width * (0.30f + 0.10f * kotlin.math.min(round.value, 4).toFloat())
             val amp = 2.6.dp.toPx()
-            val waveCount = kotlin.math.min(2 + round.value, 7)
-            for (k in 0 until waveCount) {
-                val p = (phase.value + k * 0.30f) % 1f
+            for (k in 0 until 2) {
+                val p = (phase.value + k * 0.5f) % 1f
                 val x0 = -seg + p * (size.width + seg)
                 val path = Path()
                 var x = 0f
@@ -883,7 +891,7 @@ private fun BrowserPane(
 
         LazyColumn(
             modifier = modifier.fillMaxSize().background(Color(BG_COLOR)),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            verticalArrangement = Arrangement.spacedBy(3.dp)
         ) {
         item {
             Row(
