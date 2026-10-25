@@ -261,12 +261,8 @@ private fun ProMaxIsland(
     onOpen: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val dotPulse = remember { Animatable(0f) }
-    LaunchedEffect(panelOpen) {
-        dotPulse.animateTo(if (panelOpen) 1f else 0f, tween(320))
-    }
 
-    // ZySU island motion: 1s bump / sway / lift envelope
+    // Island.kt motion: 1s bump/sway/lift envelope
     val bounce = remember { Animatable(0f) }
     LaunchedEffect(expanded, selectedFile) {
         bounce.snapTo(0f)
@@ -276,6 +272,18 @@ private fun ProMaxIsland(
     val bump = 1f + 0.06f * sin(bt * PI.toFloat())
     val sway = 6f * sin(bt * 9.424778f) * (1f - bt)
     val lift = -4f * sin(bt * PI.toFloat())
+
+    // Island.kt ball choreography
+    val ball = remember { Animatable(1f) }
+    LaunchedEffect(selectedFile != null) {
+        if (selectedFile != null) {
+            ball.animateTo(0f, spring(dampingRatio = 0.72f, stiffness = 120f))
+        } else {
+            ball.animateTo(1f, spring(dampingRatio = 0.7f, stiffness = 130f))
+        }
+    }
+    val ballShift = ball.value
+    val ballScale = 0.55f + 0.45f * ballShift
 
     val config = LocalConfiguration.current
     val density = androidx.compose.ui.platform.LocalDensity.current
@@ -295,15 +303,43 @@ private fun ProMaxIsland(
     }
     val actionColor = if (actionLabel == "挂载") Color(0xFFFFCA24) else Color(0xFF0A84FF)
 
-    // ZySU expand spec: 360ms, cubic-bezier(0.32, 0.72, 0, 1)
     val zyEase = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)
-    val pillH by animateDpAsState(if (sel != null) 138.dp else 44.dp, tween(360, easing = zyEase), label = "ph")
+    val pillH by animateDpAsState(if (sel != null) 132.dp else 42.dp, tween(360, easing = zyEase), label = "ph")
 
-    Row(
-        modifier = Modifier.fillMaxWidth().height(150.dp).offset(y = 10.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.Top
+    Box(
+        modifier = Modifier.fillMaxWidth().height(160.dp).offset(y = 10.dp),
+        contentAlignment = Alignment.TopCenter
     ) {
+        // ball sits UNDER the pill and slides out of it
+        Box(
+            modifier = Modifier
+                .offset(x = (pillW.value / 2f + 27f).dp, y = 0.dp)
+                .size(42.dp)
+                .graphicsLayer {
+                    val travel = with(density) { 58.dp.toPx() }
+                    translationX = (ballShift - 1f) * travel
+                    scaleX = ballScale * bump
+                    scaleY = ballScale * bump
+                    alpha = (ballShift * 3f).coerceIn(0f, 1f)
+                }
+                .clip(RoundedCornerShape(percent = 50))
+                .background(Color.Black)
+                .border(0.5.dp, Color(0x47FFFFFF), RoundedCornerShape(percent = 50))
+                .clickable { onOpen() },
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(26.dp)
+                    .clip(RoundedCornerShape(percent = 50))
+                    .background(Color(0xFF0A84FF)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "＋", color = Color.White, fontSize = 17.sp)
+            }
+        }
+
+        // main pill on top
         Column(
             modifier = Modifier
                 .width(pillW)
@@ -317,18 +353,23 @@ private fun ProMaxIsland(
                 .clip(RoundedCornerShape(34.dp))
                 .background(Color.Black)
                 .border(0.5.dp, Color(0x47FFFFFF), RoundedCornerShape(34.dp))
-                .clickable { if (sel == null) expanded = !expanded else onClearSelection() }
+                .pointerInput(sel) {
+                    detectTapGestures(
+                        onTap = { if (sel == null) expanded = !expanded else onClearSelection() },
+                        onLongPress = { onOpen() }
+                    )
+                }
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(44.dp)
+                    .height(42.dp)
                     .padding(start = 12.dp, end = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Image(
-                    painter = painterResource(id = R.mipmap.ic_launcher_foreground),
+                    painter = painterResource(id = R.mipmap.ic_launcher),
                     contentDescription = null,
                     modifier = Modifier.size(26.dp)
                 )
@@ -340,7 +381,7 @@ private fun ProMaxIsland(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         color = Color.White,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        textAlign = TextAlign.Center
                     )
                     Icon(
                         imageVector = Icons.Outlined.InsertDriveFile,
@@ -376,7 +417,7 @@ private fun ProMaxIsland(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -392,35 +433,7 @@ private fun ProMaxIsland(
                             modifier = Modifier.weight(1f)
                         ) { onAction() }
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
-                }
-            }
-        }
-
-        if (sel == null) {
-            Spacer(modifier = Modifier.width(6.dp))
-            Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .graphicsLayer {
-                        scaleX = bump * (0.55f + 0.45f * (1f - dotPulse.value))
-                        scaleY = bump * (0.55f + 0.45f * (1f - dotPulse.value))
-                        alpha = 1f - 0.45f * dotPulse.value
-                    }
-                    .clip(RoundedCornerShape(percent = 50))
-                    .background(Color.Black)
-                    .border(0.5.dp, Color(0x47FFFFFF), RoundedCornerShape(percent = 50))
-                    .clickable { onOpen() },
-                contentAlignment = Alignment.Center
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(26.dp)
-                        .clip(RoundedCornerShape(percent = 50))
-                        .background(Color(0xFF0A84FF)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(text = "＋", color = Color.White, fontSize = 17.sp)
+                    Spacer(modifier = Modifier.height(10.dp))
                 }
             }
         }
