@@ -264,6 +264,7 @@ private fun ProMaxIsland(
     val actionColor = if (actionLabel == "挂载") Color(0xFFFFCA24) else Color(0xFF0A84FF)
 
     // width never changes; only the height grows downwards
+    val pillW2 by animateDpAsState(if (sel != null) 292.dp else compactW.dp, tween(420, easing = curve), label = "pw")
     val pillH by animateDpAsState(if (sel != null) 118.dp else 44.dp, tween(420, easing = curve), label = "ph")
     val pillRadius by animateDpAsState(if (sel != null) 30.dp else 22.dp, tween(420, easing = curve), label = "pr")
 
@@ -275,7 +276,7 @@ private fun ProMaxIsland(
         Column(
             modifier = Modifier
                 .zIndex(1f)
-                .width(compactW.dp)
+                .width(pillW2)
                 .height(pillH)
                 .graphicsLayer {
                     if (sel == null) {
@@ -305,6 +306,17 @@ private fun ProMaxIsland(
                                 scaleY = iconScale / scale
                                 translationX = with(density) { iconShift.dp.toPx() }
                             }
+                    )
+                }
+                if (sel != null) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = sel,
+                        color = Color.White,
+                        fontSize = 13.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
                     )
                 }
                 Spacer(modifier = Modifier.weight(1f))
@@ -338,15 +350,7 @@ private fun ProMaxIsland(
                 exit = shrinkVertically(animationSpec = tween(220, easing = curve)) + fadeOut(tween(140))
             ) {
                 Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
-                    Text(
-                        text = sel ?: "",
-                        color = Color.White,
-                        fontSize = 13.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
