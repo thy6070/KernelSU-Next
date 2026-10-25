@@ -390,6 +390,19 @@ private fun ProMaxIsland(
     var expanded by remember { mutableStateOf(false) }
     var showWave by remember { mutableStateOf(false) }
     var navMode by remember { mutableStateOf(false) }
+    var navTarget by remember { mutableStateOf<String?>(null) }
+    var moduleNames by remember { mutableStateOf<List<String>>(emptyList()) }
+    LaunchedEffect(navTarget) {
+        if (navTarget == "module") {
+            moduleNames = withContext(Dispatchers.IO) {
+                try {
+                    java.io.File("/data/adb/modules").list()?.toList() ?: emptyList()
+                } catch (t: Throwable) {
+                    emptyList()
+                }
+            }
+        }
+    }
     var soInput by remember { mutableStateOf("") }
     var soPanel by remember { mutableStateOf(false) }
     LaunchedEffect(selectedFile) {
@@ -594,10 +607,69 @@ private fun ProMaxIsland(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    NavIcon(Icons.Outlined.Home) { navMode = false; navigator.navigate(HomeScreenDestination) }
-                    NavIcon(Icons.Outlined.AdminPanelSettings) { navMode = false; navigator.navigate(SuperUserScreenDestination) }
-                    NavIcon(Icons.Outlined.Layers) { navMode = false; navigator.navigate(ModuleScreenDestination) }
-                    NavIcon(Icons.Outlined.Settings) { navMode = false; navigator.navigate(SettingScreenDestination) }
+                    NavIcon(Icons.Outlined.Home) { navTarget = "home" }
+                    NavIcon(Icons.Outlined.AdminPanelSettings) { navTarget = "su" }
+                    NavIcon(Icons.Outlined.Layers) { navTarget = "module" }
+                    NavIcon(Icons.Outlined.Settings) { navTarget = "settings" }
+                }
+            }
+
+            AnimatedVisibility(
+                visible = navTarget != null,
+                enter = expandVertically(animationSpec = tween(300, easing = zyEase), expandFrom = Alignment.CenterVertically) + fadeIn(tween(180)),
+                exit = shrinkVertically(animationSpec = tween(220, easing = zyEase), shrinkTowards = Alignment.CenterVertically) + fadeOut(tween(140))
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    when (navTarget) {
+                        "module" -> {
+                            Text(
+                                text = "模块 (" + moduleNames.size + ")",
+                                color = Color.White,
+                                fontSize = 12.sp
+                            )
+                            moduleNames.take(4).forEach { n ->
+                                Text(
+                                    text = n,
+                                    color = Color(0xFF9A9A9E),
+                                    fontSize = 10.sp,
+                                    fontFamily = FontFamily.Monospace,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                            IslandActionButton("打开模块页面", Color(0xFF0A84FF)) {
+                                navTarget = null; navMode = false
+                                navigator.navigate(ModuleScreenDestination)
+                            }
+                        }
+                        "su" -> {
+                            Text(text = "超级用户", color = Color.White, fontSize = 12.sp)
+                            IslandActionButton("打开超级用户页面", Color(0xFF0A84FF)) {
+                                navTarget = null; navMode = false
+                                navigator.navigate(SuperUserScreenDestination)
+                            }
+                        }
+                        "settings" -> {
+                            IslandActionButton("挂载隔离", Color(0xFF0A84FF)) {
+                                navTarget = null; navMode = false
+                                navigator.navigate(SettingScreenDestination)
+                            }
+                            IslandActionButton("内核设置", Color(0xFF0A84FF)) {
+                                navTarget = null; navMode = false
+                                navigator.navigate(SettingScreenDestination)
+                            }
+                        }
+                        "home" -> {
+                            Text(text = "首页", color = Color.White, fontSize = 12.sp)
+                            IslandActionButton("打开首页", Color(0xFF0A84FF)) {
+                                navTarget = null; navMode = false
+                                navigator.navigate(HomeScreenDestination)
+                            }
+                        }
+                    }
                 }
             }
 
