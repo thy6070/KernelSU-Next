@@ -385,6 +385,10 @@ private fun ProMaxIsland(
     var expanded by remember { mutableStateOf(false) }
     var showWave by remember { mutableStateOf(false) }
     var navMode by remember { mutableStateOf(false) }
+    var soInput by remember { mutableStateOf("") }
+    LaunchedEffect(selectedFile) {
+        if (selectedFile != null) navMode = false
+    }
     LaunchedEffect(running) {
         if (running) {
             showWave = true
@@ -646,7 +650,7 @@ private fun ProMaxIsland(
             }
 
             AnimatedVisibility(
-                visible = sel != null && !terminalMode,
+                visible = sel != null && !terminalMode && !navMode,
                 enter = expandVertically(
                     animationSpec = tween(360, easing = zyEase),
                     expandFrom = Alignment.CenterVertically
