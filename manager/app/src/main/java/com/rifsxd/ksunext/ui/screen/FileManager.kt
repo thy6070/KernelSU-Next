@@ -45,6 +45,7 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Smartphone
 import androidx.compose.material.icons.outlined.Hotel
 import androidx.compose.material.icons.outlined.MoreHoriz
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.animation.expandVertically
@@ -570,29 +571,32 @@ private fun FsRow(
     fullPath: String,
     onClick: () -> Unit
 ) {
+    // ZySU row: rounded 14dp, no tile behind the glyph, 12sp monospace, outline on the row
     val accent = if (isDir) null else fileAccent(name)
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 5.dp, vertical = 1.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .clickable(onClick = onClick)
             .then(
                 if (accent != null) {
-                    Modifier.border(1.dp, accent.copy(alpha = 0.55f), RoundedCornerShape(12.dp))
+                    Modifier.border(1.dp, accent.copy(alpha = 0.38f), RoundedCornerShape(14.dp))
                 } else Modifier
             )
-            .clickable(onClick = onClick)
-            .padding(horizontal = 6.dp, vertical = 4.dp),
+            .padding(horizontal = 8.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         RowIcon(isDir = isDir, name = name, fullPath = fullPath)
         Spacer(modifier = Modifier.width(8.dp))
         Text(
             text = name,
-            color = Color(TEXT_COLOR),
-            fontSize = 15.sp,
+            modifier = Modifier.weight(1f),
+            fontSize = 12.sp,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            overflow = TextOverflow.Ellipsis,
+            fontFamily = FontFamily.Monospace,
+            color = Color(TEXT_COLOR)
         )
     }
 }
@@ -604,7 +608,7 @@ private fun fileAccent(name: String): Color? {
         l.endsWith(".so") -> Color(0xFF4A9EFF)
         l.endsWith(".sh") || l.endsWith(".rc") -> Color(0xFF26C6DA)
         l.endsWith(".zip") || l.endsWith(".tar") || l.endsWith(".gz") ||
-            l.endsWith(".7z") || l.endsWith(".rar") || l.endsWith(".xz") -> Color(0xFFFFCA28)
+            l.endsWith(".7z") || l.endsWith(".rar") || l.endsWith(".xz") -> Color(0xFFFFCA24)
         else -> null
     }
 }
@@ -623,39 +627,20 @@ private fun RowIcon(isDir: Boolean, name: String, fullPath: String) {
         }
     }
 
-    when {
-        isDir -> Box(
-            modifier = Modifier
-                .size(32.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(Color(TILE_COLOR)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Folder,
-                contentDescription = null,
-                tint = Color(FOLDER_ICON),
-                modifier = Modifier.size(20.dp)
-            )
-        }
-
-        apkIcon != null -> Box(modifier = Modifier.size(32.dp), contentAlignment = Alignment.Center) {
-            Image(
-                bitmap = apkIcon!!,
-                contentDescription = null,
-                modifier = Modifier.size(28.dp),
-                contentScale = ContentScale.Fit
-            )
-        }
-
-        else -> Box(modifier = Modifier.size(32.dp), contentAlignment = Alignment.Center) {
-            Icon(
-                imageVector = Icons.Filled.InsertDriveFile,
-                contentDescription = null,
-                tint = fileAccent(name) ?: Color(FILE_ICON),
-                modifier = Modifier.size(20.dp)
-            )
-        }
+    val apkIconNow = apkIcon
+    if (apkIconNow != null) {
+        Image(
+            bitmap = apkIconNow,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp)
+        )
+    } else {
+        Icon(
+            imageVector = if (isDir) Icons.Filled.Folder else Icons.Filled.InsertDriveFile,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+            tint = if (isDir) Color(FOLDER_ICON) else (fileAccent(name) ?: Color(FILE_ICON))
+        )
     }
 }
 
