@@ -317,6 +317,7 @@ private fun ProMaxIsland(
         // ball sits UNDER the pill and slides out of it
         Box(
             modifier = Modifier
+                .zIndex(2f)
                 .offset(x = (pillW.value / 2f + 27f).dp, y = 0.dp)
                 .size(42.dp)
                 .graphicsLayer {
@@ -346,6 +347,7 @@ private fun ProMaxIsland(
         // main pill on top
         Column(
             modifier = Modifier
+                .zIndex(1f)
                 .width(pillW)
                 .animateContentSize(animationSpec = tween(360, easing = zyEase))
                 .graphicsLayer {
