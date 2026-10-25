@@ -271,7 +271,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                             val cmd = when {
                                 lower.endsWith(".apk") -> "pm install -r \"$p\""
                                 lower.endsWith(".so") -> "chmod 777 \"$p\" && echo ok"
-                                else -> "chmod 777 \"$file\" 2>/dev/null; sh \"$file\""
+                                else -> "chmod 777 \"$file\" 2>/dev/null; exec sh \"$file\""
                             }
                             val pb = ProcessBuilder("/system/bin/su", "-c", cmd)
                             pb.redirectErrorStream(true)
@@ -499,7 +499,7 @@ private fun ProMaxIsland(
                         .size(26.dp)
                         .clip(RoundedCornerShape(percent = 22))
                 )
-                if (showWave) {
+                if (running || terminalMode) {
                     YukiWave(
                         color = Color(0xFFFFB6C8),
                         running = running,
@@ -722,14 +722,23 @@ private fun TerminalOverlay(onExit: () -> Unit) {
 private fun YukiWave(color: Color, running: Boolean, modifier: Modifier = Modifier) {
     val phase = remember { Animatable(0f) }
     val fill = remember { Animatable(0f) }
+    val finishing = remember { mutableStateOf(false) }
+    val round = remember { mutableStateOf(0) }
     LaunchedEffect(running) {
         if (running) {
             fill.snapTo(0f)
             while (true) {
                 phase.snapTo(0f)
                 phase.animateTo(1f, tween(900, easing = LinearEasing))
+                round.value = round.value + 1
             }
         } else {
+            finishing.value = true
+            phase.animateTo(1f, tween(450, easing = LinearEasing))
+            phase.snapTo(0f)
+            phase.animateTo(1f, tween(320, easing = LinearEasing))
+            round.value = round.value + 1
+            finishing.value = false
             fill.animateTo(1f, tween(340, easing = LinearEasing))
         }
     }
@@ -747,26 +756,38 @@ private fun YukiWave(color: Color, running: Boolean, modifier: Modifier = Modifi
             strokeWidth = 1.6.dp.toPx(),
             cap = StrokeCap.Round
         )
-        if (running) {
+        if (running || finishing.value) {
+            val seg = size.width * (0.62f + 0.10f * kotlin.math.min(round.value, 3).toFloat())
             val amp = 2.6.dp.toPx()
-            val path = Path()
-            var x = 0f
-            while (x <= size.width) {
-                val y = cy + kotlin.math.sin(x / 26.dp.toPx() * 6.2831855f - phase.value * 6.2831855f) * amp
-                if (x == 0f) path.moveTo(x, y) else path.lineTo(x, y)
-                x += 1f
+            for (k in 0 until 2) {
+                val p = (phase.value + k * 0.5f) % 1f
+                val x0 = -seg + p * (size.width + seg)
+                val path = Path()
+                var x = 0f
+                while (x <= seg) {
+                    val px = x0 + x
+                    val py = cy + amp * kotlin.math.sin(x / 26.dp.toPx() * 6.2831855f - phase.value * 6.2831855f)
+                    if (x <= 0f) path.moveTo(px, py) else path.lineTo(px, py)
+                    x += 1f
+                }
+                val ribbon = Brush.horizontalGradient(
+                    0f to color.copy(alpha = 0.05f),
+                    0.14f to color,
+                    0.86f to color,
+                    1f to color.copy(alpha = 0.05f)
+                )
+                drawPath(
+                    path = path,
+                    brush = ribbon,
+                    alpha = 0.18f,
+                    style = Stroke(width = 5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+                )
+                drawPath(
+                    path = path,
+                    brush = ribbon,
+                    style = Stroke(width = 1.8.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+                )
             }
-            drawPath(
-                path = path,
-                color = color,
-                alpha = 0.18f,
-                style = Stroke(width = 5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
-            )
-            drawPath(
-                path = path,
-                color = color,
-                style = Stroke(width = 1.8.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
-            )
         }
         if (fill.value > 0.001f) {
             drawLine(
