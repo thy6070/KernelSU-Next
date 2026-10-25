@@ -49,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.ui.zIndex
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -273,6 +274,7 @@ private fun ProMaxIsland(
     ) {
         Row(
             modifier = Modifier
+                .zIndex(1f)
                 .width(cardW)
                 .height(cardH)
                 .graphicsLayer {
@@ -284,7 +286,7 @@ private fun ProMaxIsland(
                 .clip(RoundedCornerShape(cardRadius))
                 .background(Color.Black)
                 .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = keyline), RoundedCornerShape(cardRadius))
-                .clickable { if (sel == null) expanded = !expanded }
+                .clickable { if (sel == null) expanded = !expanded else onClearSelection() }
                 .padding(horizontal = if (sel == null) 4.dp else 12.dp, vertical = if (sel == null) 0.dp else 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -297,8 +299,8 @@ private fun ProMaxIsland(
                             .size(38.dp)
                             .graphicsLayer {
                                 alpha = iconAlpha
-                                scaleX = iconScale
-                                scaleY = iconScale
+                                scaleX = iconScale / scale
+                                scaleY = iconScale / scale
                                 translationX = with(density) { iconShift.dp.toPx() }
                             }
                     )
@@ -315,7 +317,12 @@ private fun ProMaxIsland(
                         imageVector = Icons.Filled.Check,
                         contentDescription = "install",
                         tint = Color.White,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier
+                            .size(20.dp)
+                            .graphicsLayer {
+                                scaleX = 1f / scale
+                                scaleY = 1f / scale
+                            }
                     )
                 }
             } else {
