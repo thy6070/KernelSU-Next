@@ -249,6 +249,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                 uiScope.launch {
                     running = true
                     runMessage = null
+                    showTerminal = true
                     val out = withContext(Dispatchers.IO) {
                         when {
                             lower.endsWith(".apk") -> Shell.cmd("pm install -r \"$p\"").exec()
@@ -273,27 +274,6 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
             panelP.animateTo(1f, tween(420, easing = FastOutSlowInEasing))
         }
     }
-        }
-
-        Box(modifier = Modifier.fillMaxSize()) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(14.dp)
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xCC101012))
-                    .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = 0.25f), RoundedCornerShape(12.dp))
-                    .clickable { showTerminal = true },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Terminal,
-                    contentDescription = "terminal",
-                    tint = Color.White,
-                    modifier = Modifier.size(22.dp)
-                )
-            }
         }
 
         if (panel) {
@@ -508,7 +488,59 @@ private fun ProMaxIsland(
             }
 
             AnimatedVisibility(
-                visible = sel != null,
+                visible = terminalMode,
+                enter = expandVertically(animationSpec = tween(360, easing = zyEase), expandFrom = Alignment.CenterVertically) + fadeIn(tween(200)),
+                exit = shrinkVertically(animationSpec = tween(260, easing = zyEase), shrinkTowards = Alignment.CenterVertically) + fadeOut(tween(160))
+            ) {
+                val termScroll = rememberScrollState()
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 8.dp, end = 8.dp, bottom = 8.dp)
+                ) {
+                    Text(
+                        text = termText,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(240.dp)
+                            .verticalScroll(termScroll),
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = Color.White
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        androidx.compose.foundation.text.BasicTextField(
+                            value = termInput,
+                            onValueChange = onTermInput,
+                            modifier = Modifier
+                                .weight(1f)
+                                .background(Color(0xFF0E0E10), RoundedCornerShape(6.dp))
+                                .padding(4.dp),
+                            textStyle = androidx.compose.ui.text.TextStyle(
+                                color = Color.White,
+                                fontSize = 11.sp
+                            ),
+                            singleLine = true
+                        )
+                        Text(
+                            "发送",
+                            modifier = Modifier
+                                .clickable { onTermRun() }
+                                .padding(start = 10.dp)
+                                .background(Color(0xFF0A84FF), RoundedCornerShape(percent = 50))
+                                .padding(horizontal = 10.dp, vertical = 3.dp),
+                            fontSize = 11.sp,
+                            color = Color.White
+                        )
+                    }
+                }
+            }
+
+            AnimatedVisibility(
+                visible = sel != null && !terminalMode,
                 enter = expandVertically(
                     animationSpec = tween(360, easing = zyEase),
                     expandFrom = Alignment.CenterVertically
@@ -518,58 +550,6 @@ private fun ProMaxIsland(
                     shrinkTowards = Alignment.CenterVertically
                 ) + fadeOut(tween(160))
             ) {
-                AnimatedVisibility(
-                    visible = terminalMode,
-                    enter = expandVertically(animationSpec = tween(360, easing = zyEase), expandFrom = Alignment.CenterVertically) + fadeIn(tween(200)),
-                    exit = shrinkVertically(animationSpec = tween(260, easing = zyEase), shrinkTowards = Alignment.CenterVertically) + fadeOut(tween(160))
-                ) {
-                    val termScroll = rememberScrollState()
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 8.dp, end = 8.dp, bottom = 8.dp)
-                    ) {
-                        Text(
-                            text = termText,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(240.dp)
-                                .verticalScroll(termScroll),
-                            fontSize = 11.sp,
-                            fontFamily = FontFamily.Monospace,
-                            color = Color.White
-                        )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            androidx.compose.foundation.text.BasicTextField(
-                                value = termInput,
-                                onValueChange = onTermInput,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .background(Color(0xFF0E0E10), RoundedCornerShape(6.dp))
-                                    .padding(4.dp),
-                                textStyle = androidx.compose.ui.text.TextStyle(
-                                    color = Color.White,
-                                    fontSize = 11.sp
-                                ),
-                                singleLine = true
-                            )
-                            Text(
-                                "发送",
-                                modifier = Modifier
-                                    .clickable { onTermRun() }
-                                    .padding(start = 10.dp)
-                                    .background(Color(0xFF0A84FF), RoundedCornerShape(percent = 50))
-                                    .padding(horizontal = 10.dp, vertical = 3.dp),
-                                fontSize = 11.sp,
-                                color = Color.White
-                            )
-                        }
-                    }
-                }
-
                 Column(modifier = Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp)) {
                     if (runMessage != null) {
                         Text(
@@ -581,25 +561,24 @@ private fun ProMaxIsland(
                             color = if (runOk) Color(0xFF4CAF50) else Color(0xFFFF3B30)
                         )
                     }
-                if (!terminalMode) Row(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        IslandActionButton("删除", Color(0xFFFF3B30)) { onDelete() }
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            IslandActionButton("删除", Color(0xFFFF3B30)) { onDelete() }
+                        }
+                        Box(modifier = Modifier.weight(1f)) {
+                            IslandActionButton(actionLabel, actionColor) { onAction() }
+                        }
                     }
-                    Box(modifier = Modifier.weight(1f)) {
-                        IslandActionButton(actionLabel, actionColor) { onAction() }
-                    }
-                }
                 }
             }
         }
     }
 }
 
-@Composable
-private fun IslandActionButton(
+
     label: String,
     color: Color,
     onClick: () -> Unit,
