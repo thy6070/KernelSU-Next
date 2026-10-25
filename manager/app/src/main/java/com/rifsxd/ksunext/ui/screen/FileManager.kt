@@ -166,6 +166,8 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
 
     var panel by remember { mutableStateOf(false) }
     var showTerminal by remember { mutableStateOf(false) }
+    var termInput by remember { mutableStateOf("") }
+    val termLines = remember { androidx.compose.runtime.mutableStateListOf<String>() }
     var selectedFile by remember { mutableStateOf<String?>(null) }
     var refreshTick by remember { mutableStateOf(0) }
     var runMessage by remember { mutableStateOf<String?>(null) }
@@ -222,6 +224,23 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
         runMessage = runMessage,
         runOk = runOk,
         running = running,
+        terminalMode = showTerminal,
+        termLines = termLines,
+        termInput = termInput,
+        onTermInput = { termInput = it },
+        onTermRun = {
+            val cmd = termInput
+            if (cmd.isNotBlank()) {
+                termLines.add("> " + cmd)
+                termInput = ""
+                uiScope.launch {
+                    val out = withContext(Dispatchers.IO) { Shell.cmd(cmd).exec() }
+                    out.out.forEach { if (it.isNotBlank()) termLines.add(it) }
+                    out.err.forEach { if (it.isNotBlank()) termLines.add(it) }
+                }
+            }
+        },
+        onTermClose = { showTerminal = false },
         onAction = {
             val p = selectedFile
             if (p != null) {
@@ -253,10 +272,6 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
             panelP.animateTo(1f, tween(420, easing = FastOutSlowInEasing))
         }
     }
-        }
-
-        if (showTerminal) {
-            TerminalOverlay(onExit = { showTerminal = false })
         }
 
         Box(modifier = Modifier.fillMaxSize()) {
@@ -312,6 +327,12 @@ private fun ProMaxIsland(
     runMessage: String?,
     runOk: Boolean,
     running: Boolean,
+    terminalMode: Boolean,
+    termLines: List<String>,
+    termInput: String,
+    onTermInput: (String) -> Unit,
+    onTermRun: () -> Unit,
+    onTermClose: () -> Unit,
     onClearSelection: () -> Unit,
     onDelete: () -> Unit,
     onAction: () -> Unit,
@@ -496,6 +517,57 @@ private fun ProMaxIsland(
                     shrinkTowards = Alignment.CenterVertically
                 ) + fadeOut(tween(160))
             ) {
+                AnimatedVisibility(
+                    visible = terminalMode,
+                    enter = expandVertically(animationSpec = tween(360, easing = zyEase), expandFrom = Alignment.CenterVertically) + fadeIn(tween(200)),
+                    exit = shrinkVertically(animationSpec = tween(260, easing = zyEase), shrinkTowards = Alignment.CenterVertically) + fadeOut(tween(160))
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, bottom = 8.dp)) {
+                        LazyColumn(modifier = Modifier.fillMaxWidth().height(150.dp)) {
+                            items(termLines) { line ->
+                                Text(
+                                    text = line,
+                                    color = Color(0xFFDDDDDD),
+                                    fontSize = 10.sp,
+                                    fontFamily = FontFamily.Monospace,
+                                    modifier = Modifier.padding(vertical = 1.dp)
+                                )
+                            }
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = "\$", color = Color(0xFF4CAF50), fontSize = 11.sp, fontFamily = FontFamily.Monospace)
+                            androidx.compose.foundation.text.BasicTextField(
+                                value = termInput,
+                                onValueChange = onTermInput,
+                                modifier = Modifier.weight(1f).padding(horizontal = 6.dp),
+                                textStyle = androidx.compose.ui.text.TextStyle(
+                                    color = Color.White,
+                                    fontSize = 11.sp,
+                                    fontFamily = FontFamily.Monospace
+                                ),
+                                singleLine = true,
+                                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                    imeAction = androidx.compose.ui.text.input.ImeAction.Go
+                                ),
+                                keyboardActions = androidx.compose.foundation.text.KeyboardActions(onGo = { onTermRun() })
+                            )
+                            Text(
+                                text = "运行",
+                                color = Color(0xFF0A84FF),
+                                fontSize = 11.sp,
+                                modifier = Modifier.clickable { onTermRun() }
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "关闭",
+                                color = Color(0xFFFF3B30),
+                                fontSize = 11.sp,
+                                modifier = Modifier.clickable { onTermClose() }
+                            )
+                        }
+                    }
+                }
+
                 Column(modifier = Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp)) {
                     if (runMessage != null) {
                         Text(
@@ -507,7 +579,7 @@ private fun ProMaxIsland(
                             color = if (runOk) Color(0xFF4CAF50) else Color(0xFFFF3B30)
                         )
                     }
-                Row(
+                if (!terminalMode) Row(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
