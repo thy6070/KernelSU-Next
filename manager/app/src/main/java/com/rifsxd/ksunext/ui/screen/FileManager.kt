@@ -188,12 +188,10 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
         v < 0.66f -> -7f * smooth(seg(v, 0.48f, 0.66f))
         else -> -7f * (1f - smooth(seg(v, 0.66f, 0.80f)))
     }
-    // side island is always visible; it only nudges outwards during the morph
-    val dotNudge = when {
-        v < 0.30f -> 0f
-        v < 0.62f -> 6f * smooth(seg(v, 0.30f, 0.62f))
-        else -> 6f * (1f - smooth(seg(v, 0.62f, 0.95f)))
-    }
+    // side island stays visible (never hidden), but keeps its own motion:
+    // grows slightly and drifts right as the pill settles
+    val dotScale = 0.82f + 0.18f * smooth(seg(v, 0.10f, 0.70f))
+    val dotX = 192f + 4f * smooth(seg(v, 0.10f, 0.70f))
 
     Box(
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
@@ -204,9 +202,13 @@ private fun ProMaxIsland(navigator: DestinationsNavigator) {
             // side island: always shown
             Row(
                 modifier = Modifier
-                    .offset(x = (192f + dotNudge).dp, y = 4.dp)
+                    .offset(x = dotX.dp, y = 4.dp)
                     .width(52.dp)
                     .height(44.dp)
+                    .graphicsLayer {
+                        scaleX = dotScale
+                        scaleY = dotScale
+                    }
                     .clip(RoundedCornerShape(22.dp))
                     .background(Color.Black)
                     .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = 0.30f), RoundedCornerShape(22.dp)),
