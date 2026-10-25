@@ -374,7 +374,7 @@ private fun ProMaxIsland(
 
 
     Box(
-        modifier = Modifier.fillMaxWidth().height(160.dp).offset(y = 10.dp),
+        modifier = Modifier.fillMaxWidth().offset(y = 10.dp),
         contentAlignment = Alignment.TopCenter
     ) {
         // ball sits UNDER the pill and slides out of it
