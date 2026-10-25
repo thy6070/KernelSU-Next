@@ -433,7 +433,7 @@ private fun ProMaxIsland(
             wingPress.animateTo(0f, spring(dampingRatio = 0.55f, stiffness = 420f))
         }
     }
-    val wingShown = sel == null && !navMode && !terminalMode
+    val wingShown = selectedFile == null && !navMode && !terminalMode
     val wingFade by animateFloatAsState(
         targetValue = if (wingShown) 1f else 0f,
         animationSpec = tween(220, easing = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)),
