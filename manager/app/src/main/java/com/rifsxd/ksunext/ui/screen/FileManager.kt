@@ -56,6 +56,9 @@ import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -160,6 +163,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
     var refreshTick by remember { mutableStateOf(0) }
     var runMessage by remember { mutableStateOf<String?>(null) }
     var runOk by remember { mutableStateOf(true) }
+    var running by remember { mutableStateOf(false) }
     val panelP = remember { Animatable(0f) }
     val uiScope = rememberCoroutineScope()
 
@@ -210,11 +214,14 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
         },
         runMessage = runMessage,
         runOk = runOk,
+        running = running,
         onAction = {
             val p = selectedFile
             if (p != null) {
                 val lower = p.lowercase()
                 uiScope.launch {
+                    running = true
+                    runMessage = null
                     val out = withContext(Dispatchers.IO) {
                         when {
                             lower.endsWith(".apk") -> Shell.cmd("pm install -r \"$p\"").exec()
@@ -223,6 +230,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                             else -> Shell.cmd("echo 挂载未实现").exec()
                         }
                     }
+                    running = false
                     runOk = out.code == 0
                     runMessage = out.out.joinToString(" ").ifBlank { "退出码 ${out.code}" }.take(120)
                     refreshTick += 1
@@ -271,6 +279,7 @@ private fun ProMaxIsland(
     selectedFile: String?,
     runMessage: String?,
     runOk: Boolean,
+    running: Boolean,
     onClearSelection: () -> Unit,
     onDelete: () -> Unit,
     onAction: () -> Unit,
@@ -408,7 +417,13 @@ private fun ProMaxIsland(
                         .size(26.dp)
                         .clip(RoundedCornerShape(percent = 22))
                 )
-                if (sel != null) {
+                if (running) {
+                    YukiWave(
+                        color = Color(0xFFFFB6C8),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                if (sel != null && !running) {
                     Text(
                         text = selName,
                         modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
@@ -494,6 +509,33 @@ private fun IslandActionButton(
         maxLines = 1,
         color = Color.White
     )
+}
+
+@Composable
+private fun YukiWave(color: Color, modifier: Modifier = Modifier) {
+    val phase = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            phase.snapTo(0f)
+            phase.animateTo(1f, tween(900, easing = LinearEasing))
+        }
+    }
+    Canvas(modifier = modifier.height(14.dp)) {
+        val w = size.width
+        val h = size.height
+        if (w <= 0f || h <= 0f) return@Canvas
+        val mid = h / 2f
+        val amp = h * 0.30f
+        val path = Path()
+        val steps = 48
+        path.moveTo(0f, mid)
+        for (i in 0..steps) {
+            val t = i.toFloat() / steps
+            val y = mid + kotlin.math.sin((t * 2f - phase.value * 2f) * PI.toFloat()) * amp
+            path.lineTo(w * t, y)
+        }
+        drawPath(path = path, color = color, style = Stroke(width = 1.5f))
+    }
 }
 
 @Composable
@@ -624,7 +666,8 @@ private fun FsRow(
     isDir: Boolean,
     fullPath: String,
     selected: Boolean = false,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLongClick: () -> Unit = {}
 ) {
     // ZySU row: rounded 14dp, no tile behind the glyph, 12sp monospace, outline on the row
     val accent = if (isDir) null else fileAccent(name)
@@ -633,7 +676,7 @@ private fun FsRow(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .background(if (selected) Color(0x3300BCD4) else Color.Transparent)
             .then(
                 if (accent != null) {
