@@ -307,7 +307,7 @@ private fun ProMaxIsland(
     val actionColor = if (actionLabel == "挂载") Color(0xFFFFCA24) else Color(0xFF0A84FF)
 
     val zyEase = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)
-    val pillH by animateDpAsState(if (sel != null) 132.dp else 42.dp, tween(360, easing = zyEase), label = "ph")
+
 
     Box(
         modifier = Modifier.fillMaxWidth().height(160.dp).offset(y = 10.dp),
@@ -319,7 +319,7 @@ private fun ProMaxIsland(
                 .offset(x = (pillW.value / 2f + 27f).dp, y = 0.dp)
                 .size(42.dp)
                 .graphicsLayer {
-                    val travel = with(density) { 58.dp.toPx() }
+                    val travel = with(density) { (pillW.value / 2f + 3f).dp.toPx() }
                     translationX = (ballShift - 1f) * travel
                     scaleX = ballScale * bump
                     scaleY = ballScale * bump
@@ -346,7 +346,7 @@ private fun ProMaxIsland(
         Column(
             modifier = Modifier
                 .width(pillW)
-                .height(pillH)
+                .animateContentSize(animationSpec = tween(360, easing = zyEase))
                 .graphicsLayer {
                     scaleX = bump
                     scaleY = bump
