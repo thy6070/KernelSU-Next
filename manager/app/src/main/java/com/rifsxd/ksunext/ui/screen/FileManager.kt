@@ -453,11 +453,19 @@ private fun FsRow(
     fullPath: String,
     onClick: () -> Unit
 ) {
+    val accent = if (isDir) null else fileAccent(name)
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(horizontal = 5.dp, vertical = 1.dp)
+            .then(
+                if (accent != null) {
+                    Modifier.border(1.dp, accent.copy(alpha = 0.55f), RoundedCornerShape(12.dp))
+                } else Modifier
+            )
             .clickable(onClick = onClick)
-            .padding(horizontal = 6.dp, vertical = 5.dp),
+            .padding(horizontal = 6.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         RowIcon(isDir = isDir, name = name, fullPath = fullPath)
@@ -469,6 +477,18 @@ private fun FsRow(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
+    }
+}
+
+private fun fileAccent(name: String): Color? {
+    val l = name.lowercase()
+    return when {
+        l.endsWith(".apk") -> Color(0xFFFFB6C8)
+        l.endsWith(".so") -> Color(0xFF4A9EFF)
+        l.endsWith(".sh") || l.endsWith(".rc") -> Color(0xFF26C6DA)
+        l.endsWith(".zip") || l.endsWith(".tar") || l.endsWith(".gz") ||
+            l.endsWith(".7z") || l.endsWith(".rar") || l.endsWith(".xz") -> Color(0xFFFFCA28)
+        else -> null
     }
 }
 
@@ -511,33 +531,13 @@ private fun RowIcon(isDir: Boolean, name: String, fullPath: String) {
             )
         }
 
-        else -> {
-            val lower = name.lowercase()
-            val accent = when {
-                lower.endsWith(".sh") || lower.endsWith(".rc") || lower.endsWith(".so") -> Color(0xFF26C6DA)
-                lower.endsWith(".zip") || lower.endsWith(".tar") || lower.endsWith(".gz") ||
-                    lower.endsWith(".7z") || lower.endsWith(".rar") || lower.endsWith(".xz") -> Color(0xFFFFCA28)
-                else -> null
-            }
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .then(
-                        if (accent != null) {
-                            Modifier
-                                .clip(RoundedCornerShape(7.dp))
-                                .border(1.dp, accent.copy(alpha = 0.85f), RoundedCornerShape(7.dp))
-                        } else Modifier
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.InsertDriveFile,
-                    contentDescription = null,
-                    tint = if (accent != null) accent else Color(FILE_ICON),
-                    modifier = Modifier.size(20.dp)
-                )
-            }
+        else -> Box(modifier = Modifier.size(32.dp), contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = Icons.Filled.InsertDriveFile,
+                contentDescription = null,
+                tint = fileAccent(name) ?: Color(FILE_ICON),
+                modifier = Modifier.size(20.dp)
+            )
         }
     }
 }
