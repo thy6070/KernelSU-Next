@@ -239,7 +239,6 @@ private fun ProMaxIsland(
     val gather = smooth(seg(v, 0f, 0.26f)) - smooth(seg(v, 0.74f, 1f))
     val overshoot = 4f * sin(seg(v, 0f, 0.42f) * PI.toFloat()) * (1f - seg(v, 0.30f, 0.5f))
     val compactW = 188f + (138f - 188f) * gather + overshoot
-    val pillX = 25f * gather
     val scale = if (v < 0.32f) {
         1f + 0.28f * smooth(seg(v, 0f, 0.30f))
     } else {
@@ -263,67 +262,17 @@ private fun ProMaxIsland(
     }
     val actionColor = if (actionLabel == "挂载") Color(0xFFFFCA24) else Color(0xFF0A84FF)
 
-    // iOS-style grow: the pill itself expands into a card
-    val cardW by animateDpAsState(
-        if (sel != null) 252.dp else compactW.dp,
-        tween(420, easing = curve),
-        label = "cardW"
-    )
-    val cardH by animateDpAsState(
-        if (sel != null) 104.dp else 44.dp,
-        tween(420, easing = curve),
-        label = "cardH"
-    )
-    val cardRadius by animateDpAsState(
-        if (sel != null) 28.dp else 22.dp,
-        tween(420, easing = curve),
-        label = "cardR"
-    )
+    val cardW by animateDpAsState(if (sel != null) 252.dp else compactW.dp, tween(420, easing = curve), label = "cw")
+    val cardH by animateDpAsState(if (sel != null) 104.dp else 44.dp, tween(420, easing = curve), label = "ch")
+    val cardRadius by animateDpAsState(if (sel != null) 28.dp else 22.dp, tween(420, easing = curve), label = "cr")
 
-    val groupW = compactW + 4f + 52f
-    val groupX = (260f - groupW) / 2f
-
-    Box(
+    Row(
         modifier = Modifier.fillMaxWidth().height(110.dp),
-        contentAlignment = Alignment.TopCenter
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.Top
     ) {
-    Box(
-        modifier = Modifier.width(260.dp).height(110.dp),
-        contentAlignment = Alignment.TopCenter
-    ) {
-        if (sel == null) {
-            Row(
-                modifier = Modifier
-                    .offset(x = (groupX + compactW + 4f).dp, y = 0.dp)
-                    .width(52.dp)
-                    .height(44.dp)
-                    .graphicsLayer {
-                        val travel = with(density) { 64.dp.toPx() }
-                        translationX = (ball - 1f) * travel
-                        val pulse = 1f - 0.18f * dotPulse.value
-                        scaleX = ballScale * pulse
-                        scaleY = ballScale * pulse
-                        alpha = (ball * 3f).coerceIn(0f, 1f) * (1f - 0.45f * dotPulse.value)
-                    }
-                    .clip(RoundedCornerShape(22.dp))
-                    .background(Color.Black)
-                    .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = keyline), RoundedCornerShape(22.dp))
-                    .clickable { onOpen() },
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Image(
-                    painter = painterResource(id = R.mipmap.ic_modules_foreground),
-                    contentDescription = null,
-                    colorFilter = ColorFilter.tint(Color.White),
-                    modifier = Modifier.size(38.dp)
-                )
-            }
-        }
-
         Row(
             modifier = Modifier
-                .offset(x = if (sel == null) (groupX + pillX).dp else 0.dp)
                 .width(cardW)
                 .height(cardH)
                 .graphicsLayer {
@@ -413,7 +362,36 @@ private fun ProMaxIsland(
                 }
             }
         }
-    }
+
+        if (sel == null) {
+            Spacer(modifier = Modifier.width(4.dp))
+            Row(
+                modifier = Modifier
+                    .width(52.dp)
+                    .height(44.dp)
+                    .graphicsLayer {
+                        val travel = with(density) { 64.dp.toPx() }
+                        translationX = (ball - 1f) * travel
+                        val pulse = 1f - 0.18f * dotPulse.value
+                        scaleX = ballScale * pulse
+                        scaleY = ballScale * pulse
+                        alpha = (ball * 3f).coerceIn(0f, 1f) * (1f - 0.45f * dotPulse.value)
+                    }
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(Color.Black)
+                    .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = keyline), RoundedCornerShape(22.dp))
+                    .clickable { onOpen() },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Image(
+                    painter = painterResource(id = R.mipmap.ic_modules_foreground),
+                    contentDescription = null,
+                    colorFilter = ColorFilter.tint(Color.White),
+                    modifier = Modifier.size(38.dp)
+                )
+            }
+        }
     }
 }
 
