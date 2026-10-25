@@ -47,6 +47,8 @@ import androidx.compose.material.icons.outlined.Hotel
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -205,7 +207,13 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
 }
 
 @Composable
-private fun ProMaxIsland(navigator: DestinationsNavigator, panelOpen: Boolean, onOpen: () -> Unit) {
+private fun ProMaxIsland(
+    navigator: DestinationsNavigator,
+    panelOpen: Boolean,
+    selectedFile: String?,
+    onClearSelection: () -> Unit,
+    onOpen: () -> Unit
+) {
     var expanded by remember { mutableStateOf(false) }
     val dotPulse = remember { Animatable(0f) }
     LaunchedEffect(panelOpen) {
@@ -248,15 +256,26 @@ private fun ProMaxIsland(navigator: DestinationsNavigator, panelOpen: Boolean, o
     val ballScale = 0.55f + 0.45f * ball
     val density = androidx.compose.ui.platform.LocalDensity.current
 
-    Box(
-        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-        contentAlignment = Alignment.TopCenter
-    ) {
+    val sel = selectedFile
+    val accent = sel?.let { fileAccent(it) } ?: Color(0xFFEDEDED)
+    val actionLabel = when {
+        sel == null -> ""
+        sel.lowercase().endsWith(".apk") -> "安装"
+        sel.lowercase().endsWith(".so") -> "启动"
+        sel.lowercase().let {
+            it.endsWith(".zip") || it.endsWith(".tar") || it.endsWith(".gz") ||
+                it.endsWith(".7z") || it.endsWith(".rar") || it.endsWith(".xz")
+        } -> "挂载"
+        else -> "执行"
+    }
+    val actionColor = if (actionLabel == "挂载") Color(0xFFFFCA28) else Color(0xFF0A84FF)
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(modifier = Modifier.width(250.dp).height(52.dp)) {
 
             Row(
                 modifier = Modifier
-                    .offset(x = (pillW + 4f).dp, y = 4.dp)
+                    .offset(x = (pillW + 4f).dp, y = 0.dp)
                     .width(52.dp)
                     .height(44.dp)
                     .graphicsLayer {
@@ -312,26 +331,82 @@ private fun ProMaxIsland(navigator: DestinationsNavigator, panelOpen: Boolean, o
                             }
                     )
                 }
-                Spacer(modifier = Modifier.weight(1f))
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .clickable { navigator.navigate(InstallScreenDestination) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Check,
-                        contentDescription = "install",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
+                if (sel != null) {
+                    Spacer(modifier = Modifier.width(7.dp))
+                    Text(
+                        text = sel,
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
                     )
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                if (sel != null) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .clickable { onClearSelection() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.InsertDriveFile,
+                            contentDescription = null,
+                            tint = accent,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .clickable { navigator.navigate(InstallScreenDestination) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Check,
+                            contentDescription = "install",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
             }
         }
+
+        AnimatedVisibility(
+            visible = sel != null,
+            enter = expandVertically(animationSpec = tween(300, easing = curve)) + fadeIn(tween(200)),
+            exit = shrinkVertically(animationSpec = tween(220, easing = curve)) + fadeOut(tween(140))
+        ) {
+            Row(
+                modifier = Modifier.padding(top = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                ActionPill(text = "删除", color = Color(0xFFFF453A)) { onClearSelection() }
+                ActionPill(text = actionLabel, color = actionColor) { onClearSelection() }
+            }
+        }
     }
+}
 
-
+@Composable
+private fun ActionPill(text: String, color: Color, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .height(40.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .background(color.copy(alpha = 0.16f))
+            .border(1.dp, color.copy(alpha = 0.65f), RoundedCornerShape(20.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 26.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text = text, color = color, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+    }
 }
 
 @Composable
