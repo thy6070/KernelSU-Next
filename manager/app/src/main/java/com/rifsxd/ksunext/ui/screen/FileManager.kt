@@ -46,6 +46,7 @@ import androidx.compose.material.icons.outlined.Smartphone
 import androidx.compose.material.icons.outlined.Hotel
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -140,6 +141,8 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
     var rightPath by remember { mutableStateOf("/data") }
 
     var panel by remember { mutableStateOf(false) }
+    val panelP = remember { Animatable(0f) }
+    val uiScope = rememberCoroutineScope()
 
     Box(modifier = Modifier.fillMaxSize().background(Color(BG_COLOR))) {
         Box(
@@ -166,11 +169,34 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
         }
     }
 
-    ProMaxIsland(navigator) { panel = true }
+    ProMaxIsland(navigator) {
+        uiScope.launch {
+            panelP.snapTo(0f)
+            panel = true
+            panelP.animateTo(1f, tween(420, easing = FastOutSlowInEasing))
+        }
+    }
         }
 
         if (panel) {
-            ModePanel(onDismiss = { panel = false })
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        val s = 0.25f + 0.75f * panelP.value
+                        scaleX = s
+                        scaleY = s
+                        alpha = panelP.value
+                        transformOrigin = TransformOrigin(0.5f, 0.06f)
+                    }
+            ) {
+                ModePanel(onDismiss = {
+                    uiScope.launch {
+                        panelP.animateTo(0f, tween(280, easing = androidx.compose.animation.core.FastOutSlowInEasing))
+                        panel = false
+                    }
+                })
+            }
         }
     }
 }
@@ -178,6 +204,8 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
 @Composable
 private fun ProMaxIsland(navigator: DestinationsNavigator, onOpen: () -> Unit) {
     var expanded by remember { mutableStateOf(false) }
+    val shake = remember { Animatable(0f) }
+    val shakeScope = rememberCoroutineScope()
 
     val curve = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)
     val p = remember { Animatable(0f) }
@@ -224,7 +252,8 @@ private fun ProMaxIsland(navigator: DestinationsNavigator, onOpen: () -> Unit) {
                     .height(44.dp)
                     .graphicsLayer {
                         val travel = with(density) { 64.dp.toPx() }
-                        translationX = (ball - 1f) * travel
+                        val wobble = sin(shake.value * PI.toFloat() * 10f) * 4f * (1f - shake.value)
+                        translationX = (ball - 1f) * travel + with(density) { wobble.dp.toPx() }
                         scaleX = ballScale
                         scaleY = ballScale
                         alpha = (ball * 3f).coerceIn(0f, 1f)
@@ -232,7 +261,13 @@ private fun ProMaxIsland(navigator: DestinationsNavigator, onOpen: () -> Unit) {
                     .clip(RoundedCornerShape(22.dp))
                     .background(Color.Black)
                     .border(0.5.dp, Color(0xFFE6E6E6).copy(alpha = keyline), RoundedCornerShape(22.dp))
-                    .clickable { onOpen() },
+                    .clickable {
+                        shakeScope.launch {
+                            shake.snapTo(0f)
+                            shake.animateTo(1f, tween(300, easing = LinearEasing))
+                            onOpen()
+                        }
+                    },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
