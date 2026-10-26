@@ -504,6 +504,8 @@ private fun ProMaxIsland(
     var soInput by remember { mutableStateOf("") }
     var soPanel by remember { mutableStateOf(false) }
     var jumpStep by remember { mutableStateOf(0) }
+    var paneTarget by remember { mutableStateOf("/storage/emulated/0/") }
+    var createIsDir by remember { mutableStateOf(true) }
     var jumpSide by remember { mutableStateOf(0) }
     var jumpInput by remember { mutableStateOf("") }
     LaunchedEffect(selectedFile) {
@@ -972,17 +974,10 @@ private fun ProMaxIsland(
                         "home" -> {
                             when (jumpStep) {
                                 0 -> {
-                                    FileBigButton("提取") { onExtract() }
-                                    FileBigButton("data/储存") {
-                                        onOpenStorage()
-                                        onOpenData()
-                                    }
-                                    FileBigButton("文件/文件夹") {
-                                        jumpStep = 3
-                                    }
-                                    FileBigButton("跳转") {
-                                        jumpStep = 1
-                                    }
+                                    IslandActionButton("提取", Color(0xFF34C759)) { onExtract() }
+                                    IslandActionButton("data/储存", Color(0xFF00BCD4)) { jumpStep = 2 }
+                                    IslandActionButton("文件/文件夹", Color(0xFF0A84FF)) { jumpStep = 1 }
+                                    IslandActionButton("跳转", Color(0xFF0A84FF)) { jumpStep = 4 }
                                 }
                                 1 -> {
                                     Row(
@@ -990,20 +985,77 @@ private fun ProMaxIsland(
                                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                                     ) {
                                         Box(modifier = Modifier.weight(1f)) {
-                                            IslandActionButton("向左", Color(0xFF8E8E93)) {
-                                                jumpSide = 1
-                                                jumpStep = 2
+                                            IslandActionButton("创建文件夹", Color(0xFF0A84FF)) {
+                                                createIsDir = true
+                                                jumpStep = 6
                                             }
                                         }
                                         Box(modifier = Modifier.weight(1f)) {
-                                            IslandActionButton("向右", Color(0xFF0A84FF)) {
-                                                jumpSide = 2
-                                                jumpStep = 2
+                                            IslandActionButton("创建文件", Color(0xFF3A3A3C)) {
+                                                createIsDir = false
+                                                jumpStep = 6
                                             }
                                         }
                                     }
                                 }
                                 2 -> {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Box(modifier = Modifier.weight(1f)) {
+                                            IslandActionButton("data", Color(0xFF3A3A3C)) {
+                                                paneTarget = "/data/"
+                                                jumpStep = 3
+                                            }
+                                        }
+                                        Box(modifier = Modifier.weight(1f)) {
+                                            IslandActionButton("储存", Color(0xFF0A84FF)) {
+                                                paneTarget = "/storage/emulated/0/"
+                                                jumpStep = 3
+                                            }
+                                        }
+                                    }
+                                }
+                                3 -> {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Box(modifier = Modifier.weight(1f)) {
+                                            IslandActionButton("向左", Color(0xFF0A84FF)) {
+                                                onGoLeft(paneTarget)
+                                                jumpStep = 0
+                                            }
+                                        }
+                                        Box(modifier = Modifier.weight(1f)) {
+                                            IslandActionButton("向右", Color(0xFF0A84FF)) {
+                                                onGoRight(paneTarget)
+                                                jumpStep = 0
+                                            }
+                                        }
+                                    }
+                                }
+                                4 -> {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Box(modifier = Modifier.weight(1f)) {
+                                            IslandActionButton("向左", Color(0xFF8E8E93)) {
+                                                jumpSide = 1
+                                                jumpStep = 5
+                                            }
+                                        }
+                                        Box(modifier = Modifier.weight(1f)) {
+                                            IslandActionButton("向右", Color(0xFF0A84FF)) {
+                                                jumpSide = 2
+                                                jumpStep = 5
+                                            }
+                                        }
+                                    }
+                                }
+                                5 -> {
                                     androidx.compose.foundation.text.BasicTextField(
                                         value = jumpInput,
                                         onValueChange = { jumpInput = it },
@@ -1042,16 +1094,21 @@ private fun ProMaxIsland(
                                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                                     ) {
                                         Box(modifier = Modifier.weight(1f)) {
-                                            IslandActionButton("新建文件夹", Color(0xFF0A84FF)) {
+                                            IslandActionButton("确定", Color(0xFF0A84FF)) {
                                                 val nm = jumpInput.trim()
                                                 if (nm.isNotEmpty()) {
                                                     navScope.launch {
                                                         withContext(Dispatchers.IO) {
                                                             try {
-                                                                Shell.cmd("mkdir -p \"$nm\"").exec()
+                                                                if (createIsDir) {
+                                                                    Shell.cmd("mkdir -p \"$paneTarget$nm\"").exec()
+                                                                } else {
+                                                                    Shell.cmd("touch \"$paneTarget$nm\"").exec()
+                                                                }
                                                             } catch (t: Throwable) {
                                                             }
                                                         }
+                                                        onGoLeft(paneTarget)
                                                         jumpInput = ""
                                                         jumpStep = 0
                                                     }
