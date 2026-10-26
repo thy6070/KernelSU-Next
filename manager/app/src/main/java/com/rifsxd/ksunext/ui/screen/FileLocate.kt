@@ -77,9 +77,25 @@ internal fun resolveUri(context: Context, uri: Uri): String? {
     val name = contentName(context, uri) ?: return null
     val atRoot = java.io.File("/storage/emulated/0/" + name)
     if (atRoot.isFile) return atRoot.absolutePath
+    val safe = name.replace("'", "")
+    // shallow scan of the usual download spots first, then a bounded deep scan
+    val quick = listOf(
+        "/storage/emulated/0/Download",
+        "/storage/emulated/0/tencent",
+        "/storage/emulated/0/Android/data/com.tencent.mobileqq",
+        "/storage/emulated/0/Android/data/com.tencent.mm",
+        "/storage/emulated/0/UCDownloads",
+        "/storage/emulated/0/小鱼儿"
+    )
+    for (root in quick) {
+        val hit = runCatching {
+            Shell.cmd("find '$root' -maxdepth 5 -name '$safe' 2>/dev/null | head -n1")
+                .exec().out.firstOrNull { it.isNotBlank() }?.trim()
+        }.getOrNull()
+        if (!hit.isNullOrEmpty()) return hit
+    }
     return try {
-        val safe = name.replace("'", "")
-        Shell.cmd("find /storage/emulated/0 -maxdepth 7 -name '$safe' 2>/dev/null | head -n1")
+        Shell.cmd("timeout 6 find /storage/emulated/0 -maxdepth 6 -name '$safe' 2>/dev/null | head -n1")
             .exec().out.firstOrNull { it.isNotBlank() }?.trim()
     } catch (t: Throwable) {
         null
