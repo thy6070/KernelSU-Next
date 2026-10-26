@@ -9,6 +9,10 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowForward
+import androidx.compose.material3.Icon
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -167,45 +171,47 @@ fun CardLoginScreen(onSuccess: () -> Unit) {
                 Text(text = error ?: "", color = Color(0xFFFF453A), fontSize = 11.sp)
             }
             Spacer(modifier = Modifier.height(4.dp))
-            BasicTextField(
-                value = key,
-                onValueChange = { key = it },
-                singleLine = true,
-                textStyle = TextStyle(color = Color.White, fontSize = 12.sp),
-                modifier = Modifier
-                    .width(260.dp)
-                    .background(Color(0xFF1C1C1E), RoundedCornerShape(8.dp))
-                    .padding(8.dp)
-            )
-            Text(
-                text = if (busy) "验证中…" else "登录",
-                modifier = Modifier
-                    .width(260.dp)
-                    .padding(top = 8.dp)
-                    .clickable(enabled = !busy) {
-                        val k = key.trim()
-                        if (k.isEmpty()) {
-                            error = "无效密钥"
-                        } else {
-                            busy = true
-                            error = null
-                            scope.launch {
-                                val reason = withContext(Dispatchers.IO) { WeiYan.verify(ctx, k) }
-                                busy = false
-                                if (reason == null) {
-                                    onSuccess()
-                                } else {
-                                    error = reason
+            Row(
+                modifier = Modifier.offset(y = (-14).dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                BasicTextField(
+                    value = key,
+                    onValueChange = { key = it },
+                    singleLine = true,
+                    textStyle = TextStyle(color = Color(0xFF111114), fontSize = 12.sp),
+                    modifier = Modifier
+                        .width(190.dp)
+                        .background(Color(0xE6FFFFFF), RoundedCornerShape(8.dp))
+                        .padding(8.dp)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Icon(
+                    imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
+                    contentDescription = "enter",
+                    tint = if (busy) Color(0x66FFFFFF) else Color(0xFFFFFFFF),
+                    modifier = Modifier
+                        .size(30.dp)
+                        .clickable(enabled = !busy) {
+                            val k = key.trim()
+                            if (k.isEmpty()) {
+                                error = "无效密钥"
+                            } else {
+                                busy = true
+                                error = null
+                                scope.launch {
+                                    val reason = withContext(Dispatchers.IO) { WeiYan.verify(ctx, k) }
+                                    busy = false
+                                    if (reason == null) {
+                                        onSuccess()
+                                    } else {
+                                        error = reason
+                                    }
                                 }
                             }
                         }
-                    }
-                    .background(Color(0xFF0A84FF), RoundedCornerShape(percent = 50))
-                    .padding(vertical = 7.dp),
-                fontSize = 14.sp,
-                textAlign = TextAlign.Center,
-                color = Color.White
-            )
+                )
+            }
         }
     }
 }
