@@ -436,11 +436,17 @@ private fun ProMaxIsland(
             suApps = withContext(Dispatchers.IO) {
                 try {
                     val pm = navCtx.packageManager
-                    val intent = android.content.Intent(android.content.Intent.ACTION_MAIN)
-                        .addCategory(android.content.Intent.CATEGORY_LAUNCHER)
-                    pm.queryIntentActivities(intent, 0)
-                        .map { it.activityInfo.applicationInfo }
-                        .distinctBy { it.packageName }
+                    val userPkgs = Shell.cmd("pm list packages -3").exec().out
+                        .map { it.removePrefix("package:").trim() }
+                        .filter { it.isNotEmpty() && it.contains('.') }
+                    userPkgs
+                        .mapNotNull { pkg ->
+                            try {
+                                pm.getApplicationInfo(pkg, 0)
+                            } catch (t: Throwable) {
+                                null
+                            }
+                        }
                         .map { ai ->
                             val allowed = false
                             val icon = try {
