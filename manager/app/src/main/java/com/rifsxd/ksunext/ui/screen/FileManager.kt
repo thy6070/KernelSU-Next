@@ -589,10 +589,19 @@ private fun ProMaxIsland(
                 .combinedClickable(
                     onClick = {
                         if (terminalMode) onTermClose()
+                        // let the panels shrink before the pill settles, so closing keeps its animation
+                        val wasOpen = navMode || navTarget != null || sel != null
                         navMode = false
                         navTarget = null
                         if (sel != null) onClearSelection()
-                        expanded = false
+                        if (wasOpen) {
+                            reopenScope.launch {
+                                kotlinx.coroutines.delay(200)
+                                expanded = false
+                            }
+                        } else {
+                            expanded = false
+                        }
                     },
                     onLongClick = { openNav(null) }
                 )
