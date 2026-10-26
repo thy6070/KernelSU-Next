@@ -142,75 +142,70 @@ fun CardLoginScreen(onSuccess: () -> Unit) {
     val scope = rememberCoroutineScope()
 
     Box(modifier = Modifier.fillMaxSize().background(Color(0xFF101014))) {
-        // blurred app icon as the backdrop
         Image(
             painter = painterResource(id = com.rifsxd.ksunext.R.mipmap.ic_launcher_foreground),
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize().blur(52.dp)
         )
-
         Box(modifier = Modifier.fillMaxSize().background(Color(0x59FFFFFF)))
         Column(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp),
+            modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Image(
                 painter = painterResource(id = com.rifsxd.ksunext.R.mipmap.ic_launcher_foreground),
                 contentDescription = null,
-                modifier = Modifier.size(148.dp).clip(CircleShape).background(Color(0x40FFFFFF))
+                modifier = Modifier
+                    .size(148.dp)
+                    .clip(CircleShape)
+                    .background(Color(0x40FFFFFF))
             )
-            Spacer(modifier = Modifier.height(14.dp))
-            Box(modifier = Modifier.height(18.dp), contentAlignment = Alignment.Center) {
-                Text(text = error ?: "", color = Color(0xFFFF453A), fontSize = 12.sp)
+            Spacer(modifier = Modifier.height(24.dp))
+            Box(modifier = Modifier.height(16.dp), contentAlignment = Alignment.Center) {
+                Text(text = error ?: "", color = Color(0xFFFF453A), fontSize = 11.sp)
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                BasicTextField(
-                    value = key,
-                    onValueChange = { key = it },
-                    modifier = Modifier
-                        .width(190.dp)
-                        .background(Color(0xCC1C1C1E), RoundedCornerShape(10.dp))
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
-                    textStyle = TextStyle(color = Color.White, fontSize = 13.sp),
-                    singleLine = true,
-                    visualTransformation = PasswordVisualTransformation()
-                )
-                Spacer(modifier = Modifier.height(0.dp))
-                Text(
-                    text = if (busy) "…" else "进入",
-                    modifier = Modifier
-                        .padding(start = 10.dp)
-                        .clickable(enabled = !busy) {
-                            val k = key.trim()
-                            if (k.isEmpty()) {
-                                error = "无效密钥"
-                            } else {
-                                busy = true
-                                error = null
-                                scope.launch {
-                                    val reason = withContext(Dispatchers.IO) { WeiYan.verify(ctx, k) }
-                                    busy = false
-                                    if (reason == null) {
-                                        ctx.getSharedPreferences("yx_login", 0)
-                                            .edit().putString("key", k).commit()
-                                        onSuccess()
-                                    } else {
-                                        error = reason
-                                    }
+            Spacer(modifier = Modifier.height(4.dp))
+            BasicTextField(
+                value = key,
+                onValueChange = { key = it },
+                singleLine = true,
+                textStyle = TextStyle(color = Color.White, fontSize = 12.sp),
+                modifier = Modifier
+                    .width(260.dp)
+                    .background(Color(0xFF1C1C1E), RoundedCornerShape(8.dp))
+                    .padding(8.dp)
+            )
+            Text(
+                text = if (busy) "验证中…" else "登录",
+                modifier = Modifier
+                    .width(260.dp)
+                    .padding(top = 8.dp)
+                    .clickable(enabled = !busy) {
+                        val k = key.trim()
+                        if (k.isEmpty()) {
+                            error = "无效密钥"
+                        } else {
+                            busy = true
+                            error = null
+                            scope.launch {
+                                val reason = withContext(Dispatchers.IO) { WeiYan.verify(ctx, k) }
+                                busy = false
+                                if (reason == null) {
+                                    onSuccess()
+                                } else {
+                                    error = reason
                                 }
                             }
                         }
-                        .background(Color(0xFF0A84FF), RoundedCornerShape(percent = 50))
-                        .padding(horizontal = 18.dp, vertical = 11.dp),
-                    fontSize = 13.sp,
-                    color = Color.White
-                )
-            }
+                    }
+                    .background(Color(0xFF0A84FF), RoundedCornerShape(percent = 50))
+                    .padding(vertical = 7.dp),
+                fontSize = 14.sp,
+                textAlign = TextAlign.Center,
+                color = Color.White
+            )
         }
     }
 }
