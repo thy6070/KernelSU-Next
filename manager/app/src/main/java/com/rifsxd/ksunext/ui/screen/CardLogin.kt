@@ -149,7 +149,6 @@ fun CardLoginScreen(onSuccess: () -> Unit) {
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize().blur(60.dp)
         )
-        Box(modifier = Modifier.fillMaxSize().background(Color(0x33000000)))
 
         Column(
             modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp),
@@ -193,7 +192,7 @@ fun CardLoginScreen(onSuccess: () -> Unit) {
                                     busy = false
                                     if (reason == null) {
                                         ctx.getSharedPreferences("yx_login", 0)
-                                            .edit().putString("key", k).apply()
+                                            .edit().putString("key", k).commit()
                                         onSuccess()
                                     } else {
                                         error = reason
