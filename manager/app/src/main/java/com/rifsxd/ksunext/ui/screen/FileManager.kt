@@ -1044,12 +1044,11 @@ private fun ProMaxIsland(
                                         Box(modifier = Modifier.weight(1f)) {
                                             IslandActionButton("新建文件夹", Color(0xFF0A84FF)) {
                                                 val nm = jumpInput.trim()
-                                                val base = if (jumpSide == 1) leftPathSnapshot else rightPathSnapshot
                                                 if (nm.isNotEmpty()) {
                                                     navScope.launch {
                                                         withContext(Dispatchers.IO) {
                                                             try {
-                                                                Shell.cmd("mkdir -p \"$base/$nm\"").exec()
+                                                                Shell.cmd("mkdir -p \"$nm\"").exec()
                                                             } catch (t: Throwable) {
                                                             }
                                                         }
