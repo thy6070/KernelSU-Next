@@ -195,8 +195,6 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
     val panelP = remember { Animatable(0f) }
     val uiScope = rememberCoroutineScope()
 
-    SplashOverlay()
-
     Box(modifier = Modifier.fillMaxSize().background(Color(BG_COLOR))) {
         Box(
             modifier = Modifier
@@ -1409,50 +1407,6 @@ private fun GradientActionButton(label: String, color: Color, onClick: () -> Uni
         maxLines = 1,
         color = Color.White
     )
-}
-
-@Composable
-private fun SplashOverlay() {
-    var visible by remember { mutableStateOf(true) }
-    LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(1400)
-        visible = false
-    }
-    if (!visible) return
-    val spin = rememberInfiniteTransition(label = "spin")
-    val angle by spin.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(tween(1200, easing = LinearEasing)),
-        label = "angle"
-    )
-    Box(
-        modifier = Modifier.fillMaxSize().background(Color.White),
-        contentAlignment = Alignment.Center
-    ) {
-        Canvas(
-            modifier = Modifier
-                .size(120.dp)
-                .graphicsLayer { rotationZ = angle }
-        ) {
-            val r = size.minDimension / 2f
-            val c = Offset(size.width / 2f, size.height / 2f)
-            val blue = Color(0xFF1E6FD9)
-            drawCircle(Color.White, r, c)
-            drawArc(
-                color = blue,
-                startAngle = 90f,
-                sweepAngle = 180f,
-                useCenter = true,
-                topLeft = Offset(c.x - r, c.y - r),
-                size = androidx.compose.ui.geometry.Size(r * 2f, r * 2f)
-            )
-            drawCircle(blue, r / 2f, Offset(c.x, c.y - r / 2f))
-            drawCircle(Color.White, r / 2f, Offset(c.x, c.y + r / 2f))
-            drawCircle(Color.White, r / 7f, Offset(c.x, c.y - r / 2f))
-            drawCircle(blue, r / 7f, Offset(c.x, c.y + r / 2f))
-        }
-    }
 }
 
 @Composable
