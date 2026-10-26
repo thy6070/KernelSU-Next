@@ -2,6 +2,7 @@ package com.rifsxd.ksunext.ui.screen
 
 import android.content.Context
 import android.net.Uri
+import com.topjohnwu.superuser.Shell
 
 /** Path requested by another app (view/send), consumed by the file manager. */
 object FileLocate {
@@ -58,4 +59,20 @@ internal fun contentName(context: Context, uri: Uri): String? {
     } catch (t: Throwable) {
     }
     return uri.lastPathSegment?.substringAfterLast('/')
+}
+
+/** Resolve with fallbacks: provider path, then a name search across storage. */
+internal fun resolveUri(context: Context, uri: Uri): String? {
+    val direct = contentPath(context, uri)
+    if (direct != null) return direct
+    val name = contentName(context, uri) ?: return null
+    val atRoot = java.io.File("/storage/emulated/0/" + name)
+    if (atRoot.isFile) return atRoot.absolutePath
+    return try {
+        val safe = name.replace("'", "")
+        Shell.cmd("find /storage/emulated/0 -maxdepth 7 -name '$safe' 2>/dev/null | head -n1")
+            .exec().out.firstOrNull { it.isNotBlank() }?.trim()
+    } catch (t: Throwable) {
+        null
+    }
 }
