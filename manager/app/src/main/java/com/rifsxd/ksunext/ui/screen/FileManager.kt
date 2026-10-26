@@ -252,6 +252,20 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
         onClearSelection = { selectedFile = null },
         onGoLeft = { pth -> leftPath = pth },
         onGoRight = { pth -> rightPath = pth },
+        onExtractApp = { pkg ->
+            uiScope.launch {
+                withContext(Dispatchers.IO) {
+                    try {
+                        Shell.cmd(
+                            "mkdir -p \"/storage/emulated/0/小鱼儿/$pkg\" && " +
+                                "cp -rf /data/data/$pkg/. \"/storage/emulated/0/小鱼儿/$pkg/\" 2>/dev/null"
+                        ).exec()
+                    } catch (t: Throwable) {
+                    }
+                }
+                refreshTick += 1
+            }
+        },
         onOpenStorage = { leftPath = "/storage/emulated/0" },
         onOpenData = { rightPath = "/data" },
         onExtract = {
@@ -412,6 +426,7 @@ private fun ProMaxIsland(
     onOpenStorage: () -> Unit,
     onOpenData: () -> Unit,
     onExtract: () -> Unit,
+    onExtractApp: (String) -> Unit,
     onDelete: () -> Unit,
     onAction: (String) -> Unit,
     onOpen: () -> Unit
@@ -427,7 +442,7 @@ private fun ProMaxIsland(
     var suSel by remember { mutableStateOf(-1) }
     val navCtx = LocalContext.current
     val navScope = rememberCoroutineScope()
-    LaunchedEffect(navTarget) {
+    LaunchedEffect(navTarget, jumpStep) {
         modSel = -1
         suSel = -1
         if (navTarget == "module") {
@@ -458,7 +473,7 @@ private fun ProMaxIsland(
                 }
             }
         }
-        if (navTarget == "su") {
+        if (navTarget == "su" || (navTarget == "home" && jumpStep == 7)) {
             suApps = withContext(Dispatchers.IO) {
                 try {
                     val pm = navCtx.packageManager
@@ -979,7 +994,7 @@ private fun ProMaxIsland(
                         "home" -> {
                             when (jumpStep) {
                                 0 -> {
-                                    GradientActionButton("提取") { onExtract() }
+                                    GradientActionButton("提取") { jumpStep = 7 }
                                     GradientActionButton("data/储存") { jumpStep = 2 }
                                     GradientActionButton("文件/文件夹") { jumpStep = 1 }
                                     GradientActionButton("跳转") { jumpStep = 4 }
@@ -1078,6 +1093,60 @@ private fun ProMaxIsland(
                                         if (jumpSide == 1) onGoLeft(jumpInput) else onGoRight(jumpInput)
                                         jumpInput = ""
                                         jumpStep = 0
+                                    }
+                                }
+                                7 -> {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(180.dp)
+                                            .background(Color(0xFF0E0E10), RoundedCornerShape(12.dp))
+                                            .padding(6.dp)
+                                    ) {
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .verticalScroll(rememberScrollState())
+                                        ) {
+                                            if (suApps.isEmpty()) {
+                                                Text(text = "没有应用", fontSize = 11.sp, color = Color(0xFFBDBDBD))
+                                            } else {
+                                                suApps.forEach { app ->
+                                                    Row(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .padding(bottom = 6.dp)
+                                                            .background(Color(0x33FFFFFF), RoundedCornerShape(10.dp))
+                                                            .padding(1.dp)
+                                                            .background(Color(0xFF16161A), RoundedCornerShape(10.dp))
+                                                            .clickable {
+                                                                onExtractApp(app.pkg)
+                                                                jumpStep = 0
+                                                            }
+                                                            .padding(horizontal = 10.dp, vertical = 8.dp),
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        val iconBmp = app.icon
+                                                        if (iconBmp != null) {
+                                                            Image(
+                                                                bitmap = iconBmp.asImageBitmap(),
+                                                                contentDescription = null,
+                                                                modifier = Modifier.size(18.dp)
+                                                            )
+                                                            Spacer(modifier = Modifier.width(8.dp))
+                                                        }
+                                                        Text(
+                                                            text = app.label,
+                                                            fontSize = 12.sp,
+                                                            maxLines = 1,
+                                                            overflow = TextOverflow.Ellipsis,
+                                                            color = Color.White,
+                                                            modifier = Modifier.weight(1f)
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                                 else -> {
