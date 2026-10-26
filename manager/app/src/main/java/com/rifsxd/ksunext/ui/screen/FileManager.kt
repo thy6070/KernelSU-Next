@@ -250,6 +250,24 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
         panelOpen = panel,
         selectedFile = selectedFile,
         onClearSelection = { selectedFile = null },
+        onGoLeft = { pth -> leftPath = pth },
+        onGoRight = { pth -> rightPath = pth },
+        onOpenStorage = { leftPath = "/storage/emulated/0" },
+        onOpenData = { rightPath = "/data" },
+        onExtract = {
+            val from = selectedFile
+            if (from != null) {
+                uiScope.launch {
+                    withContext(Dispatchers.IO) {
+                        try {
+                            Shell.cmd("cp -rf \"$from\" \"$leftPath/\" 2>/dev/null").exec()
+                        } catch (t: Throwable) {
+                        }
+                    }
+                    refreshTick += 1
+                }
+            }
+        },
         onDelete = {
             val p = selectedFile
             if (p != null) uiScope.launch {
