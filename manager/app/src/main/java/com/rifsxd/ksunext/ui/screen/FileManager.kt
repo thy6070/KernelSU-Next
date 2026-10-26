@@ -979,10 +979,10 @@ private fun ProMaxIsland(
                         "home" -> {
                             when (jumpStep) {
                                 0 -> {
-                                    DarkActionButton("提取") { onExtract() }
-                                    DarkActionButton("data/储存") { jumpStep = 2 }
-                                    DarkActionButton("文件/文件夹") { jumpStep = 1 }
-                                    DarkActionButton("跳转") { jumpStep = 4 }
+                                    GradientActionButton("提取") { onExtract() }
+                                    GradientActionButton("data/储存") { jumpStep = 2 }
+                                    GradientActionButton("文件/文件夹") { jumpStep = 1 }
+                                    GradientActionButton("跳转") { jumpStep = 4 }
                                 }
                                 1 -> {
                                     Row(
@@ -1256,6 +1256,25 @@ private fun ProMaxIsland(
             }
         }
     }
+}
+
+@Composable
+private fun GradientActionButton(label: String, onClick: () -> Unit) {
+    Text(
+        text = label,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .background(
+                Brush.horizontalGradient(listOf(Color(0xFF0A84FF), Color(0xFF00BCD4))),
+                RoundedCornerShape(percent = 50)
+            )
+            .padding(vertical = 9.dp),
+        fontSize = 14.sp,
+        textAlign = TextAlign.Center,
+        maxLines = 1,
+        color = Color.White
+    )
 }
 
 @Composable
