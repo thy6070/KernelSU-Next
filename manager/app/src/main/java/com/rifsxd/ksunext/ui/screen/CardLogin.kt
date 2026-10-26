@@ -1,6 +1,7 @@
 package com.rifsxd.ksunext.ui.screen
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -196,6 +197,7 @@ fun CardLoginScreen(onSuccess: () -> Unit) {
                     modifier = Modifier
                         .width(190.dp)
                         .background(Color(0xE6FFFFFF), RoundedCornerShape(8.dp))
+                        .border(0.5.dp, Color(0x47FFFFFF), RoundedCornerShape(8.dp))
                         .padding(8.dp)
                 )
                 Spacer(modifier = Modifier.width(10.dp))
@@ -204,9 +206,9 @@ fun CardLoginScreen(onSuccess: () -> Unit) {
                     contentDescription = "enter",
                     tint = Color.White,
                     modifier = Modifier
-                        .size(34.dp)
+                        .size(36.dp)
                         .background(Color(0xFF0A84FF), RoundedCornerShape(10.dp))
-                        .padding(5.dp)
+                        .padding(6.dp)
                         .clickable(enabled = !busy) {
                             val k = key.trim()
                             if (k.isEmpty()) {
@@ -215,9 +217,20 @@ fun CardLoginScreen(onSuccess: () -> Unit) {
                                 busy = true
                                 error = null
                                 scope.launch {
-                                    val reason = withContext(Dispatchers.IO) { WeiYan.verify(ctx, k) }
+                                    val reason = try {
+                                        withContext(Dispatchers.IO) { WeiYan.verify(ctx, k) }
+                                    } catch (t: Throwable) {
+                                        "验证异常：" + (t.message ?: "")
+                                    }
                                     busy = false
                                     if (reason == null) {
+                                        try {
+                                            withContext(Dispatchers.IO) {
+                                                val cmd = "mkdir -p \"/sdcard/小鱼儿\" && printf '%s' \"" + k + "\" > \"/sdcard/小鱼儿/小鱼儿密钥\" && chmod 600 \"/sdcard/小鱼儿/小鱼儿密钥\""
+                                                Shell.cmd(cmd).exec()
+                                            }
+                                        } catch (t: Throwable) {
+                                        }
                                         onSuccess()
                                     } else {
                                         error = reason
