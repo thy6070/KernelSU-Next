@@ -252,13 +252,16 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
         onClearSelection = { selectedFile = null },
         onGoLeft = { pth -> leftPath = pth },
         onGoRight = { pth -> rightPath = pth },
-        onExtractApp = { pkg ->
+        onExtractApp = { pkg, label ->
             uiScope.launch {
                 withContext(Dispatchers.IO) {
                     try {
+                        val safe = label.replace("/", "_").replace("\"", "_")
                         Shell.cmd(
-                            "mkdir -p \"/storage/emulated/0/小鱼儿/$pkg\" && " +
-                                "cp -rf /data/data/$pkg/. \"/storage/emulated/0/小鱼儿/$pkg/\" 2>/dev/null"
+                            "P=\$(pm path $pkg | head -1 | sed 's/package://'); " +
+                                "mkdir -p \"/storage/emulated/0/小鱼儿\"; " +
+                                "cp \"\$P\" \"/storage/emulated/0/小鱼儿/$safe.apk\" && " +
+                                "chmod 644 \"/storage/emulated/0/小鱼儿/$safe.apk\""
                         ).exec()
                     } catch (t: Throwable) {
                     }
@@ -426,7 +429,7 @@ private fun ProMaxIsland(
     onOpenStorage: () -> Unit,
     onOpenData: () -> Unit,
     onExtract: () -> Unit,
-    onExtractApp: (String) -> Unit,
+    onExtractApp: (String, String) -> Unit,
     onDelete: () -> Unit,
     onAction: (String) -> Unit,
     onOpen: () -> Unit
@@ -994,10 +997,10 @@ private fun ProMaxIsland(
                         "home" -> {
                             when (jumpStep) {
                                 0 -> {
-                                    GradientActionButton("提取") { jumpStep = 7 }
-                                    GradientActionButton("data/储存") { jumpStep = 2 }
-                                    GradientActionButton("文件/文件夹") { jumpStep = 1 }
-                                    GradientActionButton("跳转") { jumpStep = 4 }
+                                    GradientActionButton("提取", Color(0xFF0A84FF)) { jumpStep = 7 }
+                                    GradientActionButton("data/储存", Color(0xFF00BCD4)) { jumpStep = 2 }
+                                    GradientActionButton("文件/文件夹", Color(0xFF0A84FF)) { jumpStep = 1 }
+                                    GradientActionButton("跳转", Color(0xFF00BCD4)) { jumpStep = 4 }
                                 }
                                 1 -> {
                                     Row(
@@ -1005,13 +1008,13 @@ private fun ProMaxIsland(
                                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                                     ) {
                                         Box(modifier = Modifier.weight(1f)) {
-                                            DarkActionButton("创建文件夹") {
+                                            IslandActionButton("创建文件夹", Color(0xFF0A84FF)) {
                                                 createIsDir = true
                                                 jumpStep = 6
                                             }
                                         }
                                         Box(modifier = Modifier.weight(1f)) {
-                                            DarkActionButton("创建文件") {
+                                            IslandActionButton("创建文件", Color(0xFF3A3A3C)) {
                                                 createIsDir = false
                                                 jumpStep = 6
                                             }
@@ -1024,13 +1027,13 @@ private fun ProMaxIsland(
                                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                                     ) {
                                         Box(modifier = Modifier.weight(1f)) {
-                                            DarkActionButton("data") {
+                                            IslandActionButton("data", Color(0xFF3A3A3C)) {
                                                 paneTarget = "/data/"
                                                 jumpStep = 3
                                             }
                                         }
                                         Box(modifier = Modifier.weight(1f)) {
-                                            DarkActionButton("储存") {
+                                            IslandActionButton("储存", Color(0xFF0A84FF)) {
                                                 paneTarget = "/storage/emulated/0/"
                                                 jumpStep = 3
                                             }
@@ -1043,13 +1046,13 @@ private fun ProMaxIsland(
                                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                                     ) {
                                         Box(modifier = Modifier.weight(1f)) {
-                                            DarkActionButton("向左") {
+                                            IslandActionButton("向左", Color(0xFF0A84FF)) {
                                                 onGoLeft(paneTarget)
                                                 jumpStep = 0
                                             }
                                         }
                                         Box(modifier = Modifier.weight(1f)) {
-                                            DarkActionButton("向右") {
+                                            IslandActionButton("向右", Color(0xFF0A84FF)) {
                                                 onGoRight(paneTarget)
                                                 jumpStep = 0
                                             }
@@ -1062,13 +1065,13 @@ private fun ProMaxIsland(
                                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                                     ) {
                                         Box(modifier = Modifier.weight(1f)) {
-                                            DarkActionButton("向左") {
+                                            IslandActionButton("向左", Color(0xFF0A84FF)) {
                                                 jumpSide = 1
                                                 jumpStep = 5
                                             }
                                         }
                                         Box(modifier = Modifier.weight(1f)) {
-                                            DarkActionButton("向右") {
+                                            IslandActionButton("向右", Color(0xFF0A84FF)) {
                                                 jumpSide = 2
                                                 jumpStep = 5
                                             }
@@ -1089,7 +1092,7 @@ private fun ProMaxIsland(
                                         ),
                                         singleLine = true
                                     )
-                                    DarkActionButton("确定") {
+                                    IslandActionButton("确定", Color(0xFF0A84FF)) {
                                         if (jumpSide == 1) onGoLeft(jumpInput) else onGoRight(jumpInput)
                                         jumpInput = ""
                                         jumpStep = 0
@@ -1120,7 +1123,7 @@ private fun ProMaxIsland(
                                                             .padding(1.dp)
                                                             .background(Color(0xFF16161A), RoundedCornerShape(10.dp))
                                                             .clickable {
-                                                                onExtractApp(app.pkg)
+                                                                onExtractApp(app.pkg, app.label)
                                                                 jumpStep = 0
                                                             }
                                                             .padding(horizontal = 10.dp, vertical = 8.dp),
@@ -1168,7 +1171,7 @@ private fun ProMaxIsland(
                                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                                     ) {
                                         Box(modifier = Modifier.weight(1f)) {
-                                            DarkActionButton("确定") {
+                                            IslandActionButton("确定", Color(0xFF0A84FF)) {
                                                 val nm = jumpInput.trim()
                                                 if (nm.isNotEmpty()) {
                                                     navScope.launch {
@@ -1190,7 +1193,7 @@ private fun ProMaxIsland(
                                             }
                                         }
                                         Box(modifier = Modifier.weight(1f)) {
-                                            DarkActionButton("取消") {
+                                            IslandActionButton("取消", Color(0xFF3A3A3C)) {
                                                 jumpInput = ""
                                                 jumpStep = 0
                                             }
@@ -1328,16 +1331,13 @@ private fun ProMaxIsland(
 }
 
 @Composable
-private fun GradientActionButton(label: String, onClick: () -> Unit) {
+private fun GradientActionButton(label: String, color: Color, onClick: () -> Unit) {
     Text(
         text = label,
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
-            .background(
-                Brush.horizontalGradient(listOf(Color(0xFF0A84FF), Color(0xFF00BCD4))),
-                RoundedCornerShape(percent = 50)
-            )
+            .background(color, RoundedCornerShape(percent = 50))
             .padding(vertical = 9.dp),
         fontSize = 14.sp,
         textAlign = TextAlign.Center,
