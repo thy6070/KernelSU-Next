@@ -697,11 +697,9 @@ class MainActivity : FragmentActivity() {
             else -> null
         } ?: return false
         val picked: android.net.Uri = uri
-        val from = try {
-            i.getParcelableExtra<android.os.Parcelable>(Intent.EXTRA_REFERRER)
-                ?.let { ref -> if (ref is android.net.Uri) ref.authority else null }
-                ?: runCatching { i.getParcelableExtra<android.os.Parcelable>("android.intent.extra.REFERRER_NAME") as? String }
-                    ?.removePrefix("android-app://")
+        val from: String? = try {
+            val ref = i.getParcelableExtra<android.os.Parcelable>(Intent.EXTRA_REFERRER)
+            if (ref is android.net.Uri) ref.authority else null
         } catch (t: Throwable) {
             null
         }
