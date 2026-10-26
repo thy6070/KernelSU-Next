@@ -209,7 +209,8 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
     var selectedFile by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(pendingLocate) {
         val target = pendingLocate ?: return@LaunchedEffect
-        leftPath = target.substringBeforeLast('/', "/")
+        val dir = target.substringBeforeLast('/', "/")
+        if (leftPath == dir) refreshTick += 1 else leftPath = dir
         selectedFile = target
         pendingLocate = null
     }
