@@ -502,10 +502,11 @@ private fun ProMaxIsland(
 
     fun openNav(target: String?) {
         reopenScope.launch {
-            expanded = false
-            kotlinx.coroutines.delay(190)
+            navMode = false
+            navTarget = null
+            kotlinx.coroutines.delay(200)
+            navMode = true
             navTarget = target
-            navMode = target == null
             expanded = true
         }
     }
@@ -686,7 +687,7 @@ private fun ProMaxIsland(
             AnimatedVisibility(
                 visible = navMode || navTarget != null,
                 enter = expandVertically(animationSpec = tween(260, easing = zyEase), expandFrom = Alignment.Bottom) + fadeIn(tween(160)),
-                exit = shrinkVertically(animationSpec = tween(260, easing = zyEase), shrinkTowards = Alignment.Bottom) + fadeOut(tween(160))
+                exit = shrinkVertically(animationSpec = tween(260, easing = zyEase), shrinkTowards = Alignment.Bottom) + fadeOut(tween(90))
             ) {
                 Column(
                     modifier = Modifier
