@@ -290,10 +290,11 @@ class MainActivity : FragmentActivity() {
                 }
                 else -> null
             } ?: return
+            val picked = uri
             Thread {
                 try {
-                    val path = com.rifsxd.ksunext.ui.screen.contentPath(this, uri)
-                        ?: com.rifsxd.ksunext.ui.screen.contentName(this, uri)
+                    val path = com.rifsxd.ksunext.ui.screen.contentPath(this, picked)
+                        ?: com.rifsxd.ksunext.ui.screen.contentName(this, picked)
                             ?.let { n -> "/storage/emulated/0/" + n }
                     if (path != null) {
                         com.rifsxd.ksunext.ui.screen.FileLocate.pendingPath = path
