@@ -1092,14 +1092,12 @@ private fun ProMaxIsland(
                                         Box(modifier = Modifier.weight(1f)) {
                                             IslandActionButton("向左", Color(0xFF3A3A3C)) {
                                                 onGoLeft(paneTarget)
-                                                jumpStep = 0
                                                 closeIsland()
                                             }
                                         }
                                         Box(modifier = Modifier.weight(1f)) {
                                             IslandActionButton("向右", Color(0xFF0A84FF)) {
                                                 onGoRight(paneTarget)
-                                                jumpStep = 0
                                                 closeIsland()
                                             }
                                         }
