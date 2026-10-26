@@ -54,16 +54,7 @@
             android:exported="true"
             android:label="@string/app_name"
             android:targetActivity=".ui.MainActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data
-                    android:mimeType="application/zip"
-                    android:scheme="content" />
-            </intent-filter>
+            <!-- no VIEW filter: every opened file is located, never flashed -->
         </activity-alias>
 
         <!-- No intent-filter: kept only for backward compatibility with
