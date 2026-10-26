@@ -569,10 +569,10 @@ private fun ProMaxIsland(
     fun closeIsland() {
         reopenScope.launch {
             navClosing = true
+            navMode = false
             expanded = false
             kotlinx.coroutines.delay(300)
             navTarget = null
-            navMode = false
             jumpStep = 0
             jumpInput = ""
             navClosing = false
