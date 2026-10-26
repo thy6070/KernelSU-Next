@@ -650,10 +650,10 @@ private fun ProMaxIsland(
         lowerSel.endsWith(".apk") -> "安装"
         lowerSel.endsWith(".so") -> "启动"
         lowerSel.endsWith(".zip") || lowerSel.endsWith(".tar") || lowerSel.endsWith(".gz") ||
-            lowerSel.endsWith(".7z") || lowerSel.endsWith(".rar") || lowerSel.endsWith(".xz") -> "挂载"
+            lowerSel.endsWith(".7z") || lowerSel.endsWith(".rar") || lowerSel.endsWith(".xz") -> "···"
         else -> "执行"
     }
-    val actionColor = if (actionLabel == "挂载") Color(0xFFFFB300) else Color(0xFF0A84FF)
+    val actionColor = Color(0xFF0A84FF)
 
     val zyEase = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)
 
