@@ -783,7 +783,7 @@ private fun ProMaxIsland(
                         .fillMaxWidth()
                         .animateContentSize(animationSpec = tween(260, easing = zyEase))
                 ) {
-                Row(
+                if (navTarget == null) Row(
                     modifier = Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
@@ -1078,12 +1078,18 @@ private fun ProMaxIsland(
                                             IslandActionButton("向左", Color(0xFF3A3A3C)) {
                                                 onGoLeft(paneTarget)
                                                 jumpStep = 0
+                                                navTarget = null
+                                                navMode = false
+                                                expanded = false
                                             }
                                         }
                                         Box(modifier = Modifier.weight(1f)) {
                                             IslandActionButton("向右", Color(0xFF0A84FF)) {
                                                 onGoRight(paneTarget)
                                                 jumpStep = 0
+                                                navTarget = null
+                                                navMode = false
+                                                expanded = false
                                             }
                                         }
                                     }
@@ -1125,6 +1131,9 @@ private fun ProMaxIsland(
                                         if (jumpSide == 1) onGoLeft(jumpInput) else onGoRight(jumpInput)
                                         jumpInput = ""
                                         jumpStep = 0
+                                        navTarget = null
+                                        navMode = false
+                                        expanded = false
                                     }
                                 }
                                 7 -> {
@@ -1221,6 +1230,9 @@ private fun ProMaxIsland(
                                                         onGoLeft(paneTarget)
                                                         jumpInput = ""
                                                         jumpStep = 0
+                                                        navTarget = null
+                                                        navMode = false
+                                                        expanded = false
                                                     }
                                                 }
                                             }
@@ -1243,6 +1255,9 @@ private fun ProMaxIsland(
                                                         onGoRight(paneTarget)
                                                         jumpInput = ""
                                                         jumpStep = 0
+                                                        navTarget = null
+                                                        navMode = false
+                                                        expanded = false
                                                     }
                                                 }
                                             }
