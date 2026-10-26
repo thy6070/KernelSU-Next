@@ -290,7 +290,7 @@ class MainActivity : FragmentActivity() {
                 }
                 else -> null
             } ?: return
-            val picked = uri
+            val picked: android.net.Uri = uri
             Thread {
                 try {
                     val path = com.rifsxd.ksunext.ui.screen.contentPath(this, picked)
