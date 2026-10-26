@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material3.Icon
 import androidx.compose.foundation.layout.offset
+import com.topjohnwu.superuser.Shell
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -144,6 +146,17 @@ fun CardLoginScreen(onSuccess: () -> Unit) {
     var error by remember { mutableStateOf<String?>(null) }
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
+    LaunchedEffect(Unit) {
+        val saved = withContext(Dispatchers.IO) {
+            try {
+                Shell.cmd("cat \"/sdcard/小鱼儿/小鱼儿密钥\" 2>/dev/null").exec()
+                    .out.joinToString("").trim()
+            } catch (t: Throwable) {
+                ""
+            }
+        }
+        if (saved.isNotEmpty()) key = saved
+    }
 
     Box(modifier = Modifier.fillMaxSize().background(Color(0xFF101014))) {
         Image(
@@ -167,12 +180,12 @@ fun CardLoginScreen(onSuccess: () -> Unit) {
                     .background(Color(0x40FFFFFF))
             )
             Spacer(modifier = Modifier.height(24.dp))
-            Box(modifier = Modifier.height(16.dp), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.height(16.dp).offset(y = 10.dp), contentAlignment = Alignment.Center) {
                 Text(text = error ?: "", color = Color(0xFFFF453A), fontSize = 11.sp)
             }
             Spacer(modifier = Modifier.height(4.dp))
             Row(
-                modifier = Modifier.offset(y = (-14).dp),
+                modifier = Modifier.offset(x = 18.dp, y = (-22).dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 BasicTextField(
@@ -189,9 +202,11 @@ fun CardLoginScreen(onSuccess: () -> Unit) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
                     contentDescription = "enter",
-                    tint = if (busy) Color(0x66FFFFFF) else Color(0xFFFFFFFF),
+                    tint = Color.White,
                     modifier = Modifier
-                        .size(30.dp)
+                        .size(34.dp)
+                        .background(Color(0xFF0A84FF), RoundedCornerShape(10.dp))
+                        .padding(5.dp)
                         .clickable(enabled = !busy) {
                             val k = key.trim()
                             if (k.isEmpty()) {
