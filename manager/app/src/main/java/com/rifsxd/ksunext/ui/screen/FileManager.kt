@@ -190,17 +190,6 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
 
     var leftPath by remember { mutableStateOf("/storage/emulated/0") }
     var rightPath by remember { mutableStateOf("/data") }
-    var pendingLocate by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            val target = FileLocate.pendingPath
-            if (target != null) {
-                FileLocate.pendingPath = null
-                pendingLocate = target
-            }
-            kotlinx.coroutines.delay(250)
-        }
-    }
 
     var panel by remember { mutableStateOf(false) }
     var showTerminal by remember { mutableStateOf(false) }
@@ -208,12 +197,11 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
     var termText by remember { mutableStateOf("") }
     var selectedFile by remember { mutableStateOf<String?>(null) }
     var refreshTick by remember { mutableStateOf(0) }
-    LaunchedEffect(pendingLocate) {
-        val target = pendingLocate ?: return@LaunchedEffect
+    LaunchedEffect(FileLocate.tick) {
+        val target = FileLocate.path ?: return@LaunchedEffect
         val dir = target.substringBeforeLast('/', "/")
         if (leftPath == dir) refreshTick += 1 else leftPath = dir
         selectedFile = target
-        pendingLocate = null
     }
 
     var runMessage by remember { mutableStateOf<String?>(null) }
@@ -1822,6 +1810,7 @@ private fun FsRow(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
+            .background(if (selected) Color(0x33FFB6C8) else Color.Transparent)
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .then(
                 if (accent != null) {
