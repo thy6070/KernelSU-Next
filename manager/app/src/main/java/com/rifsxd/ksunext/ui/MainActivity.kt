@@ -275,31 +275,7 @@ class MainActivity : FragmentActivity() {
             appLockState.value = requireBiometric
         }
 
-        // an external app asked us to open/locate a file
-        fun handleLocate(i: Intent?): Boolean {
-            if (i == null) return false
-            val uri = when (i.action) {
-                Intent.ACTION_VIEW -> i.data
-                Intent.ACTION_SEND -> {
-                    @Suppress("DEPRECATION")
-                    (i.getParcelableExtra(Intent.EXTRA_STREAM) as? android.net.Uri)
-                        ?: i.clipData?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.uri
-                }
-                else -> null
-            } ?: return false
-            val picked: android.net.Uri = uri
-            Thread {
-                try {
-                    val path = com.rifsxd.ksunext.ui.screen.resolveUri(this, picked)
-                    if (path != null) {
-                        com.rifsxd.ksunext.ui.screen.FileLocate.request(path)
-                    }
-                } catch (t: Throwable) {
-                }
-            }.start()
-            return true
-        }
-        if (!handleLocate(intent) && intent != null) {
+        if (!locateIntent(intent) && intent != null) {
             handleIntent(intent)
         }
 
@@ -701,8 +677,34 @@ class MainActivity : FragmentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        handleIntent(intent)
+        // opened/shared files are located in the panes, never flashed
+        if (!locateIntent(intent)) {
+            handleIntent(intent)
+        }
         setIntent(intent)
+    }
+
+    /** Resolve an opened/shared file and ask the file manager to reveal it. */
+    private fun locateIntent(i: Intent?): Boolean {
+        if (i == null) return false
+        val uri = when (i.action) {
+            Intent.ACTION_VIEW -> i.data
+            Intent.ACTION_SEND -> {
+                @Suppress("DEPRECATION")
+                (i.getParcelableExtra(Intent.EXTRA_STREAM) as? android.net.Uri)
+                    ?: i.clipData?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.uri
+            }
+            else -> null
+        } ?: return false
+        val picked: android.net.Uri = uri
+        Thread {
+            try {
+                val path = com.rifsxd.ksunext.ui.screen.resolveUri(this, picked)
+                if (path != null) com.rifsxd.ksunext.ui.screen.FileLocate.request(path)
+            } catch (t: Throwable) {
+            }
+        }.start()
+        return true
     }
 
     override fun onStop() {
