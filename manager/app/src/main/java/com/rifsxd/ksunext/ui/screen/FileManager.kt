@@ -38,6 +38,7 @@ import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.CubicBezierEasing
@@ -568,10 +569,10 @@ private fun ProMaxIsland(
     fun closeIsland() {
         reopenScope.launch {
             navClosing = true
+            navMode = false
             expanded = false
             kotlinx.coroutines.delay(300)
             navTarget = null
-            navMode = false
             jumpStep = 0
             jumpInput = ""
             navClosing = false
@@ -821,11 +822,12 @@ private fun ProMaxIsland(
                 }
             }
 
-                if (navTarget != null) Column(
+                Crossfade(targetState = navTarget, label = "navPanel") { shownNav ->
+                if (shownNav != null) Column(
                     modifier = Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    when (navTarget) {
+                    when (shownNav) {
                         "module" -> {
                             Box(
                                 modifier = Modifier
@@ -1280,6 +1282,7 @@ private fun ProMaxIsland(
                             }
                         }
                     }
+                }
                 }
             }
 
