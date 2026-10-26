@@ -436,9 +436,9 @@ private fun ProMaxIsland(
             suApps = withContext(Dispatchers.IO) {
                 try {
                     val pm = navCtx.packageManager
-                    val granted = Shell.cmd("ls -1 /data/adb/ksu/packages 2>/dev/null").exec().out
-                        .map { it.trim() }
-                        .filter { it.isNotEmpty() }
+                    val grantedUids = Shell.cmd("od -An -t u4 -j 12 /data/adb/ksu/.allowlist 2>/dev/null").exec().out
+                        .flatMap { line -> line.trim().split(Regex("\\s+")) }
+                        .mapNotNull { it.toLongOrNull() }
                         .toSet()
                     val userPkgs = Shell.cmd("pm list packages -3").exec().out
                         .map { it.removePrefix("package:").trim() }
@@ -452,7 +452,7 @@ private fun ProMaxIsland(
                             }
                         }
                         .map { ai ->
-                            val allowed = granted.contains(ai.packageName)
+                            val allowed = grantedUids.contains(ai.uid.toLong())
                             val icon = try {
                                 val d = pm.getApplicationIcon(ai)
                                 val w = d.intrinsicWidth.coerceAtLeast(1)
@@ -599,7 +599,6 @@ private fun ProMaxIsland(
             modifier = Modifier
                 .zIndex(1f)
                 .width(pillW)
-                .animateContentSize(animationSpec = tween(320, easing = zyEase))
                 .graphicsLayer {
                     scaleX = bump
                     scaleY = bump
@@ -616,10 +615,7 @@ private fun ProMaxIsland(
                         navMode = false
                         navTarget = null
                         if (sel != null) onClearSelection()
-                        reopenScope.launch {
-                            kotlinx.coroutines.delay(320)
-                            expanded = false
-                        }
+                        expanded = false
                     },
                     onLongClick = { openNav(null) }
                 )
