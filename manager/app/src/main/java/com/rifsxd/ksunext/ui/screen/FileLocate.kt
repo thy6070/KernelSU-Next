@@ -2,11 +2,20 @@ package com.rifsxd.ksunext.ui.screen
 
 import android.content.Context
 import android.net.Uri
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.topjohnwu.superuser.Shell
 
 /** Path requested by another app (view/send), consumed by the file manager. */
 object FileLocate {
-    var pendingPath: String? = null
+    var path by mutableStateOf<String?>(null)
+    var tick by mutableStateOf(0)
+
+    fun request(target: String) {
+        path = target
+        tick += 1
+    }
 }
 
 /** Resolve a content:// uri back to a real file path (provider, fd, then document id). */
