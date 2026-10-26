@@ -651,9 +651,14 @@ private fun ProMaxIsland(
                                 kotlinx.coroutines.delay(300)
                                 navMode = false
                                 navTarget = null
+                                jumpStep = 0
+                                jumpInput = ""
                                 navClosing = false
                             }
                         }
+                        jumpStep = 0
+                        jumpInput = ""
+                        soPanel = false
                         if (sel != null) onClearSelection()
                         expanded = false
                     },
@@ -820,7 +825,7 @@ private fun ProMaxIsland(
                                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
                                     Box(modifier = Modifier.weight(1f)) {
-                                        IslandActionButton("删除", Color(0xFFFF3B30)) {
+                                        DarkActionButton("删除") {
                                             val mod = modules.getOrNull(modSel)
                                             if (mod != null) {
                                                 navScope.launch {
@@ -837,7 +842,7 @@ private fun ProMaxIsland(
                                         }
                                     }
                                     Box(modifier = Modifier.weight(1f)) {
-                                        IslandActionButton("操作", Color(0xFF0A84FF)) {
+                                        DarkActionButton("操作") {
                                             val mod = modules.getOrNull(modSel)
                                             if (mod != null) {
                                                 navScope.launch {
@@ -962,11 +967,11 @@ private fun ProMaxIsland(
                             }
                         }
                         "settings" -> {
-                            IslandActionButton("挂载隔离", Color(0xFF0A84FF)) {
+                            DarkActionButton("挂载隔离") {
                                 navTarget = null; navMode = false
                                 navigator.navigate(SettingScreenDestination)
                             }
-                            IslandActionButton("内核设置", Color(0xFF0A84FF)) {
+                            DarkActionButton("内核设置") {
                                 navTarget = null; navMode = false
                                 navigator.navigate(SettingScreenDestination)
                             }
@@ -974,10 +979,10 @@ private fun ProMaxIsland(
                         "home" -> {
                             when (jumpStep) {
                                 0 -> {
-                                    IslandActionButton("提取", Color(0xFF34C759)) { onExtract() }
-                                    IslandActionButton("data/储存", Color(0xFF00BCD4)) { jumpStep = 2 }
-                                    IslandActionButton("文件/文件夹", Color(0xFF0A84FF)) { jumpStep = 1 }
-                                    IslandActionButton("跳转", Color(0xFF0A84FF)) { jumpStep = 4 }
+                                    DarkActionButton("提取") { onExtract() }
+                                    DarkActionButton("data/储存") { jumpStep = 2 }
+                                    DarkActionButton("文件/文件夹") { jumpStep = 1 }
+                                    DarkActionButton("跳转") { jumpStep = 4 }
                                 }
                                 1 -> {
                                     Row(
@@ -985,13 +990,13 @@ private fun ProMaxIsland(
                                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                                     ) {
                                         Box(modifier = Modifier.weight(1f)) {
-                                            IslandActionButton("创建文件夹", Color(0xFF0A84FF)) {
+                                            DarkActionButton("创建文件夹") {
                                                 createIsDir = true
                                                 jumpStep = 6
                                             }
                                         }
                                         Box(modifier = Modifier.weight(1f)) {
-                                            IslandActionButton("创建文件", Color(0xFF3A3A3C)) {
+                                            DarkActionButton("创建文件") {
                                                 createIsDir = false
                                                 jumpStep = 6
                                             }
@@ -1004,13 +1009,13 @@ private fun ProMaxIsland(
                                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                                     ) {
                                         Box(modifier = Modifier.weight(1f)) {
-                                            IslandActionButton("data", Color(0xFF3A3A3C)) {
+                                            DarkActionButton("data") {
                                                 paneTarget = "/data/"
                                                 jumpStep = 3
                                             }
                                         }
                                         Box(modifier = Modifier.weight(1f)) {
-                                            IslandActionButton("储存", Color(0xFF0A84FF)) {
+                                            DarkActionButton("储存") {
                                                 paneTarget = "/storage/emulated/0/"
                                                 jumpStep = 3
                                             }
@@ -1023,13 +1028,13 @@ private fun ProMaxIsland(
                                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                                     ) {
                                         Box(modifier = Modifier.weight(1f)) {
-                                            IslandActionButton("向左", Color(0xFF0A84FF)) {
+                                            DarkActionButton("向左") {
                                                 onGoLeft(paneTarget)
                                                 jumpStep = 0
                                             }
                                         }
                                         Box(modifier = Modifier.weight(1f)) {
-                                            IslandActionButton("向右", Color(0xFF0A84FF)) {
+                                            DarkActionButton("向右") {
                                                 onGoRight(paneTarget)
                                                 jumpStep = 0
                                             }
@@ -1042,13 +1047,13 @@ private fun ProMaxIsland(
                                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                                     ) {
                                         Box(modifier = Modifier.weight(1f)) {
-                                            IslandActionButton("向左", Color(0xFF8E8E93)) {
+                                            DarkActionButton("向左") {
                                                 jumpSide = 1
                                                 jumpStep = 5
                                             }
                                         }
                                         Box(modifier = Modifier.weight(1f)) {
-                                            IslandActionButton("向右", Color(0xFF0A84FF)) {
+                                            DarkActionButton("向右") {
                                                 jumpSide = 2
                                                 jumpStep = 5
                                             }
@@ -1069,7 +1074,7 @@ private fun ProMaxIsland(
                                         ),
                                         singleLine = true
                                     )
-                                    IslandActionButton("确定", Color(0xFF0A84FF)) {
+                                    DarkActionButton("确定") {
                                         if (jumpSide == 1) onGoLeft(jumpInput) else onGoRight(jumpInput)
                                         jumpInput = ""
                                         jumpStep = 0
@@ -1094,7 +1099,7 @@ private fun ProMaxIsland(
                                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                                     ) {
                                         Box(modifier = Modifier.weight(1f)) {
-                                            IslandActionButton("确定", Color(0xFF0A84FF)) {
+                                            DarkActionButton("确定") {
                                                 val nm = jumpInput.trim()
                                                 if (nm.isNotEmpty()) {
                                                     navScope.launch {
@@ -1116,7 +1121,7 @@ private fun ProMaxIsland(
                                             }
                                         }
                                         Box(modifier = Modifier.weight(1f)) {
-                                            IslandActionButton("取消", Color(0xFF3A3A3C)) {
+                                            DarkActionButton("取消") {
                                                 jumpInput = ""
                                                 jumpStep = 0
                                             }
@@ -1202,7 +1207,7 @@ private fun ProMaxIsland(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Box(modifier = Modifier.weight(1f)) {
-                            IslandActionButton("删除", Color(0xFFFF3B30)) { onDelete() }
+                            DarkActionButton("删除") { onDelete() }
                         }
                         Box(modifier = Modifier.weight(1f)) {
                             IslandActionButton(actionLabel, actionColor) {
@@ -1243,7 +1248,7 @@ private fun ProMaxIsland(
                         ),
                         singleLine = true
                     )
-                    IslandActionButton("启动", Color(0xFF0A84FF)) {
+                    DarkActionButton("启动") {
                         onAction(soInput)
                         soPanel = false
                     }
@@ -1251,6 +1256,23 @@ private fun ProMaxIsland(
             }
         }
     }
+}
+
+@Composable
+private fun DarkActionButton(label: String, onClick: () -> Unit) {
+    Text(
+        text = label,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .background(Color(0xFF16161A), RoundedCornerShape(percent = 50))
+            .border(0.5.dp, Color(0xFF3A3A3C), RoundedCornerShape(percent = 50))
+            .padding(vertical = 9.dp),
+        fontSize = 14.sp,
+        textAlign = TextAlign.Center,
+        maxLines = 1,
+        color = Color.White
+    )
 }
 
 @Composable
