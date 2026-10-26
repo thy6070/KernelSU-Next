@@ -237,7 +237,24 @@ class MainActivity : FragmentActivity() {
         try {
             val prefsInit = getSharedPreferences("settings", MODE_PRIVATE)
             amoledModeState.value = prefsInit.getBoolean("enable_amoled", false)
-            navBarEnabled.value = prefsInit.getBoolean("enable_navbar", true)
+            // our defaults on first run: navbar off, update check off, su_compat off,
+            // selinux hide on, susfs auto load on
+            if (!prefsInit.getBoolean("xy_defaults_applied", false)) {
+                prefsInit.edit()
+                    .putBoolean("enable_navbar", false)
+                    .putBoolean("check_update", false)
+                    .putInt("su_compat_mode", 2)
+                    .putInt("selinux_hide_mode", 0)
+                    .putBoolean("susfs_auto_load", true)
+                    .putBoolean("xy_defaults_applied", true)
+                    .apply()
+                try {
+                    Natives.setSuEnabled(false)
+                    Natives.setSelinuxHideEnabled(true)
+                } catch (_: Throwable) {
+                }
+            }
+            navBarEnabled.value = prefsInit.getBoolean("enable_navbar", false)
         } catch (_: Exception) {}
 
         val isManager = Natives.isManager
