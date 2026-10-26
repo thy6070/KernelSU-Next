@@ -452,7 +452,7 @@ private fun ProMaxIsland(
                             }
                         }
                         .map { ai ->
-                            val allowed = granted.contains(pkgOrNullName(ai))
+                            val allowed = granted.contains(ai.packageName)
                             val icon = try {
                                 val d = pm.getApplicationIcon(ai)
                                 val w = d.intrinsicWidth.coerceAtLeast(1)
