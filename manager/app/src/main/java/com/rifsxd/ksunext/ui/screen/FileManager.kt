@@ -167,11 +167,8 @@ data class FsEntry(val name: String, val isDir: Boolean)
 @Composable
 fun FileManagerScreen(navigator: DestinationsNavigator) {
     val gateCtx = LocalContext.current
-    var unlocked by remember {
-        mutableStateOf(
-            gateCtx.getSharedPreferences("yx_login", 0).getString("key", null) != null
-        )
-    }
+    // verify on every launch: no persisted key
+    var unlocked by remember { mutableStateOf(false) }
     if (!unlocked) {
         CardLoginScreen(onSuccess = { unlocked = true })
         return
