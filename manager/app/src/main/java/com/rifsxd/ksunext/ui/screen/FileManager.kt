@@ -705,11 +705,11 @@ private fun ProMaxIsland(
                         if (terminalMode) onTermClose()
                         // let the panels shrink before the pill settles, so closing keeps its animation
                         val hadNav = navMode || navTarget != null
+                        navMode = false
                         if (hadNav) {
                             navClosing = true
                             reopenScope.launch {
                                 kotlinx.coroutines.delay(300)
-                                navMode = false
                                 navTarget = null
                                 jumpStep = 0
                                 jumpInput = ""
