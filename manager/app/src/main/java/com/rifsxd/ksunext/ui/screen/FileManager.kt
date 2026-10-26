@@ -569,10 +569,10 @@ private fun ProMaxIsland(
     fun closeIsland() {
         reopenScope.launch {
             navClosing = true
-            navMode = false
             expanded = false
             kotlinx.coroutines.delay(300)
             navTarget = null
+            navMode = false
             jumpStep = 0
             jumpInput = ""
             navClosing = false
@@ -591,14 +591,12 @@ private fun ProMaxIsland(
 
     fun openNav(target: String?) {
         reopenScope.launch {
+            navClosing = true
+            kotlinx.coroutines.delay(260)
             navMode = true
-            navTarget = null
+            navTarget = target
             navClosing = false
             expanded = true
-            if (target != null) {
-                kotlinx.coroutines.delay(200)
-                navTarget = target
-            }
         }
     }
 
@@ -822,12 +820,11 @@ private fun ProMaxIsland(
                 }
             }
 
-                Crossfade(targetState = navTarget, label = "navPanel") { shownNav ->
-                if (shownNav != null) Column(
+                if (navTarget != null) Column(
                     modifier = Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    when (shownNav) {
+                    when (navTarget) {
                         "module" -> {
                             Box(
                                 modifier = Modifier
@@ -1282,7 +1279,6 @@ private fun ProMaxIsland(
                             }
                         }
                     }
-                }
                 }
             }
 
