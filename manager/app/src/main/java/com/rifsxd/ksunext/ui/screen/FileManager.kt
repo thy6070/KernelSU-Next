@@ -684,11 +684,14 @@ private fun ProMaxIsland(
                                 navClosing = false
                             }
                         }
-                        jumpStep = 0
-                        jumpInput = ""
                         soPanel = false
                         if (sel != null) onClearSelection()
                         expanded = false
+                        reopenScope.launch {
+                            kotlinx.coroutines.delay(300)
+                            jumpStep = 0
+                            jumpInput = ""
+                        }
                     },
                     onLongClick = { openNav(null) }
                 )
@@ -1008,9 +1011,9 @@ private fun ProMaxIsland(
                             when (jumpStep) {
                                 0 -> {
                                     GradientActionButton("提取", Color(0xFF0A84FF)) { switchStep(7) }
-                                    GradientActionButton("data/储存", Color(0xFF00BCD4)) { switchStep(2) }
+                                    GradientActionButton("data/储存", Color(0xFF0A84FF)) { switchStep(2) }
                                     GradientActionButton("文件/文件夹", Color(0xFF0A84FF)) { switchStep(1) }
-                                    GradientActionButton("跳转", Color(0xFF00BCD4)) { switchStep(4) }
+                                    GradientActionButton("跳转", Color(0xFF0A84FF)) { switchStep(4) }
                                 }
                                 1 -> {
                                     Row(
@@ -1018,14 +1021,14 @@ private fun ProMaxIsland(
                                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                                     ) {
                                         Box(modifier = Modifier.weight(1f)) {
-                                            IslandActionButton("创建文件夹", Color(0xFF0A84FF)) {
-                                                createIsDir = true
+                                            IslandActionButton("创建文件", Color(0xFF3A3A3C)) {
+                                                createIsDir = false
                                                 jumpStep = 6
                                             }
                                         }
                                         Box(modifier = Modifier.weight(1f)) {
-                                            IslandActionButton("创建文件", Color(0xFF3A3A3C)) {
-                                                createIsDir = false
+                                            IslandActionButton("创建文件夹", Color(0xFF0A84FF)) {
+                                                createIsDir = true
                                                 jumpStep = 6
                                             }
                                         }
@@ -1056,7 +1059,7 @@ private fun ProMaxIsland(
                                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                                     ) {
                                         Box(modifier = Modifier.weight(1f)) {
-                                            IslandActionButton("向左", Color(0xFF0A84FF)) {
+                                            IslandActionButton("向左", Color(0xFF8E8E93)) {
                                                 onGoLeft(paneTarget)
                                                 jumpStep = 0
                                             }
@@ -1075,7 +1078,7 @@ private fun ProMaxIsland(
                                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                                     ) {
                                         Box(modifier = Modifier.weight(1f)) {
-                                            IslandActionButton("向左", Color(0xFF0A84FF)) {
+                                            IslandActionButton("向左", Color(0xFF8E8E93)) {
                                                 jumpSide = 1
                                                 jumpStep = 5
                                             }
@@ -1135,6 +1138,9 @@ private fun ProMaxIsland(
                                                             .clickable {
                                                                 onExtractApp(app.pkg, app.label)
                                                                 jumpStep = 0
+                                                                navTarget = null
+                                                                navMode = false
+                                                                expanded = false
                                                             }
                                                             .padding(horizontal = 10.dp, vertical = 8.dp),
                                                         verticalAlignment = Alignment.CenterVertically
