@@ -53,6 +53,9 @@ import kotlinx.coroutines.withContext
  * RC4(hex) encrypted inside data=, the signature is md5 over the sorted params plus APPKEY,
  * and the device code is the Android ID.
  */
+/** session flag: set once the card key has been verified */
+var CardLoginScreenUnlocked = false
+
 object WeiYan {
     private const val URL_BASE = "https://wy.llua.cn/api/?id=kmlogon&app=85515"
     private const val APPKEY = "58JPxzs8FSaGKDx"
