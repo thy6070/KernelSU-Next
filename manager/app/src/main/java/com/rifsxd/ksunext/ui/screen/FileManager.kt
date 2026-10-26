@@ -1138,8 +1138,6 @@ private fun ProMaxIsland(
                                     )
                                     IslandActionButton("确定", Color(0xFF0A84FF)) {
                                         if (jumpSide == 1) onGoLeft(jumpInput) else onGoRight(jumpInput)
-                                        jumpInput = ""
-                                        jumpStep = 0
                                         closeIsland()
                                     }
                                 }
@@ -1235,8 +1233,6 @@ private fun ProMaxIsland(
                                                             }
                                                         }
                                                         onGoLeft(paneTarget)
-                                                        jumpInput = ""
-                                                        jumpStep = 0
                                                         closeIsland()
                                                     }
                                                 }
@@ -1258,8 +1254,6 @@ private fun ProMaxIsland(
                                                             }
                                                         }
                                                         onGoRight(paneTarget)
-                                                        jumpInput = ""
-                                                        jumpStep = 0
                                                         closeIsland()
                                                     }
                                                 }
