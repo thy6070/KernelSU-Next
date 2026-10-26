@@ -590,18 +590,10 @@ private fun ProMaxIsland(
                     onClick = {
                         if (terminalMode) onTermClose()
                         // let the panels shrink before the pill settles, so closing keeps its animation
-                        val wasOpen = navMode || navTarget != null || sel != null
                         navMode = false
                         navTarget = null
                         if (sel != null) onClearSelection()
-                        if (wasOpen) {
-                            reopenScope.launch {
-                                kotlinx.coroutines.delay(200)
-                                expanded = false
-                            }
-                        } else {
-                            expanded = false
-                        }
+                        expanded = false
                     },
                     onLongClick = { openNav(null) }
                 )
@@ -721,10 +713,7 @@ private fun ProMaxIsland(
                                                         RoundedCornerShape(10.dp)
                                                     )
                                                     .padding(1.dp)
-                                                    .background(
-                                                        if (chosen) Color(0xFF17323A) else Color(0xFF16161A),
-                                                        RoundedCornerShape(10.dp)
-                                                    )
+                                                    .background(Color(0xFF16161A), RoundedCornerShape(10.dp))
                                                     .clickable { modSel = if (chosen) -1 else mi }
                                                     .padding(horizontal = 10.dp, vertical = 7.dp)
                                             ) {
@@ -787,8 +776,38 @@ private fun ProMaxIsland(
                                     }
                                     Box(modifier = Modifier.weight(1f)) {
                                         IslandActionButton("操作", Color(0xFF0A84FF)) {
-                                            navTarget = null; navMode = false
-                                            navigator.navigate(ModuleScreenDestination)
+                                            val mod = modules.getOrNull(modSel)
+                                            if (mod != null) {
+                                                navScope.launch {
+                                                    val hasWeb = withContext(Dispatchers.IO) {
+                                                        Shell.cmd("test -d \"/data/adb/modules/${mod.id}/webroot\" && echo yes")
+                                                            .exec().out.joinToString("").contains("yes")
+                                                    }
+                                                    if (hasWeb) {
+                                                        try {
+                                                            val it = android.content.Intent(
+                                                                navCtx,
+                                                                com.rifsxd.ksunext.ui.webui.WebUIActivity::class.java
+                                                            ).apply {
+                                                                putExtra("is_internal_transition", true)
+                                                                setData(android.net.Uri.parse("kernelsu://webui/${mod.id}"))
+                                                                putExtra("id", mod.id)
+                                                                putExtra("name", mod.name)
+                                                            }
+                                                            navCtx.startActivity(it)
+                                                        } catch (t: Throwable) {
+                                                        }
+                                                    } else {
+                                                        withContext(Dispatchers.IO) {
+                                                            try {
+                                                                Shell.cmd("sh \"/data/adb/modules/${mod.id}/action.sh\" 2>/dev/null")
+                                                                    .exec()
+                                                            } catch (t: Throwable) {
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -1361,7 +1380,6 @@ private fun FsRow(
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
-            .background(if (selected) Color(0x3300BCD4) else Color.Transparent)
             .then(
                 if (accent != null) {
                     Modifier.border(1.dp, accent.copy(alpha = 0.38f), RoundedCornerShape(14.dp))
