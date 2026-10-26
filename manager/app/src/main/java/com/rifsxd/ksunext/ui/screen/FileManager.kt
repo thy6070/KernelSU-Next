@@ -190,6 +190,23 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
 
     var leftPath by remember { mutableStateOf("/storage/emulated/0") }
     var rightPath by remember { mutableStateOf("/data") }
+    var pendingLocate by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            val target = FileLocate.pendingPath
+            if (target != null) {
+                FileLocate.pendingPath = null
+                pendingLocate = target
+            }
+            kotlinx.coroutines.delay(250)
+        }
+    }
+    LaunchedEffect(pendingLocate) {
+        val target = pendingLocate ?: return@LaunchedEffect
+        leftPath = target.substringBeforeLast('/', "/")
+        selectedFile = target
+        pendingLocate = null
+    }
 
     var panel by remember { mutableStateOf(false) }
     var showTerminal by remember { mutableStateOf(false) }
