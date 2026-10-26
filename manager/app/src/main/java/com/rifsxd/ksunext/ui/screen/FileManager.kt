@@ -688,31 +688,183 @@ private fun ProMaxIsland(
                 ) {
                     when (navTarget) {
                         "module" -> {
-                            Text(
-                                text = "模块 (" + moduleNames.size + ")",
-                                color = Color.White,
-                                fontSize = 12.sp
-                            )
-                            moduleNames.take(4).forEach { n ->
-                                Text(
-                                    text = n,
-                                    color = Color(0xFF9A9A9E),
-                                    fontSize = 10.sp,
-                                    fontFamily = FontFamily.Monospace,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(180.dp)
+                                    .background(Color(0xFF0E0E10), RoundedCornerShape(12.dp))
+                                    .padding(6.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .verticalScroll(rememberScrollState())
+                                ) {
+                                    if (modules.isEmpty()) {
+                                        Text(text = "没有添加模块", fontSize = 11.sp, color = Color(0xFFBDBDBD))
+                                    } else {
+                                        modules.forEachIndexed { mi, m ->
+                                            val chosen = modSel == mi
+                                            Column(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(bottom = 6.dp)
+                                                    .background(
+                                                        if (chosen) Color(0xFF00BCD4) else Color(0x33FFFFFF),
+                                                        RoundedCornerShape(10.dp)
+                                                    )
+                                                    .padding(1.dp)
+                                                    .background(
+                                                        if (chosen) Color(0xFF17323A) else Color(0xFF16161A),
+                                                        RoundedCornerShape(10.dp)
+                                                    )
+                                                    .clickable { modSel = if (chosen) -1 else mi }
+                                                    .padding(horizontal = 10.dp, vertical = 7.dp)
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.SpaceBetween
+                                                ) {
+                                                    Text(
+                                                        text = m.name,
+                                                        fontSize = 12.sp,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis,
+                                                        color = Color.White,
+                                                        modifier = Modifier.weight(1f)
+                                                    )
+                                                    Text(
+                                                        text = if (m.disabled) "已禁用" else "启用",
+                                                        fontSize = 10.sp,
+                                                        color = if (m.disabled) Color(0xFFFF9800) else Color(0xFF4CAF50)
+                                                    )
+                                                }
+                                                if (m.version.isNotEmpty()) {
+                                                    Text(text = m.version, fontSize = 10.sp, color = Color(0xFF9E9E9E))
+                                                }
+                                                if (m.desc.isNotEmpty()) {
+                                                    Text(
+                                                        text = m.desc,
+                                                        fontSize = 10.sp,
+                                                        maxLines = 2,
+                                                        overflow = TextOverflow.Ellipsis,
+                                                        color = Color(0xFF9E9E9E)
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
-                            IslandActionButton("打开模块页面", Color(0xFF0A84FF)) {
-                                navTarget = null; navMode = false
-                                navigator.navigate(ModuleScreenDestination)
+                            if (modSel >= 0 && modSel < modules.size) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Box(modifier = Modifier.weight(1f)) {
+                                        IslandActionButton("删除", Color(0xFFFF3B30)) {
+                                            val mod = modules.getOrNull(modSel)
+                                            if (mod != null) {
+                                                navScope.launch {
+                                                    withContext(Dispatchers.IO) {
+                                                        try {
+                                                            Shell.cmd("rm -rf \"/data/adb/modules/${mod.id}\"").exec()
+                                                        } catch (t: Throwable) {
+                                                        }
+                                                    }
+                                                    modules = modules.filterNot { it.id == mod.id }
+                                                    modSel = -1
+                                                }
+                                            }
+                                        }
+                                    }
+                                    Box(modifier = Modifier.weight(1f)) {
+                                        IslandActionButton("操作", Color(0xFF0A84FF)) {
+                                            navTarget = null; navMode = false
+                                            navigator.navigate(ModuleScreenDestination)
+                                        }
+                                    }
+                                }
                             }
                         }
                         "su" -> {
-                            Text(text = "超级用户", color = Color.White, fontSize = 12.sp)
-                            IslandActionButton("打开超级用户页面", Color(0xFF0A84FF)) {
-                                navTarget = null; navMode = false
-                                navigator.navigate(SuperUserScreenDestination)
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(180.dp)
+                                    .background(Color(0xFF0E0E10), RoundedCornerShape(12.dp))
+                                    .padding(6.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .verticalScroll(rememberScrollState())
+                                ) {
+                                    if (suApps.isEmpty()) {
+                                        Text(text = "没有应用", fontSize = 11.sp, color = Color(0xFFBDBDBD))
+                                    } else {
+                                        suApps.forEachIndexed { si, app ->
+                                            val chosen = suSel == si
+                                            val ring = when {
+                                                chosen -> Color(0xFF0A84FF)
+                                                app.allowed -> Color(0xFFFF6FA8)
+                                                else -> Color(0x33FFFFFF)
+                                            }
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(bottom = 6.dp)
+                                                    .background(ring, RoundedCornerShape(10.dp))
+                                                    .padding(1.dp)
+                                                    .background(
+                                                        if (chosen) Color(0xFF10233A) else Color(0xFF16161A),
+                                                        RoundedCornerShape(10.dp)
+                                                    )
+                                                    .clickable { suSel = if (chosen) -1 else si }
+                                                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    text = app.label,
+                                                    fontSize = 12.sp,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis,
+                                                    color = Color.White,
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                                                if (app.allowed) {
+                                                    Text(text = "已寄生", fontSize = 10.sp, color = Color(0xFFFF6FA8))
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            if (suSel >= 0 && suSel < suApps.size) {
+                                val app = suApps[suSel]
+                                IslandActionButton(
+                                    if (app.allowed) "撤销" else "寄生",
+                                    if (app.allowed) Color(0xFFFF3B30) else Color(0xFF0A84FF)
+                                ) {
+                                    navScope.launch {
+                                        withContext(Dispatchers.IO) {
+                                            try {
+                                                com.rifsxd.ksunext.Natives.setAppProfile(
+                                                    com.rifsxd.ksunext.Natives.Profile(
+                                                        name = app.pkg,
+                                                        currentUid = app.uid,
+                                                        allowSu = !app.allowed
+                                                    )
+                                                )
+                                            } catch (t: Throwable) {
+                                            }
+                                        }
+                                        suApps = suApps.mapIndexed { i, a ->
+                                            if (i == suSel) a.copy(allowed = !a.allowed) else a
+                                        }.sortedByDescending { it.allowed }
+                                        suSel = -1
+                                    }
+                                }
                             }
                         }
                         "settings" -> {
