@@ -547,6 +547,16 @@ private fun ProMaxIsland(
         }
     }
 
+    fun switchStep(target: Int) {
+        reopenScope.launch {
+            navClosing = true
+            kotlinx.coroutines.delay(200)
+            jumpStep = target
+            navClosing = false
+            expanded = true
+        }
+    }
+
     fun openNav(target: String?) {
         reopenScope.launch {
             navClosing = true
@@ -997,10 +1007,10 @@ private fun ProMaxIsland(
                         "home" -> {
                             when (jumpStep) {
                                 0 -> {
-                                    GradientActionButton("提取", Color(0xFF0A84FF)) { jumpStep = 7 }
-                                    GradientActionButton("data/储存", Color(0xFF00BCD4)) { jumpStep = 2 }
-                                    GradientActionButton("文件/文件夹", Color(0xFF0A84FF)) { jumpStep = 1 }
-                                    GradientActionButton("跳转", Color(0xFF00BCD4)) { jumpStep = 4 }
+                                    GradientActionButton("提取", Color(0xFF0A84FF)) { switchStep(7) }
+                                    GradientActionButton("data/储存", Color(0xFF00BCD4)) { switchStep(2) }
+                                    GradientActionButton("文件/文件夹", Color(0xFF0A84FF)) { switchStep(1) }
+                                    GradientActionButton("跳转", Color(0xFF00BCD4)) { switchStep(4) }
                                 }
                                 1 -> {
                                     Row(
