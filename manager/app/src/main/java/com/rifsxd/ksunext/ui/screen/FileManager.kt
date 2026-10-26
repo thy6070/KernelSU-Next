@@ -1063,6 +1063,25 @@ private fun ProMaxIsland(
                         }
                         "home" -> {
                             when (jumpStep) {
+                                8 -> {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Box(modifier = Modifier.weight(1f)) {
+                                            IslandActionButton("进入", Color(0xFF0A84FF)) {
+                                                onArchiveEnter()
+                                                closeIsland()
+                                            }
+                                        }
+                                        Box(modifier = Modifier.weight(1f)) {
+                                            IslandActionButton("挂载", Color(0xFFFFB300)) {
+                                                onArchiveMount()
+                                                closeIsland()
+                                            }
+                                        }
+                                    }
+                                }
                                 0 -> {
                                     GradientActionButton("提取", Color(0xFF0A84FF)) { switchStep(7) }
                                     GradientActionButton("data/储存", Color(0xFF0A84FF)) { switchStep(2) }
