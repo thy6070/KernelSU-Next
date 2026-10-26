@@ -167,14 +167,6 @@ data class FsEntry(val name: String, val isDir: Boolean)
 
 @Composable
 fun FileManagerScreen(navigator: DestinationsNavigator) {
-    val gateCtx = LocalContext.current
-    // verify on every launch: no persisted key
-    var unlocked by remember { mutableStateOf(false) }
-    if (!unlocked) {
-        CardLoginScreen(onSuccess = { unlocked = true })
-        return
-    }
-
     val view = LocalView.current
 
     DisposableEffect(Unit) {
