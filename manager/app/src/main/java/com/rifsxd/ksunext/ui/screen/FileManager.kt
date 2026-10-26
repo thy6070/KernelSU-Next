@@ -684,10 +684,15 @@ private fun ProMaxIsland(
             }
 
             AnimatedVisibility(
-                visible = navMode,
-                enter = expandVertically(animationSpec = tween(320, easing = zyEase), expandFrom = Alignment.CenterVertically) + fadeIn(tween(180)),
-                exit = shrinkVertically(animationSpec = tween(240, easing = zyEase), shrinkTowards = Alignment.CenterVertically) + fadeOut(tween(140))
+                visible = navMode || navTarget != null,
+                enter = expandVertically(animationSpec = tween(260, easing = zyEase), expandFrom = Alignment.Bottom) + fadeIn(tween(160)),
+                exit = shrinkVertically(animationSpec = tween(260, easing = zyEase), shrinkTowards = Alignment.Bottom) + fadeOut(tween(160))
             ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .animateContentSize(animationSpec = tween(260, easing = zyEase))
+                ) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly,
@@ -700,22 +705,7 @@ private fun ProMaxIsland(
                 }
             }
 
-            AnimatedVisibility(
-                visible = navTarget != null,
-                enter = expandVertically(animationSpec = tween(260, easing = zyEase), expandFrom = Alignment.Bottom) +
-                    scaleIn(
-                        initialScale = 0.92f,
-                        animationSpec = tween(260, easing = zyEase),
-                        transformOrigin = TransformOrigin(0.5f, 1f)
-                    ) + fadeIn(tween(160)),
-                exit = shrinkVertically(animationSpec = tween(260, easing = zyEase), shrinkTowards = Alignment.Bottom) +
-                    scaleOut(
-                        targetScale = 0.92f,
-                        animationSpec = tween(240, easing = zyEase),
-                        transformOrigin = TransformOrigin(0.5f, 1f)
-                    ) + fadeOut(tween(160))
-            ) {
-                Column(
+                if (navTarget != null) Column(
                     modifier = Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
