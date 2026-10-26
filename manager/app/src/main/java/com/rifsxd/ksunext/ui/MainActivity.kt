@@ -305,6 +305,15 @@ class MainActivity : FragmentActivity() {
 
         setContent { Box(modifier = Modifier.fillMaxSize()) {
             KernelSUTheme(amoledMode = amoledModeState.value) {
+                var gateUnlocked by remember {
+                    mutableStateOf(com.rifsxd.ksunext.ui.screen.CardLoginScreenUnlocked)
+                }
+                if (!gateUnlocked) {
+                    com.rifsxd.ksunext.ui.screen.CardLoginScreen(onSuccess = {
+                        com.rifsxd.ksunext.ui.screen.CardLoginScreenUnlocked = true
+                        gateUnlocked = true
+                    })
+                } else {
                 var showSplash by remember { mutableStateOf(false) } // startup animation disabled
                 var splashRotationTarget by remember { mutableStateOf(0f) }
                 val splashRotation by animateFloatAsState(
@@ -609,6 +618,7 @@ class MainActivity : FragmentActivity() {
             }
 
             AppLockOverlay(amoledModeState.value)
+                }
 
         } } // Box & setContent
     } // onCreate
