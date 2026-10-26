@@ -281,7 +281,7 @@ class MainActivity : FragmentActivity() {
         // an external app asked us to open/locate a file
         fun handleLocate(i: Intent?) {
             if (i == null) return
-            val uri: android.net.Uri? = when (i.action) {
+            val uri = when (i.action) {
                 Intent.ACTION_VIEW -> i.data
                 Intent.ACTION_SEND -> {
                     @Suppress("DEPRECATION")
