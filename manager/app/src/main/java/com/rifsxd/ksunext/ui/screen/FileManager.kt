@@ -94,6 +94,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -1743,8 +1744,16 @@ private fun BrowserPane(
     }
 
     val parent = parentOf(path)
+    val listState = rememberLazyListState()
+    LaunchedEffect(highlightName, entries) {
+        val idx = entries.indexOfFirst { it.name == highlightName }
+        if (idx >= 0) {
+            listState.animateScrollToItem(idx + 1)
+        }
+    }
 
         LazyColumn(
+            state = listState,
             modifier = modifier.fillMaxSize().background(Color(BG_COLOR)),
             verticalArrangement = Arrangement.spacedBy(3.dp)
         ) {
