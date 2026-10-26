@@ -825,7 +825,7 @@ private fun ProMaxIsland(
                                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
                                     Box(modifier = Modifier.weight(1f)) {
-                                        DarkActionButton("删除") {
+                                        IslandActionButton("删除", Color(0xFFFF3B30)) {
                                             val mod = modules.getOrNull(modSel)
                                             if (mod != null) {
                                                 navScope.launch {
@@ -842,7 +842,7 @@ private fun ProMaxIsland(
                                         }
                                     }
                                     Box(modifier = Modifier.weight(1f)) {
-                                        DarkActionButton("操作") {
+                                        IslandActionButton("操作", Color(0xFF0A84FF)) {
                                             val mod = modules.getOrNull(modSel)
                                             if (mod != null) {
                                                 navScope.launch {
@@ -1207,7 +1207,7 @@ private fun ProMaxIsland(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Box(modifier = Modifier.weight(1f)) {
-                            DarkActionButton("删除") { onDelete() }
+                            IslandActionButton("删除", Color(0xFFFF3B30)) { onDelete() }
                         }
                         Box(modifier = Modifier.weight(1f)) {
                             IslandActionButton(actionLabel, actionColor) {
@@ -1248,7 +1248,7 @@ private fun ProMaxIsland(
                         ),
                         singleLine = true
                     )
-                    DarkActionButton("启动") {
+                    IslandActionButton("启动", Color(0xFF0A84FF)) {
                         onAction(soInput)
                         soPanel = false
                     }
