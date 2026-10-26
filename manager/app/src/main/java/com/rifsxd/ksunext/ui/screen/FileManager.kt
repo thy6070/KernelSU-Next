@@ -444,6 +444,7 @@ private fun ProMaxIsland(
     var jumpInput by remember { mutableStateOf("") }
     var paneTarget by remember { mutableStateOf("/storage/emulated/0/") }
     var createIsDir by remember { mutableStateOf(true) }
+    var extractDone by remember { mutableStateOf(false) }
     var modules by remember { mutableStateOf<List<ModItem>>(emptyList()) }
     var modSel by remember { mutableStateOf(-1) }
     var suApps by remember { mutableStateOf<List<SuApp>>(emptyList()) }
@@ -529,6 +530,12 @@ private fun ProMaxIsland(
     LaunchedEffect(selectedFile) {
         if (selectedFile != null) navMode = false
         soPanel = false
+    }
+    LaunchedEffect(extractDone) {
+        if (extractDone) {
+            kotlinx.coroutines.delay(2200)
+            extractDone = false
+        }
     }
     LaunchedEffect(running) {
         if (running) {
@@ -722,6 +729,15 @@ private fun ProMaxIsland(
                         .size(26.dp)
                         .clip(RoundedCornerShape(percent = 22))
                 )
+                if (extractDone) {
+                    Text(
+                        text = "已完成",
+                        modifier = Modifier.weight(1f),
+                        fontSize = 12.sp,
+                        textAlign = TextAlign.Center,
+                        color = Color(0xFF4CAF50)
+                    )
+                }
                 if (terminalMode || (running && expanded)) {
                     YukiWave(
                         color = Color(0xFFFFB6C8),
@@ -1059,7 +1075,7 @@ private fun ProMaxIsland(
                                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                                     ) {
                                         Box(modifier = Modifier.weight(1f)) {
-                                            IslandActionButton("向左", Color(0xFF8E8E93)) {
+                                            IslandActionButton("向左", Color(0xFF3A3A3C)) {
                                                 onGoLeft(paneTarget)
                                                 jumpStep = 0
                                             }
@@ -1078,7 +1094,7 @@ private fun ProMaxIsland(
                                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                                     ) {
                                         Box(modifier = Modifier.weight(1f)) {
-                                            IslandActionButton("向左", Color(0xFF8E8E93)) {
+                                            IslandActionButton("向左", Color(0xFF3A3A3C)) {
                                                 jumpSide = 1
                                                 jumpStep = 5
                                             }
@@ -1141,6 +1157,7 @@ private fun ProMaxIsland(
                                                                 navTarget = null
                                                                 navMode = false
                                                                 expanded = false
+                                                                extractDone = true
                                                             }
                                                             .padding(horizontal = 10.dp, vertical = 8.dp),
                                                         verticalAlignment = Alignment.CenterVertically
@@ -1187,7 +1204,7 @@ private fun ProMaxIsland(
                                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                                     ) {
                                         Box(modifier = Modifier.weight(1f)) {
-                                            IslandActionButton("确定", Color(0xFF0A84FF)) {
+                                            IslandActionButton("向左", Color(0xFF3A3A3C)) {
                                                 val nm = jumpInput.trim()
                                                 if (nm.isNotEmpty()) {
                                                     navScope.launch {
@@ -1209,9 +1226,25 @@ private fun ProMaxIsland(
                                             }
                                         }
                                         Box(modifier = Modifier.weight(1f)) {
-                                            IslandActionButton("取消", Color(0xFF3A3A3C)) {
-                                                jumpInput = ""
-                                                jumpStep = 0
+                                            IslandActionButton("向右", Color(0xFF0A84FF)) {
+                                                val nm = jumpInput.trim()
+                                                if (nm.isNotEmpty()) {
+                                                    navScope.launch {
+                                                        withContext(Dispatchers.IO) {
+                                                            try {
+                                                                if (createIsDir) {
+                                                                    Shell.cmd("mkdir -p \"$paneTarget$nm\"").exec()
+                                                                } else {
+                                                                    Shell.cmd("touch \"$paneTarget$nm\"").exec()
+                                                                }
+                                                            } catch (t: Throwable) {
+                                                            }
+                                                        }
+                                                        onGoRight(paneTarget)
+                                                        jumpInput = ""
+                                                        jumpStep = 0
+                                                    }
+                                                }
                                             }
                                         }
                                     }
