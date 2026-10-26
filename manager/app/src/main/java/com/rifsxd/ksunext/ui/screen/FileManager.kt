@@ -436,6 +436,10 @@ private fun ProMaxIsland(
             suApps = withContext(Dispatchers.IO) {
                 try {
                     val pm = navCtx.packageManager
+                    val granted = Shell.cmd("ls -1 /data/adb/ksu/packages 2>/dev/null").exec().out
+                        .map { it.trim() }
+                        .filter { it.isNotEmpty() }
+                        .toSet()
                     val userPkgs = Shell.cmd("pm list packages -3").exec().out
                         .map { it.removePrefix("package:").trim() }
                         .filter { it.isNotEmpty() && it.contains('.') }
@@ -448,7 +452,7 @@ private fun ProMaxIsland(
                             }
                         }
                         .map { ai ->
-                            val allowed = false
+                            val allowed = granted.contains(pkgOrNullName(ai))
                             val icon = try {
                                 val d = pm.getApplicationIcon(ai)
                                 val w = d.intrinsicWidth.coerceAtLeast(1)
@@ -595,6 +599,7 @@ private fun ProMaxIsland(
             modifier = Modifier
                 .zIndex(1f)
                 .width(pillW)
+                .animateContentSize(animationSpec = tween(320, easing = zyEase))
                 .graphicsLayer {
                     scaleX = bump
                     scaleY = bump
@@ -611,7 +616,10 @@ private fun ProMaxIsland(
                         navMode = false
                         navTarget = null
                         if (sel != null) onClearSelection()
-                        expanded = false
+                        reopenScope.launch {
+                            kotlinx.coroutines.delay(320)
+                            expanded = false
+                        }
                     },
                     onLongClick = { openNav(null) }
                 )
