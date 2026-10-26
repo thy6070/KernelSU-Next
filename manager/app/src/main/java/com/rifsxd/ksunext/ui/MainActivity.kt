@@ -724,14 +724,7 @@ class MainActivity : FragmentActivity() {
 
         when (intent.action) {
             Intent.ACTION_VIEW -> {
-                zipUri =
-                    intent.data?.let { arrayListOf(it) }
-                        ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            intent.getParcelableArrayListExtra("uris", Uri::class.java)
-                        } else {
-                            @Suppress("DEPRECATION")
-                            intent.getParcelableArrayListExtra("uris")
-                        }
+                // opened files are only located in the file panes; never flash them
             }
 
             "ACTION_SETTINGS" -> navigateLoc = NavigateLocation.SETTINGS
