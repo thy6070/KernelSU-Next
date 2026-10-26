@@ -290,9 +290,7 @@ class MainActivity : FragmentActivity() {
             val picked: android.net.Uri = uri
             Thread {
                 try {
-                    val path = com.rifsxd.ksunext.ui.screen.contentPath(this, picked)
-                        ?: com.rifsxd.ksunext.ui.screen.contentName(this, picked)
-                            ?.let { n -> "/storage/emulated/0/" + n }
+                    val path = com.rifsxd.ksunext.ui.screen.resolveUri(this, picked)
                     if (path != null) {
                         com.rifsxd.ksunext.ui.screen.FileLocate.pendingPath = path
                     }
