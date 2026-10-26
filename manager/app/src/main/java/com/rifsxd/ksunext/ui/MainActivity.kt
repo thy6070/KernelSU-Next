@@ -275,12 +275,9 @@ class MainActivity : FragmentActivity() {
             appLockState.value = requireBiometric
         }
 
-        if(intent != null)
-            handleIntent(intent)
-
         // an external app asked us to open/locate a file
-        fun handleLocate(i: Intent?) {
-            if (i == null) return
+        fun handleLocate(i: Intent?): Boolean {
+            if (i == null) return false
             val uri = when (i.action) {
                 Intent.ACTION_VIEW -> i.data
                 Intent.ACTION_SEND -> {
@@ -289,7 +286,7 @@ class MainActivity : FragmentActivity() {
                         ?: i.clipData?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.uri
                 }
                 else -> null
-            } ?: return
+            } ?: return false
             val picked: android.net.Uri = uri
             Thread {
                 try {
@@ -302,8 +299,11 @@ class MainActivity : FragmentActivity() {
                 } catch (t: Throwable) {
                 }
             }.start()
+            return true
         }
-        handleLocate(intent)
+        if (!handleLocate(intent) && intent != null) {
+            handleIntent(intent)
+        }
 
         setContent { Box(modifier = Modifier.fillMaxSize()) {
             KernelSUTheme(amoledMode = amoledModeState.value) {
