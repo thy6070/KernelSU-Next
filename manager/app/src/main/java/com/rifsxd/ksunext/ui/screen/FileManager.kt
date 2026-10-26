@@ -1020,13 +1020,16 @@ private fun ProMaxIsland(
                                     navScope.launch {
                                         withContext(Dispatchers.IO) {
                                             try {
-                                                com.rifsxd.ksunext.Natives.setAppProfile(
-                                                    com.rifsxd.ksunext.Natives.Profile(
+                                                // same path as the AppProfile screen: read the live
+                                                // profile, flip allowSu, write it back
+                                                val current = com.rifsxd.ksunext.Natives.getAppProfile(app.pkg, app.uid)
+                                                val next = current?.copy(allowSu = !app.allowed)
+                                                    ?: com.rifsxd.ksunext.Natives.Profile(
                                                         name = app.pkg,
                                                         currentUid = app.uid,
                                                         allowSu = !app.allowed
                                                     )
-                                                )
+                                                com.rifsxd.ksunext.Natives.setAppProfile(next)
                                             } catch (t: Throwable) {
                                             }
                                         }
