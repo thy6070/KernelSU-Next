@@ -34,6 +34,8 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.CubicBezierEasing
@@ -700,8 +702,18 @@ private fun ProMaxIsland(
 
             AnimatedVisibility(
                 visible = navTarget != null,
-                enter = expandVertically(animationSpec = tween(260, easing = zyEase), expandFrom = Alignment.Bottom) + fadeIn(tween(160)),
-                exit = shrinkVertically(animationSpec = tween(260, easing = zyEase), shrinkTowards = Alignment.Bottom) + fadeOut(tween(160))
+                enter = expandVertically(animationSpec = tween(260, easing = zyEase), expandFrom = Alignment.Bottom) +
+                    scaleIn(
+                        initialScale = 0.92f,
+                        animationSpec = tween(260, easing = zyEase),
+                        transformOrigin = TransformOrigin(0.5f, 1f)
+                    ) + fadeIn(tween(160)),
+                exit = shrinkVertically(animationSpec = tween(260, easing = zyEase), shrinkTowards = Alignment.Bottom) +
+                    scaleOut(
+                        targetScale = 0.92f,
+                        animationSpec = tween(240, easing = zyEase),
+                        transformOrigin = TransformOrigin(0.5f, 1f)
+                    ) + fadeOut(tween(160))
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
