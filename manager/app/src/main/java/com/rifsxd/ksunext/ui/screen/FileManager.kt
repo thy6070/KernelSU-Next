@@ -156,7 +156,7 @@ private val apkIconMutex = Mutex()
 
 data class ModItem(val id: String, val name: String, val version: String, val desc: String, val disabled: Boolean)
 
-data class SuApp(val pkg: String, val label: String, val uid: Int, val allowed: Boolean)
+data class SuApp(val pkg: String, val label: String, val uid: Int, val allowed: Boolean, val icon: android.graphics.Bitmap? = null)
 
 data class FsEntry(val name: String, val isDir: Boolean)
 
@@ -443,10 +443,22 @@ private fun ProMaxIsland(
                         .distinctBy { it.packageName }
                         .map { ai ->
                             val allowed = false
-                            SuApp(ai.packageName, pm.getApplicationLabel(ai).toString(), ai.uid, allowed)
+                            val icon = try {
+                                val d = pm.getApplicationIcon(ai)
+                                val w = d.intrinsicWidth.coerceAtLeast(1)
+                                val h = d.intrinsicHeight.coerceAtLeast(1)
+                                val bmp = android.graphics.Bitmap.createBitmap(w, h, android.graphics.Bitmap.Config.ARGB_8888)
+                                val canvas = android.graphics.Canvas(bmp)
+                                d.setBounds(0, 0, w, h)
+                                d.draw(canvas)
+                                bmp
+                            } catch (t: Throwable) {
+                                null
+                            }
+                            SuApp(ai.packageName, pm.getApplicationLabel(ai).toString(), ai.uid, allowed, icon)
                         }
                         .sortedByDescending { it.allowed }
-                        .take(24)
+                        .take(200)
                 } catch (t: Throwable) {
                     emptyList()
                 }
@@ -832,7 +844,7 @@ private fun ProMaxIsland(
                                         suApps.forEachIndexed { si, app ->
                                             val chosen = suSel == si
                                             val ring = when {
-                                                chosen -> Color(0xFF0A84FF)
+                                                chosen -> Color(0xFF00BCD4)
                                                 app.allowed -> Color(0xFFFF6FA8)
                                                 else -> Color(0x33FFFFFF)
                                             }
@@ -842,14 +854,20 @@ private fun ProMaxIsland(
                                                     .padding(bottom = 6.dp)
                                                     .background(ring, RoundedCornerShape(10.dp))
                                                     .padding(1.dp)
-                                                    .background(
-                                                        if (chosen) Color(0xFF10233A) else Color(0xFF16161A),
-                                                        RoundedCornerShape(10.dp)
-                                                    )
+                                                    .background(Color(0xFF16161A), RoundedCornerShape(10.dp))
                                                     .clickable { suSel = if (chosen) -1 else si }
                                                     .padding(horizontal = 10.dp, vertical = 8.dp),
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
+                                                val iconBmp = app.icon
+                                                if (iconBmp != null) {
+                                                    Image(
+                                                        bitmap = iconBmp.asImageBitmap(),
+                                                        contentDescription = null,
+                                                        modifier = Modifier.size(18.dp)
+                                                    )
+                                                    Spacer(modifier = Modifier.width(8.dp))
+                                                }
                                                 Text(
                                                     text = app.label,
                                                     fontSize = 12.sp,
