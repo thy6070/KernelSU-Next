@@ -159,9 +159,13 @@ fun CardLoginScreen(onSuccess: () -> Unit) {
             Image(
                 painter = painterResource(id = com.rifsxd.ksunext.R.mipmap.ic_launcher_foreground),
                 contentDescription = null,
-                modifier = Modifier.size(148.dp).clip(CircleShape).background(Color(0x40FFFFFF))
+                modifier = Modifier.size(148.dp).clip(CircleShape)
             )
-            Spacer(modifier = Modifier.height(22.dp))
+            Spacer(modifier = Modifier.height(14.dp))
+            Box(modifier = Modifier.height(18.dp), contentAlignment = Alignment.Center) {
+                Text(text = error ?: "", color = Color(0xFFFF453A), fontSize = 12.sp)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -206,10 +210,6 @@ fun CardLoginScreen(onSuccess: () -> Unit) {
                     fontSize = 13.sp,
                     color = Color.White
                 )
-            }
-            if (error != null) {
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(text = error!!, color = Color(0xFFFF453A), fontSize = 12.sp)
             }
         }
     }
