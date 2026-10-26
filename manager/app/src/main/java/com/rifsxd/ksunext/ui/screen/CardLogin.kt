@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -148,7 +149,7 @@ fun CardLoginScreen(onSuccess: () -> Unit) {
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize().blur(60.dp)
         )
-        Box(modifier = Modifier.fillMaxSize().background(Color(0x99000000)))
+        Box(modifier = Modifier.fillMaxSize().background(Color(0x33000000)))
 
         Column(
             modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp),
@@ -158,18 +159,17 @@ fun CardLoginScreen(onSuccess: () -> Unit) {
             Image(
                 painter = painterResource(id = com.rifsxd.ksunext.R.mipmap.ic_launcher_foreground),
                 contentDescription = null,
-                modifier = Modifier.size(128.dp).clip(CircleShape)
+                modifier = Modifier.size(180.dp).clip(CircleShape)
             )
             Spacer(modifier = Modifier.height(22.dp))
             Row(
-                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 BasicTextField(
                     value = key,
                     onValueChange = { key = it },
                     modifier = Modifier
-                        .weight(1f)
+                        .width(190.dp)
                         .background(Color(0xCC1C1C1E), RoundedCornerShape(10.dp))
                         .padding(horizontal = 12.dp, vertical = 10.dp),
                     textStyle = TextStyle(color = Color.White, fontSize = 13.sp),
