@@ -436,6 +436,11 @@ private fun ProMaxIsland(
     var navMode by remember { mutableStateOf(false) }
     var navTarget by remember { mutableStateOf<String?>(null) }
     var navClosing by remember { mutableStateOf(false) }
+    var jumpStep by remember { mutableStateOf(0) }
+    var jumpSide by remember { mutableStateOf(0) }
+    var jumpInput by remember { mutableStateOf("") }
+    var paneTarget by remember { mutableStateOf("/storage/emulated/0/") }
+    var createIsDir by remember { mutableStateOf(true) }
     var modules by remember { mutableStateOf<List<ModItem>>(emptyList()) }
     var modSel by remember { mutableStateOf(-1) }
     var suApps by remember { mutableStateOf<List<SuApp>>(emptyList()) }
@@ -518,11 +523,6 @@ private fun ProMaxIsland(
     }
     var soInput by remember { mutableStateOf("") }
     var soPanel by remember { mutableStateOf(false) }
-    var jumpStep by remember { mutableStateOf(0) }
-    var paneTarget by remember { mutableStateOf("/storage/emulated/0/") }
-    var createIsDir by remember { mutableStateOf(true) }
-    var jumpSide by remember { mutableStateOf(0) }
-    var jumpInput by remember { mutableStateOf("") }
     LaunchedEffect(selectedFile) {
         if (selectedFile != null) navMode = false
         soPanel = false
