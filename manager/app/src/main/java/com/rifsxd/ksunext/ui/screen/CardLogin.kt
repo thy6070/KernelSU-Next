@@ -197,7 +197,7 @@ fun CardLoginScreen(onSuccess: () -> Unit) {
                     modifier = Modifier
                         .width(190.dp)
                         .background(Color(0xE6FFFFFF), RoundedCornerShape(8.dp))
-                        .border(0.5.dp, Color(0x47FFFFFF), RoundedCornerShape(8.dp))
+                        .border(0.5.dp, Color(0x33000000), RoundedCornerShape(8.dp))
                         .padding(8.dp)
                 )
                 Spacer(modifier = Modifier.width(10.dp))
@@ -207,8 +207,8 @@ fun CardLoginScreen(onSuccess: () -> Unit) {
                     tint = Color.White,
                     modifier = Modifier
                         .size(36.dp)
-                        .background(Color(0xFF0A84FF), RoundedCornerShape(10.dp))
-                        .padding(6.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color(0xFF0A84FF))
                         .clickable(enabled = !busy) {
                             val k = key.trim()
                             if (k.isEmpty()) {
@@ -238,6 +238,7 @@ fun CardLoginScreen(onSuccess: () -> Unit) {
                                 }
                             }
                         }
+                        .padding(6.dp)
                 )
             }
         }
