@@ -700,8 +700,8 @@ private fun ProMaxIsland(
 
             AnimatedVisibility(
                 visible = navTarget != null,
-                enter = expandVertically(animationSpec = tween(260, easing = zyEase), expandFrom = Alignment.BottomCenter) + fadeIn(tween(160)),
-                exit = shrinkVertically(animationSpec = tween(260, easing = zyEase), shrinkTowards = Alignment.BottomCenter) + fadeOut(tween(160))
+                enter = expandVertically(animationSpec = tween(260, easing = zyEase), expandFrom = Alignment.Bottom) + fadeIn(tween(160)),
+                exit = shrinkVertically(animationSpec = tween(260, easing = zyEase), shrinkTowards = Alignment.Bottom) + fadeOut(tween(160))
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
