@@ -229,6 +229,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                 },
                 refreshTick = refreshTick,
                 selectedPath = selectedFile,
+                highlightName = leftHighlight,
                 modifier = Modifier.weight(1f)
             )
         }
