@@ -458,6 +458,7 @@ private fun ProMaxIsland(
     var modules by remember { mutableStateOf<List<ModItem>>(emptyList()) }
     var modSel by remember { mutableStateOf(-1) }
     var suApps by remember { mutableStateOf<List<SuApp>>(emptyList()) }
+    var revokedPkgs by remember { mutableStateOf<Set<String>>(emptySet()) }
     var suSel by remember { mutableStateOf(-1) }
     val navCtx = LocalContext.current
     val navScope = rememberCoroutineScope()
@@ -512,7 +513,7 @@ private fun ProMaxIsland(
                             }
                         }
                         .map { ai ->
-                            val allowed = grantedUids.contains(ai.uid.toLong())
+                            val allowed = grantedUids.contains(ai.uid.toLong()) && !revokedPkgs.contains(ai.packageName)
                             val icon = try {
                                 val d = pm.getApplicationIcon(ai)
                                 val w = d.intrinsicWidth.coerceAtLeast(1)
@@ -589,12 +590,14 @@ private fun ProMaxIsland(
 
     fun openNav(target: String?) {
         reopenScope.launch {
-            navClosing = true
-            kotlinx.coroutines.delay(260)
             navMode = true
-            navTarget = target
+            navTarget = null
             navClosing = false
             expanded = true
+            if (target != null) {
+                kotlinx.coroutines.delay(200)
+                navTarget = target
+            }
         }
     }
 
@@ -1027,6 +1030,11 @@ private fun ProMaxIsland(
                                                 )
                                             } catch (t: Throwable) {
                                             }
+                                        }
+                                        revokedPkgs = if (app.allowed) {
+                                            revokedPkgs + app.pkg
+                                        } else {
+                                            revokedPkgs - app.pkg
                                         }
                                         suApps = suApps.mapIndexed { i, a ->
                                             if (i == suSel) a.copy(allowed = !a.allowed) else a
