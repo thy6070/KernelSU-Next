@@ -530,6 +530,14 @@ private fun ProMaxIsland(
                     emptyList()
                 }
             }
+            suApps = base.map { a ->
+                val allowed = try {
+                    com.rifsxd.ksunext.Natives.getAppProfile(a.pkg, a.uid)?.allowSu == true
+                } catch (t: Throwable) {
+                    false
+                }
+                a.copy(allowed = allowed)
+            }.sortedByDescending { it.allowed }
         }
     }
     var soInput by remember { mutableStateOf("") }
