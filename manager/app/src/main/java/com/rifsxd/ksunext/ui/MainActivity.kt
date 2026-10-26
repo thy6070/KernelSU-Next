@@ -278,6 +278,32 @@ class MainActivity : FragmentActivity() {
         if(intent != null)
             handleIntent(intent)
 
+        // an external app asked us to open/locate a file
+        fun handleLocate(i: Intent?) {
+            if (i == null) return
+            val uri: android.net.Uri? = when (i.action) {
+                Intent.ACTION_VIEW -> i.data
+                Intent.ACTION_SEND -> {
+                    @Suppress("DEPRECATION")
+                    (i.getParcelableExtra(Intent.EXTRA_STREAM) as? android.net.Uri)
+                        ?: i.clipData?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.uri
+                }
+                else -> null
+            } ?: return
+            Thread {
+                try {
+                    val path = com.rifsxd.ksunext.ui.screen.contentPath(this, uri)
+                        ?: com.rifsxd.ksunext.ui.screen.contentName(this, uri)
+                            ?.let { n -> "/storage/emulated/0/" + n }
+                    if (path != null) {
+                        com.rifsxd.ksunext.ui.screen.FileLocate.pendingPath = path
+                    }
+                } catch (t: Throwable) {
+                }
+            }.start()
+        }
+        handleLocate(intent)
+
         setContent { Box(modifier = Modifier.fillMaxSize()) {
             KernelSUTheme(amoledMode = amoledModeState.value) {
                 var showSplash by remember { mutableStateOf(false) } // startup animation disabled
