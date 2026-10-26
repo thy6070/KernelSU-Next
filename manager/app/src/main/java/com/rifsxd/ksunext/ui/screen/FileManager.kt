@@ -970,10 +970,103 @@ private fun ProMaxIsland(
                             }
                         }
                         "home" -> {
-                            Text(text = "首页", color = Color.White, fontSize = 12.sp)
-                            IslandActionButton("打开首页", Color(0xFF0A84FF)) {
-                                navTarget = null; navMode = false
-                                navigator.navigate(HomeScreenDestination)
+                            when (jumpStep) {
+                                0 -> {
+                                    FileBigButton("提取") { onExtract() }
+                                    FileBigButton("data/储存") {
+                                        onOpenStorage()
+                                        onOpenData()
+                                    }
+                                    FileBigButton("文件/文件夹") {
+                                        jumpStep = 3
+                                    }
+                                    FileBigButton("跳转") {
+                                        jumpStep = 1
+                                    }
+                                }
+                                1 -> {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Box(modifier = Modifier.weight(1f)) {
+                                            IslandActionButton("向左", Color(0xFF8E8E93)) {
+                                                jumpSide = 1
+                                                jumpStep = 2
+                                            }
+                                        }
+                                        Box(modifier = Modifier.weight(1f)) {
+                                            IslandActionButton("向右", Color(0xFF0A84FF)) {
+                                                jumpSide = 2
+                                                jumpStep = 2
+                                            }
+                                        }
+                                    }
+                                }
+                                2 -> {
+                                    androidx.compose.foundation.text.BasicTextField(
+                                        value = jumpInput,
+                                        onValueChange = { jumpInput = it },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .background(Color(0xFF1C1C1E), RoundedCornerShape(8.dp))
+                                            .padding(8.dp),
+                                        textStyle = androidx.compose.ui.text.TextStyle(
+                                            color = Color.White,
+                                            fontSize = 12.sp
+                                        ),
+                                        singleLine = true
+                                    )
+                                    IslandActionButton("确定", Color(0xFF0A84FF)) {
+                                        if (jumpSide == 1) onGoLeft(jumpInput) else onGoRight(jumpInput)
+                                        jumpInput = ""
+                                        jumpStep = 0
+                                    }
+                                }
+                                else -> {
+                                    androidx.compose.foundation.text.BasicTextField(
+                                        value = jumpInput,
+                                        onValueChange = { jumpInput = it },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .background(Color(0xFF1C1C1E), RoundedCornerShape(8.dp))
+                                            .padding(8.dp),
+                                        textStyle = androidx.compose.ui.text.TextStyle(
+                                            color = Color.White,
+                                            fontSize = 12.sp
+                                        ),
+                                        singleLine = true
+                                    )
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Box(modifier = Modifier.weight(1f)) {
+                                            IslandActionButton("新建文件夹", Color(0xFF0A84FF)) {
+                                                val nm = jumpInput.trim()
+                                                val base = if (jumpSide == 1) leftPathSnapshot else rightPathSnapshot
+                                                if (nm.isNotEmpty()) {
+                                                    navScope.launch {
+                                                        withContext(Dispatchers.IO) {
+                                                            try {
+                                                                Shell.cmd("mkdir -p \"$base/$nm\"").exec()
+                                                            } catch (t: Throwable) {
+                                                            }
+                                                        }
+                                                        jumpInput = ""
+                                                        jumpStep = 0
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        Box(modifier = Modifier.weight(1f)) {
+                                            IslandActionButton("取消", Color(0xFF3A3A3C)) {
+                                                jumpInput = ""
+                                                jumpStep = 0
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -1102,6 +1195,23 @@ private fun ProMaxIsland(
             }
         }
     }
+}
+
+@Composable
+private fun FileBigButton(label: String, onClick: () -> Unit) {
+    Text(
+        text = label,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .background(Color(0xFF16161A), RoundedCornerShape(26.dp))
+            .border(0.5.dp, Color(0xFF3A3A3C), RoundedCornerShape(26.dp))
+            .padding(vertical = 15.dp),
+        fontSize = 14.sp,
+        textAlign = TextAlign.Center,
+        maxLines = 1,
+        color = Color.White
+    )
 }
 
 @Composable
