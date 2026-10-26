@@ -336,9 +336,73 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
             }
         },
         onTermClose = { showTerminal = false },
-        onAction = { soKey ->
+        onArchiveEnter = {
             val p = selectedFile
             if (p != null) {
+                uiScope.launch {
+                    running = true
+                    showTerminal = true
+                    termText = ""
+                    runMessage = null
+                    withContext(Dispatchers.IO) {
+                        try {
+                            val q = "'" + p.replace("'", "'\\''") + "'"
+                            Shell.cmd(
+                                "rm -rf /data/local/tmp/yx_arch && mkdir -p /data/local/tmp/yx_arch && " +
+                                    "( unzip -o -q " + q + " -d /data/local/tmp/yx_arch 2>&1 || " +
+                                    "tar -xf " + q + " -C /data/local/tmp/yx_arch 2>&1 )"
+                            ).exec()
+                        } catch (t: Throwable) {
+                        }
+                    }
+                    running = false
+                    showTerminal = false
+                    leftPath = "/data/local/tmp/yx_arch"
+                    refreshTick += 1
+                }
+            }
+        },
+        onArchiveMount = {
+            val p = selectedFile
+            if (p != null) {
+                uiScope.launch {
+                    running = true
+                    termText = ""
+                    runMessage = null
+                    showTerminal = true
+                    val ksud = gateCtx.applicationInfo.nativeLibraryDir + "/libksud.so"
+                    val q = "'" + p.replace("'", "'\\''") + "'"
+                    val cmd = "export HOME=/data/local/tmp ; export TMPDIR=/data/local/tmp ; " +
+                        "export KSU_VER=1.0.0 ; export KSU_VER_CODE=12100 ; export KSU_KERNEL_VER_CODE=12100 ; " +
+                        "'" + ksud + "' module install " + q + " 2>&1"
+                    try {
+                        withContext(Dispatchers.IO) {
+                            val pb = ProcessBuilder("/system/bin/sh", "-c", "su -c " + "'" + cmd.replace("'", "'\\''") + "'")
+                            pb.redirectErrorStream(true)
+                            val proc = pb.start()
+                            activeProc = proc
+                            proc.inputStream.bufferedReader().useLines { lines ->
+                                lines.forEach { line ->
+                                    withContext(Dispatchers.Main) {
+                                        termText = (termText + line + "\n").takeLast(20000)
+                                    }
+                                }
+                            }
+                            proc.waitFor()
+                        }
+                    } catch (t: Throwable) {
+                        termText += "挂载失败: " + (t.message ?: "") + "\n"
+                    }
+                    activeProc = null
+                    running = false
+                }
+            }
+        },
+        onAction = { soKey ->
+            val p = selectedFile
+            if (p != null && soKey.trim() == "···") {
+                openArchive()
+            } else if (p != null) {
                 val lower = p.lowercase()
                 uiScope.launch {
                     running = true
