@@ -181,7 +181,7 @@ fun CardLoginScreen(onSuccess: () -> Unit) {
                     .background(Color(0x40FFFFFF))
             )
             Spacer(modifier = Modifier.height(24.dp))
-            Box(modifier = Modifier.height(16.dp).offset(y = 10.dp), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.height(16.dp).offset(y = 22.dp), contentAlignment = Alignment.Center) {
                 Text(text = error ?: "", color = Color(0xFFFF453A), fontSize = 11.sp)
             }
             Spacer(modifier = Modifier.height(4.dp))
@@ -197,7 +197,7 @@ fun CardLoginScreen(onSuccess: () -> Unit) {
                     modifier = Modifier
                         .width(190.dp)
                         .background(Color(0xE6FFFFFF), RoundedCornerShape(8.dp))
-                        .border(0.5.dp, Color(0x33000000), RoundedCornerShape(8.dp))
+                        .border(1.dp, Color(0x55000000), RoundedCornerShape(8.dp))
                         .padding(8.dp)
                 )
                 Spacer(modifier = Modifier.width(10.dp))
