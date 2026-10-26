@@ -397,6 +397,7 @@ private fun ProMaxIsland(
     var showWave by remember { mutableStateOf(false) }
     var navMode by remember { mutableStateOf(false) }
     var navTarget by remember { mutableStateOf<String?>(null) }
+    var navClosing by remember { mutableStateOf(false) }
     var modules by remember { mutableStateOf<List<ModItem>>(emptyList()) }
     var modSel by remember { mutableStateOf(-1) }
     var suApps by remember { mutableStateOf<List<SuApp>>(emptyList()) }
@@ -502,11 +503,11 @@ private fun ProMaxIsland(
 
     fun openNav(target: String?) {
         reopenScope.launch {
-            navMode = false
-            navTarget = null
-            kotlinx.coroutines.delay(200)
+            navClosing = true
+            kotlinx.coroutines.delay(260)
             navMode = true
             navTarget = target
+            navClosing = false
             expanded = true
         }
     }
@@ -615,8 +616,16 @@ private fun ProMaxIsland(
                     onClick = {
                         if (terminalMode) onTermClose()
                         // let the panels shrink before the pill settles, so closing keeps its animation
-                        navMode = false
-                        navTarget = null
+                        val hadNav = navMode || navTarget != null
+                        if (hadNav) {
+                            navClosing = true
+                            reopenScope.launch {
+                                kotlinx.coroutines.delay(300)
+                                navMode = false
+                                navTarget = null
+                                navClosing = false
+                            }
+                        }
                         if (sel != null) onClearSelection()
                         expanded = false
                     },
@@ -685,7 +694,7 @@ private fun ProMaxIsland(
             }
 
             AnimatedVisibility(
-                visible = navMode || navTarget != null,
+                visible = (navMode || navTarget != null) && !navClosing,
                 enter = expandVertically(animationSpec = tween(260, easing = zyEase), expandFrom = Alignment.Bottom) + fadeIn(tween(160)),
                 exit = shrinkVertically(animationSpec = tween(260, easing = zyEase), shrinkTowards = Alignment.Bottom) + fadeOut(tween(40))
             ) {
