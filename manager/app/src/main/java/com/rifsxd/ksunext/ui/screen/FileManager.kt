@@ -407,24 +407,26 @@ private fun ProMaxIsland(
         if (navTarget == "module") {
             modules = withContext(Dispatchers.IO) {
                 try {
-                    java.io.File("/data/adb/modules").listFiles()
-                        ?.filter { it.isDirectory }
-                        ?.mapNotNull { dir ->
-                            val prop = java.io.File(dir, "module.prop")
-                            if (!prop.exists()) null else {
-                                val map = prop.readLines().mapNotNull { line ->
-                                    val i = line.indexOf('=')
-                                    if (i > 0) line.substring(0, i).trim() to line.substring(i + 1).trim() else null
-                                }.toMap()
-                                ModItem(
-                                    id = dir.name,
-                                    name = map["name"] ?: dir.name,
-                                    version = map["version"] ?: "",
-                                    desc = map["description"] ?: "",
-                                    disabled = java.io.File(dir, "disable").exists()
-                                )
-                            }
-                        } ?: emptyList()
+                    val ids = Shell.cmd("ls -1 /data/adb/modules 2>/dev/null").exec().out
+                        .filter { it.isNotBlank() }
+                    ids.mapNotNull { id ->
+                        val prop = Shell.cmd("cat /data/adb/modules/$id/module.prop 2>/dev/null").exec().out
+                        if (prop.isEmpty()) null else {
+                            val map = prop.mapNotNull { line ->
+                                val i = line.indexOf('=')
+                                if (i > 0) line.substring(0, i).trim() to line.substring(i + 1).trim() else null
+                            }.toMap()
+                            val disabled = Shell.cmd("test -e /data/adb/modules/$id/disable && echo yes").exec()
+                                .out.joinToString("").contains("yes")
+                            ModItem(
+                                id = id,
+                                name = map["name"] ?: id,
+                                version = map["version"] ?: "",
+                                desc = map["description"] ?: "",
+                                disabled = disabled
+                            )
+                        }
+                    }
                 } catch (t: Throwable) {
                     emptyList()
                 }
@@ -440,11 +442,7 @@ private fun ProMaxIsland(
                         .map { it.activityInfo.applicationInfo }
                         .distinctBy { it.packageName }
                         .map { ai ->
-                            val allowed = try {
-                                com.rifsxd.ksunext.Natives.getAppProfile(null, ai.uid)?.allowSu == true
-                            } catch (t: Throwable) {
-                                false
-                            }
+                            val allowed = false
                             SuApp(ai.packageName, pm.getApplicationLabel(ai).toString(), ai.uid, allowed)
                         }
                         .sortedByDescending { it.allowed }
@@ -481,7 +479,7 @@ private fun ProMaxIsland(
     fun openNav(target: String?) {
         reopenScope.launch {
             expanded = false
-            kotlinx.coroutines.delay(280)
+            kotlinx.coroutines.delay(190)
             navTarget = target
             navMode = target == null
             expanded = true
