@@ -201,18 +201,18 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
             kotlinx.coroutines.delay(250)
         }
     }
-    LaunchedEffect(pendingLocate) {
-        val target = pendingLocate ?: return@LaunchedEffect
-        leftPath = target.substringBeforeLast('/', "/")
-        selectedFile = target
-        pendingLocate = null
-    }
 
     var panel by remember { mutableStateOf(false) }
     var showTerminal by remember { mutableStateOf(false) }
     var termInput by remember { mutableStateOf("") }
     var termText by remember { mutableStateOf("") }
     var selectedFile by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(pendingLocate) {
+        val target = pendingLocate ?: return@LaunchedEffect
+        leftPath = target.substringBeforeLast('/', "/")
+        selectedFile = target
+        pendingLocate = null
+    }
     var refreshTick by remember { mutableStateOf(0) }
     var runMessage by remember { mutableStateOf<String?>(null) }
     var runOk by remember { mutableStateOf(true) }
