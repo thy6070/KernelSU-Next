@@ -389,6 +389,11 @@ private fun ProMaxIsland(
     onTermRun: () -> Unit,
     onTermClose: () -> Unit,
     onClearSelection: () -> Unit,
+    onGoLeft: (String) -> Unit,
+    onGoRight: (String) -> Unit,
+    onOpenStorage: () -> Unit,
+    onOpenData: () -> Unit,
+    onExtract: () -> Unit,
     onDelete: () -> Unit,
     onAction: (String) -> Unit,
     onOpen: () -> Unit
@@ -480,6 +485,9 @@ private fun ProMaxIsland(
     }
     var soInput by remember { mutableStateOf("") }
     var soPanel by remember { mutableStateOf(false) }
+    var jumpStep by remember { mutableStateOf(0) }
+    var jumpSide by remember { mutableStateOf(0) }
+    var jumpInput by remember { mutableStateOf("") }
     LaunchedEffect(selectedFile) {
         if (selectedFile != null) navMode = false
         soPanel = false
