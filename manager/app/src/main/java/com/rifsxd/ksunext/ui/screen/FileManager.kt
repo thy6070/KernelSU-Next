@@ -445,6 +445,8 @@ private fun ProMaxIsland(
     onExtractApp: (String, String) -> Unit,
     onDelete: () -> Unit,
     onAction: (String) -> Unit,
+    onArchiveEnter: () -> Unit,
+    onArchiveMount: () -> Unit,
     onOpen: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -589,6 +591,18 @@ private fun ProMaxIsland(
             navClosing = true
             kotlinx.coroutines.delay(200)
             jumpStep = target
+            navClosing = false
+            expanded = true
+        }
+    }
+
+    fun openArchive() {
+        reopenScope.launch {
+            navClosing = true
+            kotlinx.coroutines.delay(220)
+            navMode = true
+            navTarget = "home"
+            jumpStep = 8
             navClosing = false
             expanded = true
         }
