@@ -554,6 +554,19 @@ private fun ProMaxIsland(
         }
     }
 
+    fun closeIsland() {
+        reopenScope.launch {
+            navClosing = true
+            expanded = false
+            kotlinx.coroutines.delay(300)
+            navTarget = null
+            navMode = false
+            jumpStep = 0
+            jumpInput = ""
+            navClosing = false
+        }
+    }
+
     fun switchStep(target: Int) {
         reopenScope.launch {
             navClosing = true
@@ -1058,13 +1071,13 @@ private fun ProMaxIsland(
                                         Box(modifier = Modifier.weight(1f)) {
                                             IslandActionButton("data", Color(0xFF3A3A3C)) {
                                                 paneTarget = "/data/"
-                                                jumpStep = 3
+                                                switchStep(3)
                                             }
                                         }
                                         Box(modifier = Modifier.weight(1f)) {
                                             IslandActionButton("储存", Color(0xFF0A84FF)) {
                                                 paneTarget = "/storage/emulated/0/"
-                                                jumpStep = 3
+                                                switchStep(3)
                                             }
                                         }
                                     }
@@ -1078,18 +1091,14 @@ private fun ProMaxIsland(
                                             IslandActionButton("向左", Color(0xFF3A3A3C)) {
                                                 onGoLeft(paneTarget)
                                                 jumpStep = 0
-                                                navTarget = null
-                                                navMode = false
-                                                expanded = false
+                                                closeIsland()
                                             }
                                         }
                                         Box(modifier = Modifier.weight(1f)) {
                                             IslandActionButton("向右", Color(0xFF0A84FF)) {
                                                 onGoRight(paneTarget)
                                                 jumpStep = 0
-                                                navTarget = null
-                                                navMode = false
-                                                expanded = false
+                                                closeIsland()
                                             }
                                         }
                                     }
@@ -1102,13 +1111,13 @@ private fun ProMaxIsland(
                                         Box(modifier = Modifier.weight(1f)) {
                                             IslandActionButton("向左", Color(0xFF3A3A3C)) {
                                                 jumpSide = 1
-                                                jumpStep = 5
+                                                switchStep(5)
                                             }
                                         }
                                         Box(modifier = Modifier.weight(1f)) {
                                             IslandActionButton("向右", Color(0xFF0A84FF)) {
                                                 jumpSide = 2
-                                                jumpStep = 5
+                                                switchStep(5)
                                             }
                                         }
                                     }
@@ -1131,9 +1140,7 @@ private fun ProMaxIsland(
                                         if (jumpSide == 1) onGoLeft(jumpInput) else onGoRight(jumpInput)
                                         jumpInput = ""
                                         jumpStep = 0
-                                        navTarget = null
-                                        navMode = false
-                                        expanded = false
+                                        closeIsland()
                                     }
                                 }
                                 7 -> {
@@ -1230,9 +1237,7 @@ private fun ProMaxIsland(
                                                         onGoLeft(paneTarget)
                                                         jumpInput = ""
                                                         jumpStep = 0
-                                                        navTarget = null
-                                                        navMode = false
-                                                        expanded = false
+                                                        closeIsland()
                                                     }
                                                 }
                                             }
@@ -1255,9 +1260,7 @@ private fun ProMaxIsland(
                                                         onGoRight(paneTarget)
                                                         jumpInput = ""
                                                         jumpStep = 0
-                                                        navTarget = null
-                                                        navMode = false
-                                                        expanded = false
+                                                        closeIsland()
                                                     }
                                                 }
                                             }
