@@ -159,7 +159,7 @@ fun CardLoginScreen(onSuccess: () -> Unit) {
             Image(
                 painter = painterResource(id = com.rifsxd.ksunext.R.mipmap.ic_launcher_foreground),
                 contentDescription = null,
-                modifier = Modifier.size(148.dp).clip(CircleShape)
+                modifier = Modifier.size(148.dp).clip(CircleShape).background(Color(0x40FFFFFF))
             )
             Spacer(modifier = Modifier.height(14.dp))
             Box(modifier = Modifier.height(18.dp), contentAlignment = Alignment.Center) {
