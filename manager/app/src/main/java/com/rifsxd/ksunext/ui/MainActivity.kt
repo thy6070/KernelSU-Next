@@ -263,7 +263,7 @@ class MainActivity : FragmentActivity() {
 
         setContent { Box(modifier = Modifier.fillMaxSize()) {
             KernelSUTheme(amoledMode = amoledModeState.value) {
-                var showSplash by remember { mutableStateOf(enableStartupAnimation) }
+                var showSplash by remember { mutableStateOf(false) } // startup animation disabled
                 var splashRotationTarget by remember { mutableStateOf(0f) }
                 val splashRotation by animateFloatAsState(
                     targetValue = splashRotationTarget,
