@@ -189,11 +189,12 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
     var termText by remember { mutableStateOf("") }
     var selectedFile by remember { mutableStateOf<String?>(null) }
     var refreshTick by remember { mutableStateOf(0) }
+    var leftHighlight by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(FileLocate.tick) {
         val target = FileLocate.path ?: return@LaunchedEffect
         val dir = target.substringBeforeLast('/', "/")
         if (leftPath == dir) refreshTick += 1 else leftPath = dir
-        selectedFile = target
+        leftHighlight = target.substringAfterLast('/')
     }
 
     var runMessage by remember { mutableStateOf<String?>(null) }
@@ -1779,6 +1780,7 @@ private fun BrowserPane(
                 isDir = entry.isDir,
                 fullPath = rowPath,
                 selected = selectedPath == rowPath,
+                highlight = highlightName,
                 onClick = {
                     if (entry.isDir) onNavigate(joinPath(path, entry.name)) else onFileClick(joinPath(path, entry.name))
                 }
