@@ -495,13 +495,9 @@ private fun ProMaxIsland(
             }
         }
         if (navTarget == "su" || (navTarget == "home" && jumpStep == 7)) {
-            suApps = withContext(Dispatchers.IO) {
+            val base = withContext(Dispatchers.IO) {
                 try {
                     val pm = navCtx.packageManager
-                    val grantedUids = Shell.cmd("od -An -t u4 -j 12 /data/adb/ksu/.allowlist 2>/dev/null").exec().out
-                        .flatMap { line -> line.trim().split(Regex("\\s+")) }
-                        .mapNotNull { it.toLongOrNull() }
-                        .toSet()
                     val userPkgs = Shell.cmd("pm list packages -3").exec().out
                         .map { it.removePrefix("package:").trim() }
                         .filter { it.isNotEmpty() && it.contains('.') }
@@ -514,7 +510,7 @@ private fun ProMaxIsland(
                             }
                         }
                         .map { ai ->
-                            val allowed = grantedUids.contains(ai.uid.toLong()) && !revokedPkgs.contains(ai.packageName)
+                            val allowed = false
                             val icon = try {
                                 val d = pm.getApplicationIcon(ai)
                                 val w = d.intrinsicWidth.coerceAtLeast(1)
@@ -529,7 +525,6 @@ private fun ProMaxIsland(
                             }
                             SuApp(ai.packageName, pm.getApplicationLabel(ai).toString(), ai.uid, allowed, icon)
                         }
-                        .sortedByDescending { it.allowed }
                         .take(200)
                 } catch (t: Throwable) {
                     emptyList()
