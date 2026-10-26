@@ -687,7 +687,7 @@ private fun ProMaxIsland(
             AnimatedVisibility(
                 visible = navMode || navTarget != null,
                 enter = expandVertically(animationSpec = tween(260, easing = zyEase), expandFrom = Alignment.Bottom) + fadeIn(tween(160)),
-                exit = shrinkVertically(animationSpec = tween(260, easing = zyEase), shrinkTowards = Alignment.Bottom) + fadeOut(tween(90))
+                exit = shrinkVertically(animationSpec = tween(260, easing = zyEase), shrinkTowards = Alignment.Bottom) + fadeOut(tween(40))
             ) {
                 Column(
                     modifier = Modifier
@@ -699,7 +699,7 @@ private fun ProMaxIsland(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    NavIcon(Icons.Outlined.Home) { openNav("home") }
+                    NavIcon(Icons.Outlined.InsertDriveFile) { openNav("home") }
                     NavIcon(Icons.Outlined.AdminPanelSettings) { openNav("su") }
                     NavIcon(Icons.Outlined.Layers) { openNav("module") }
                     NavIcon(Icons.Outlined.Settings) { openNav("settings") }
