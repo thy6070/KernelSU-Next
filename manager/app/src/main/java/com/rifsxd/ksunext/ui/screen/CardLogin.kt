@@ -143,7 +143,7 @@ fun CardLoginScreen(onSuccess: () -> Unit) {
 
     Box(modifier = Modifier.fillMaxSize().background(Color(0xFF101014))) {
         Image(
-            painter = painterResource(id = com.rifsxd.ksunext.R.mipmap.ic_launcher_foreground),
+            painter = painterResource(id = com.rifsxd.ksunext.R.drawable.ic_zysu),
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize().blur(52.dp)
@@ -155,7 +155,7 @@ fun CardLoginScreen(onSuccess: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Image(
-                painter = painterResource(id = com.rifsxd.ksunext.R.mipmap.ic_launcher_foreground),
+                painter = painterResource(id = com.rifsxd.ksunext.R.drawable.ic_zysu),
                 contentDescription = null,
                 modifier = Modifier
                     .size(148.dp)
