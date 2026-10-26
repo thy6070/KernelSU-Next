@@ -1731,6 +1731,7 @@ private fun BrowserPane(
     onFileClick: (String) -> Unit,
     refreshTick: Int = 0,
     selectedPath: String? = null,
+    highlightName: String? = null,
     modifier: Modifier = Modifier
 ) {
     var entries by remember { mutableStateOf<List<FsEntry>>(emptyList()) }
@@ -1792,6 +1793,7 @@ private fun FsRow(
     isDir: Boolean,
     fullPath: String,
     selected: Boolean = false,
+    highlight: String? = null,
     onClick: () -> Unit,
     onLongClick: () -> Unit = {}
 ) {
@@ -1802,8 +1804,11 @@ private fun FsRow(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .background(if (selected) Color(0x33FFB6C8) else Color.Transparent)
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            .background(
+                if (highlight != null && highlight == name) Color(0x3300BCD4)
+                else Color.Transparent
+            )
             .then(
                 if (accent != null) {
                     Modifier.border(1.dp, accent.copy(alpha = 0.38f), RoundedCornerShape(14.dp))
