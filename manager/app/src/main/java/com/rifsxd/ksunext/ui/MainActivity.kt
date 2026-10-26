@@ -243,13 +243,13 @@ class MainActivity : FragmentActivity() {
                 prefsInit.edit()
                     .putBoolean("enable_navbar", false)
                     .putBoolean("check_update", false)
-                    .putInt("su_compat_mode", 2)
+                    .putInt("su_compat_mode", 0)
                     .putInt("selinux_hide_mode", 0)
                     .putBoolean("susfs_auto_load", true)
                     .putBoolean("xy_defaults_applied", true)
                     .apply()
                 try {
-                    Natives.setSuEnabled(false)
+                    Natives.setSuEnabled(true)
                     Natives.setSelinuxHideEnabled(true)
                 } catch (_: Throwable) {
                 }
