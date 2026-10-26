@@ -71,13 +71,27 @@ internal fun contentName(context: Context, uri: Uri): String? {
 }
 
 /** Resolve with fallbacks: provider path, then a name search across storage. */
-internal fun resolveUri(context: Context, uri: Uri): String? {
+internal fun resolveUri(context: Context, uri: Uri, referrerPackage: String? = null): String? {
     val direct = contentPath(context, uri)
     if (direct != null) return direct
     val name = contentName(context, uri) ?: return null
     val atRoot = java.io.File("/storage/emulated/0/" + name)
     if (atRoot.isFile) return atRoot.absolutePath
     val safe = name.replace("'", "")
+    // the app that handed us the file usually keeps it in its own folder
+    val fromApp = referrerPackage?.let { pkg ->
+        listOf(
+            "/storage/emulated/0/Android/data/$pkg",
+            "/storage/emulated/0/Android/media/$pkg"
+        )
+    } ?: emptyList()
+    for (root in fromApp) {
+        val hit = runCatching {
+            Shell.cmd("find '$root' -maxdepth 7 -name '$safe' 2>/dev/null | head -n1")
+                .exec().out.firstOrNull { it.isNotBlank() }?.trim()
+        }.getOrNull()
+        if (!hit.isNullOrEmpty()) return hit
+    }
     // shallow scan of the usual download spots first, then a bounded deep scan
     val quick = listOf(
         "/storage/emulated/0/Download",
