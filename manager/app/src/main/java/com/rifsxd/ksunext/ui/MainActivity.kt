@@ -292,7 +292,7 @@ class MainActivity : FragmentActivity() {
                 try {
                     val path = com.rifsxd.ksunext.ui.screen.resolveUri(this, picked)
                     if (path != null) {
-                        com.rifsxd.ksunext.ui.screen.FileLocate.pendingPath = path
+                        com.rifsxd.ksunext.ui.screen.FileLocate.request(path)
                     }
                 } catch (t: Throwable) {
                 }
