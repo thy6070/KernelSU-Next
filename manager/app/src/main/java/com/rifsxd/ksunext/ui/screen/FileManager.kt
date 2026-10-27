@@ -453,7 +453,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
         longPressTick = longPressTick,
         oppositePath = if (longPressFromRight) leftPath else rightPath,
         onFileOp = { op, arg ->
-            val srcPath = longPressPath
+            val srcPath = longPressPath ?: selectedFile
             if (srcPath != null) {
                 uiScope.launch {
                     withContext(Dispatchers.IO) {
