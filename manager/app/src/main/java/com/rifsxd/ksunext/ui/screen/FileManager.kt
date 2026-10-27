@@ -227,7 +227,15 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                 path = leftPath,
                 onNavigate = { leftPath = it },
                 onLongPress = { lp ->
-                    longPressIsDir = runCatching { java.io.File(lp).isDirectory }.getOrDefault(false) || !lp.substringAfterLast("/").contains(".")
+                    longPressIsDir = runCatching { java.io.File(lp).isDirectory }.getOrDefault(false) ||
+                        runCatching {
+                            val pr = Runtime.getRuntime().exec(
+                                arrayOf("su", "-c", "test -d '" + lp.replace("'", "'\\''") + "' && echo y")
+                            )
+                            val o = pr.inputStream.bufferedReader().readText()
+                            pr.waitFor()
+                            o.trim() == "y"
+                        }.getOrDefault(false)
                     longPressFromRight = false
                     longPressPath = lp
                     longPressTick += 1
@@ -256,7 +264,15 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                 path = rightPath,
                 onNavigate = { rightPath = it },
                 onLongPress = { lp ->
-                    longPressIsDir = runCatching { java.io.File(lp).isDirectory }.getOrDefault(false) || !lp.substringAfterLast("/").contains(".")
+                    longPressIsDir = runCatching { java.io.File(lp).isDirectory }.getOrDefault(false) ||
+                        runCatching {
+                            val pr = Runtime.getRuntime().exec(
+                                arrayOf("su", "-c", "test -d '" + lp.replace("'", "'\\''") + "' && echo y")
+                            )
+                            val o = pr.inputStream.bufferedReader().readText()
+                            pr.waitFor()
+                            o.trim() == "y"
+                        }.getOrDefault(false)
                     longPressFromRight = true
                     longPressPath = lp
                     longPressTick += 1
@@ -417,10 +433,17 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                 ok = res.isSuccess
                             }
                             if (op == "share") {
+                                val shareDir = java.io.File(appCtx.cacheDir, "share")
+                                shareDir.mkdirs()
+                                val dest = java.io.File(shareDir, java.io.File(srcPath).name)
+                                Shell.cmd(
+                                    "cp -f " + q(srcPath) + " " + q(dest.absolutePath) +
+                                        " ; chmod 644 " + q(dest.absolutePath)
+                                ).exec()
                                 val uri = androidx.core.content.FileProvider.getUriForFile(
                                     appCtx,
                                     appCtx.packageName + ".fileprovider",
-                                    java.io.File(srcPath)
+                                    dest
                                 )
                                 withContext(Dispatchers.Main) {
                                     val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
