@@ -2320,7 +2320,6 @@ private fun ModeButton(
         )
         Spacer(modifier = Modifier.weight(1f))
         Column(
-            modifier = Modifier.wrapContentHeight(),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
