@@ -2230,7 +2230,7 @@ private fun ModeButton(
                                         "resetprop --delete ro.boot.veritymode 2>/dev/null; " +
                                         "resetprop --delete ro.secureboot.lockstate 2>/dev/null; " +
                                         "resetprop --delete ro.boot.warranty_bit 2>/dev/null; true")
-                                    su("for m in /data/adb/modules/AlwaysStrong /data/adb/modules/alwaysstrong; do [ -d \"\$m\" ] && touch \"$m/remove\"; done 2>/dev/null; true")
+                                    su("for m in /data/adb/modules/AlwaysStrong /data/adb/modules/alwaysstrong; do [ -d \"\$m\" ] && touch \"\$m/remove\"; done 2>/dev/null; true")
                                     "已恢复 BL 状态"
                                 }
                             } catch (t: Throwable) {
