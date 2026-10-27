@@ -1355,14 +1355,6 @@ private fun ProMaxIsland(
                                         modifier = Modifier.fillMaxWidth(),
                                         verticalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
-                                        Text(
-                                            text = lp.substringAfterLast('/'),
-                                            color = Color(0xFFFFB6C8),
-                                            fontSize = 12.sp,
-                                            maxLines = 1,
-                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
-                                        )
                                         IslandActionButton("移动/复制", Color(0xFF0A84FF)) {
                                             switchStep(10)
                                         }
