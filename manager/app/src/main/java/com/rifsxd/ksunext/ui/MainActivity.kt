@@ -257,6 +257,17 @@ class MainActivity : FragmentActivity() {
             navBarEnabled.value = prefsInit.getBoolean("enable_navbar", false)
         } catch (_: Exception) {}
 
+        // warm the root shell so the first module install has no startup cost
+        try {
+            Thread {
+                try {
+                    com.topjohnwu.superuser.Shell.getShell()
+                } catch (t: Throwable) {
+                }
+            }.start()
+        } catch (t: Throwable) {
+        }
+
         val isManager = Natives.isManager
         if (isManager) install()
 
