@@ -2177,7 +2177,7 @@ private fun ModePanel(onDismiss: () -> Unit, onRunExec: (String) -> Unit = {}) {
             ModeButton(Icons.Outlined.AcUnit, "性能模式")
             ModeButton(Icons.Outlined.Person, "隐藏BL")
             ModeButton(Icons.Outlined.Smartphone, "刷入RT驱动")
-            ModeButton(Icons.Outlined.Hotel, "执行此文件", onRun = {
+            ModeButton(Icons.Outlined.Description, "执行此文件", onRun = {
                 onDismiss()
                 onRunExec(it)
             })
