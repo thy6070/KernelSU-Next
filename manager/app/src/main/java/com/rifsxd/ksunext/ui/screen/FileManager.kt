@@ -195,6 +195,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
     var longPressPath by remember { mutableStateOf<String?>(null) }
     var longPressIsDir by remember { mutableStateOf(false) }
     var longPressTick by remember { mutableStateOf(0) }
+    var longPressFromRight by remember { mutableStateOf(false) }
     var editPath by remember { mutableStateOf<String?>(null) }
     var editText by remember { mutableStateOf("") }
     LaunchedEffect(FileLocate.tick) {
@@ -291,6 +292,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                 onNavigate = { leftPath = it },
                 onLongPress = { lp ->
                     longPressIsDir = !lp.endsWith(".apk") && !lp.contains(".")
+                    longPressFromRight = false
                     longPressPath = lp
                     longPressTick += 1
                 },
@@ -318,6 +320,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                 onNavigate = { rightPath = it },
                 onLongPress = { lp ->
                     longPressIsDir = !lp.endsWith(".apk") && !lp.contains(".")
+                    longPressFromRight = true
                     longPressPath = lp
                     longPressTick += 1
                 },
@@ -447,7 +450,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
         longPressPath = longPressPath,
         longPressIsDir = longPressIsDir,
         longPressTick = longPressTick,
-        oppositePath = rightPath,
+        oppositePath = if (longPressFromRight) leftPath else rightPath,
         onFileOp = { op, arg ->
             val srcPath = longPressPath
             if (srcPath != null) {
@@ -1365,16 +1368,16 @@ private fun ProMaxIsland(
                                                 when {
                                                     isApk -> "安装"
                                                     isArchive -> "进入"
-                                                    isExec -> "执行"
-                                                    else -> "编辑"
+                                                    isExec -> "编辑"
+                                                    else -> "执行"
                                                 },
                                                 Color(0xFF0A84FF)
                                             ) {
                                                 when {
                                                     isApk -> onFileOp("install", "")
                                                     isArchive -> onArchiveEnter()
-                                                    isExec -> onAction("")
-                                                    else -> onFileOp("edit", "")
+                                                    isExec -> onFileOp("edit", "")
+                                                    else -> onAction("")
                                                 }
                                                 closeIsland()
                                             }
