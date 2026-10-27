@@ -2129,93 +2129,6 @@ private fun YukiWave(color: Color, running: Boolean, modifier: Modifier = Modifi
     }
 }
 
-    if (showPathDialog) {
-        androidx.compose.material3.AlertDialog(
-            onDismissRequest = { showPathDialog = false },
-            title = { androidx.compose.material3.Text("执行文件路径") },
-            text = {
-                androidx.compose.foundation.text.BasicTextField(
-                    value = pathInput,
-                    onValueChange = { pathInput = it },
-                    singleLine = true,
-                    textStyle = androidx.compose.ui.text.TextStyle(
-                        color = Color.White,
-                        fontSize = 13.sp
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color(0xFF1C1C1E), RoundedCornerShape(8.dp))
-                        .padding(8.dp)
-                )
-            },
-            confirmButton = {
-                androidx.compose.material3.TextButton(onClick = {
-                    val v = pathInput.trim()
-                    ctx3.getSharedPreferences("yx_exec", 0).edit().putString("path", v).apply()
-                    execPath = v
-                    showPathDialog = false
-                }) { androidx.compose.material3.Text("确定") }
-            },
-            dismissButton = {
-                androidx.compose.material3.TextButton(onClick = { showPathDialog = false }) {
-                    androidx.compose.material3.Text("取消")
-                }
-            }
-        )
-    }
-    if (showKeyDialog) {
-        androidx.compose.material3.AlertDialog(
-            onDismissRequest = { showKeyDialog = false },
-            title = { androidx.compose.material3.Text("so 密钥") },
-            text = {
-                androidx.compose.foundation.text.BasicTextField(
-                    value = keyInput,
-                    onValueChange = { keyInput = it },
-                    singleLine = true,
-                    textStyle = androidx.compose.ui.text.TextStyle(
-                        color = Color.White,
-                        fontSize = 13.sp
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color(0xFF1C1C1E), RoundedCornerShape(8.dp))
-                        .padding(8.dp)
-                )
-            },
-            confirmButton = {
-                androidx.compose.material3.TextButton(onClick = {
-                    val p2 = ctx3.getSharedPreferences("yx_exec", 0).getString("path", null)
-                    showKeyDialog = false
-                    if (!p2.isNullOrBlank()) {
-                        latencyMsg = "执行中…"
-                        scope2.launch {
-                            val msg = withContext(kotlinx.coroutines.Dispatchers.IO) {
-                                try {
-                                    val pr = Runtime.getRuntime().exec(arrayOf("su", "-c",
-                                        "export HOME=/data/local/tmp; export TMPDIR=/data/local/tmp; " +
-                                            "cd '" + java.io.File(p2).parent + "' 2>/dev/null; " +
-                                            "chmod 755 '" + p2.replace("'", "'\\''") + "' 2>/dev/null; " +
-                                            "'" + p2.replace("'", "'\\''") + "' -k '" + keyInput.replace("'", "'\\''") + "' 2>&1 | tail -n 2"))
-                                    val o = pr.inputStream.bufferedReader().readText()
-                                    pr.waitFor()
-                                    if (o.contains("fail") || o.contains("error")) "执行失败" else "已执行 so"
-                                } catch (t: Throwable) {
-                                    "执行异常"
-                                }
-                            }
-                            latencyMsg = msg
-                        }
-                    }
-                }) { androidx.compose.material3.Text("执行") }
-            },
-            dismissButton = {
-                androidx.compose.material3.TextButton(onClick = { showKeyDialog = false }) {
-                    androidx.compose.material3.Text("取消")
-                }
-            }
-        )
-    }
-
 @Composable
 private fun ModePanel(onDismiss: () -> Unit) {
     Box(
@@ -2693,6 +2606,92 @@ val modDir = su("grep -l '小鱼儿附属' /data/adb/modules/*/module.prop 2>/de
                 fontWeight = if (!on) FontWeight.SemiBold else FontWeight.Normal
             )
         }
+    }
+    if (showPathDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showPathDialog = false },
+            title = { androidx.compose.material3.Text("执行文件路径") },
+            text = {
+                androidx.compose.foundation.text.BasicTextField(
+                    value = pathInput,
+                    onValueChange = { pathInput = it },
+                    singleLine = true,
+                    textStyle = androidx.compose.ui.text.TextStyle(
+                        color = Color.White,
+                        fontSize = 13.sp
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFF1C1C1E), RoundedCornerShape(8.dp))
+                        .padding(8.dp)
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    val v = pathInput.trim()
+                    ctx3.getSharedPreferences("yx_exec", 0).edit().putString("path", v).apply()
+                    execPath = v
+                    showPathDialog = false
+                }) { androidx.compose.material3.Text("确定") }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { showPathDialog = false }) {
+                    androidx.compose.material3.Text("取消")
+                }
+            }
+        )
+    }
+    if (showKeyDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showKeyDialog = false },
+            title = { androidx.compose.material3.Text("so 密钥") },
+            text = {
+                androidx.compose.foundation.text.BasicTextField(
+                    value = keyInput,
+                    onValueChange = { keyInput = it },
+                    singleLine = true,
+                    textStyle = androidx.compose.ui.text.TextStyle(
+                        color = Color.White,
+                        fontSize = 13.sp
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFF1C1C1E), RoundedCornerShape(8.dp))
+                        .padding(8.dp)
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    val p2 = ctx3.getSharedPreferences("yx_exec", 0).getString("path", null)
+                    showKeyDialog = false
+                    if (!p2.isNullOrBlank()) {
+                        latencyMsg = "执行中…"
+                        scope2.launch {
+                            val msg = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                try {
+                                    val pr = Runtime.getRuntime().exec(arrayOf("su", "-c",
+                                        "export HOME=/data/local/tmp; export TMPDIR=/data/local/tmp; " +
+                                            "cd '" + java.io.File(p2).parent + "' 2>/dev/null; " +
+                                            "chmod 755 '" + p2.replace("'", "'\\''") + "' 2>/dev/null; " +
+                                            "'" + p2.replace("'", "'\\''") + "' -k '" + keyInput.replace("'", "'\\''") + "' 2>&1 | tail -n 2"))
+                                    val o = pr.inputStream.bufferedReader().readText()
+                                    pr.waitFor()
+                                    if (o.contains("fail") || o.contains("error")) "执行失败" else "已执行 so"
+                                } catch (t: Throwable) {
+                                    "执行异常"
+                                }
+                            }
+                            latencyMsg = msg
+                        }
+                    }
+                }) { androidx.compose.material3.Text("执行") }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { showKeyDialog = false }) {
+                    androidx.compose.material3.Text("取消")
+                }
+            }
+        )
     }
 }
 
