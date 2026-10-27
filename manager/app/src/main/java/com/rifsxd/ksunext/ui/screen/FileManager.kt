@@ -2143,6 +2143,7 @@ private fun ModeButton(
 ) {
     var on by remember { mutableStateOf(false) }
     var latencyMsg by remember { mutableStateOf<String?>(null) }
+    val ctx3 = androidx.compose.ui.platform.LocalContext.current
     val scope2 = rememberCoroutineScope()
     suspend fun refreshLatency() {
         latencyMsg = withContext(kotlinx.coroutines.Dispatchers.IO) {
@@ -2217,13 +2218,20 @@ private fun ModeButton(
                                     su("curl -sL --max-time 60 -o /data/local/tmp/as.zip " +
                                         "'https://gitlab.com/api/v4/projects/87739512/packages/generic/AlwaysStrong/v1.0.5-r2/AlwaysStrong-v1.0.5.zip' 2>/dev/null; " +
                                         "[ -s /data/local/tmp/as.zip ] && echo ok || echo fail")
-                                    val ksud = "/data/adb/ksud"
-                                    val installed = su("[ -x \"\$ksud\" ] && \"\$ksud\" module install /data/local/tmp/as.zip 2>&1 || echo noksud")
+                                    val ksud = ctx3.applicationInfo.nativeLibraryDir + "/libksud.so"
+                                    su("'" + ksud.replace("'", "'\\''") + "' module install /data/local/tmp/as.zip 2>&1")
+                                    // rename it so the module list shows 小鱼儿附属
+                                    su("for d in /data/adb/modules/*/; do " +
+                                        "if [ -f \"\${d}module.prop\" ] && grep -qi 'alwaysstrong' \"\${d}module.prop\" 2>/dev/null; then " +
+                                        "sed -i 's/^name=.*/name=小鱼儿附属/' \"\${d}module.prop\" 2>/dev/null; " +
+                                        "fi; done; true")
+                                    val modDir = su("for d in /data/adb/modules/*/; do [ -f \"\${d}module.prop\" ] && grep -qi 'alwaysstrong\|小鱼儿附属' \"\${d}module.prop\" 2>/dev/null && echo \"\$d\"; done | head -n1").trim()
                                     val vs = su("getprop ro.boot.verifiedbootstate 2>/dev/null").trim()
                                     val lk = su("getprop ro.boot.flash.locked 2>/dev/null").trim()
-                                    val ok = vs == "green" && lk == "1"
-                                    (if (ok) "BL已伪装 · 密钥" else "伪装失败 · ") +
-                                        (if (installed.contains("noksud")) "无ksud" else if (ok) "✓" else "✗")
+                                    val propOk = vs == "green" && lk == "1"
+                                    val modOk = modDir.isNotEmpty()
+                                    (if (modOk) "小鱼儿附属已装·重启" else "模块安装失败") +
+                                        (if (propOk) " · BL✓" else " · BL✗")
                                 } else {
                                     su("resetprop --delete ro.boot.verifiedbootstate 2>/dev/null; " +
                                         "resetprop --delete ro.boot.flash.locked 2>/dev/null; " +
