@@ -1427,7 +1427,19 @@ private fun ProMaxIsland(
                                                 switchStep(12)
                                             }
                                         } else {
-                                            IslandActionButton("分享", Color(0xFF0A84FF)) {
+                                            IslandActionButton("复制路径", Color(0xFF0A84FF)) {
+                                            try {
+                                                val cm = ctxNav.getSystemService(
+                                                    android.content.Context.CLIPBOARD_SERVICE
+                                                ) as android.content.ClipboardManager
+                                                cm.setPrimaryClip(
+                                                    android.content.ClipData.newPlainText("path", lp)
+                                                )
+                                            } catch (t: Throwable) {
+                                            }
+                                            closeIsland()
+                                        }
+                                        IslandActionButton("分享", Color(0xFF0A84FF)) {
                                                 onFileOp("share", "")
                                                 closeIsland()
                                             }
