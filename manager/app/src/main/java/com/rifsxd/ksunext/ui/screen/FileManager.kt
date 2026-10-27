@@ -229,6 +229,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                     longPressIsDir = !lp.endsWith(".apk") && !lp.contains(".")
                     longPressFromRight = false
                     longPressPath = lp
+                    selectedFile = lp
                     longPressTick += 1
                 },
                 onFileClick = { picked ->
@@ -257,6 +258,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                     longPressIsDir = !lp.endsWith(".apk") && !lp.contains(".")
                     longPressFromRight = true
                     longPressPath = lp
+                    selectedFile = lp
                     longPressTick += 1
                 },
                 onFileClick = { picked ->
@@ -398,10 +400,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                             val cmd = when (op) {
                                 "move" -> "mv -f " + q(srcPath) + " " + q(arg)
                                 "copy" -> "cp -rf " + q(srcPath) + " " + q(arg)
-                                "zip" -> "cd " + q(dir) +
-                                    " && (command -v zip >/dev/null 2>&1 && zip -r " + q(name + ".zip") + " " + q(name) +
-                                    " || /data/adb/ksu/bin/busybox zip -r " + q(name + ".zip") + " " + q(name) +
-                                    " || /data/adb/magisk/busybox zip -r " + q(name + ".zip") + " " + q(name) + ")"
+                                "zip" -> "cd " + q(dir) + " && tar -czf " + q(name + ".tar.gz") + " " + q(name)
                                 "unzip" -> "unzip -o " + q(srcPath) + " -d " + q(arg)
                                 "rename" -> "mv -f " + q(srcPath) + " " + q(dir + "/" + arg)
                                 "delete" -> "rm -rf " + q(srcPath)
