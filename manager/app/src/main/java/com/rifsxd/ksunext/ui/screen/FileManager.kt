@@ -2207,23 +2207,49 @@ private fun ModeButton(
                                 }
                                 val path = "/data/adb/service.d/xy_perf.sh"
                                 if (enabling) {
-                                    val script = "#!/system/bin/sh\n" +
-                                        "sleep 20\n" +
-                                        "for c in /sys/devices/system/cpu/cpu*/cpufreq; do\n" +
-                                        "  [ -f \"\$c/scaling_governor\" ] || continue\n" +
-                                        "  echo performance > \"\$c/scaling_governor\" 2>/dev/null\n" +
-                                        "done\n" +
-                                        "for u in /dev/cpuset/top-app/cpus /sys/fs/cgroup/top-app/cpuset.cpus; do [ -f \"\$u\" ] && echo 4-7 > \"\$u\" 2>/dev/null; done\n" +
-                                        "for u in /dev/cpuset/background/cpus /sys/fs/cgroup/background/cpuset.cpus /dev/cpuset/system-background/cpus; do [ -f \"\$u\" ] && echo 0-1 > \"\$u\" 2>/dev/null; done\n" +
-                                        "for u in /dev/cpuset/top-app/uclamp.min /sys/fs/cgroup/top-app/uclamp.min; do [ -f \"\$u\" ] && echo 1024 > \"\$u\" 2>/dev/null; done\n" +
-                                        "echo 1024 > /proc/sys/kernel/sched_util_clamp_min 2>/dev/null\n" +
-                                        "echo 1 > /proc/sys/kernel/sched_boost 2>/dev/null\n" +
-                                        "for c in /sys/devices/system/cpu/cpu*/cpufreq; do [ -f \"\$c/cpuinfo_max_freq\" ] && cat \"\$c/cpuinfo_max_freq\" > \"\$c/scaling_min_freq\" 2>/dev/null; done\n" +
-                                        "for g in /sys/class/kgsl/kgsl-3d0/devfreq/max_freq; do [ -f \"\$g\" ] && cat \"\$g\" > /sys/class/kgsl/kgsl-3d0/devfreq/min_freq 2>/dev/null; done\n" +
-                                        "for g in /sys/class/kgsl/kgsl-3d0/max_gpuclk; do [ -f \"\$g\" ] && cat \"\$g\" > /sys/class/kgsl/kgsl-3d0/gpuclk 2>/dev/null; done\n" +
-                                        "for z in /sys/class/thermal/thermal_zone*/mode; do echo disabled > \"\$z\" 2>/dev/null; done\n" +
-                                        "settings put system peak_refresh_rate 120 2>/dev/null\n" +
-                                        "settings put system min_refresh_rate 120 2>/dev/null\n"
+                                    val script = "#!/system/bin/sh\\n" +
+                                        "sleep 20\\n" +
+                                        "# CPU: governor + min=max\\n" +
+                                        "for c in /sys/devices/system/cpu/cpu*/cpufreq; do\\n" +
+                                        "  [ -d \\\"\\$c\\\" ] || continue\\n" +
+                                        "  echo performance > \\\"\\$c/scaling_governor\\\" 2>/dev/null\\n" +
+                                        "  m=\\$(cat \\\"\\$c/cpuinfo_max_freq\\\" 2>/dev/null)\\n" +
+                                        "  [ -n \\\"\\$m\\\" ] && echo \\\"\\$m\\\" > \\\"\\$c/scaling_min_freq\\\" 2>/dev/null\\n" +
+                                        "done\\n" +
+                                        "# cpuset: cgroup v1 and v2, several spellings\\n" +
+                                        "for base in /dev/cpuset /sys/fs/cgroup; do\\n" +
+                                        "  for n in top-app foreground; do\\n" +
+                                        "    for f in \\\"\\$base/\\$n/cpus\\\" \\\"\\$base/\\$n/cpuset.cpus\\\"; do\\n" +
+                                        "      [ -f \\\"\\$f\\\" ] && echo 4-7 > \\\"\\$f\\\" 2>/dev/null\\n" +
+                                        "    done\\n" +
+                                        "  done\\n" +
+                                        "  for f in \\\"\\$base/system/cpus\\\" \\\"\\$base/system/cpuset.cpus\\\"; do\\n" +
+                                        "    [ -f \\\"\\$f\\\" ] && echo 0-3 > \\\"\\$f\\\" 2>/dev/null\\n" +
+                                        "  done\\n" +
+                                        "  for n in background system-background; do\\n" +
+                                        "    for f in \\\"\\$base/\\$n/cpus\\\" \\\"\\$base/\\$n/cpuset.cpus\\\"; do\\n" +
+                                        "      [ -f \\\"\\$f\\\" ] && echo 0-1 > \\\"\\$f\\\" 2>/dev/null\\n" +
+                                        "    done\\n" +
+                                        "  done\\n" +
+                                        "done\\n" +
+                                        "for f in /dev/cpuset/top-app/uclamp.min /sys/fs/cgroup/top-app/uclamp.min; do\\n" +
+                                        "  [ -f \\\"\\$f\\\" ] && echo 1024 > \\\"\\$f\\\" 2>/dev/null\\n" +
+                                        "done\\n" +
+                                        "echo 1024 > /proc/sys/kernel/sched_util_clamp_min 2>/dev/null\\n" +
+                                        "echo 1 > /proc/sys/kernel/sched_boost 2>/dev/null\\n" +
+                                        "# GPU: qualcomm kgsl, generic devfreq, mtk\\n" +
+                                        "for g in /sys/class/kgsl/kgsl-3d0/devfreq /sys/class/devfreq/*; do\\n" +
+                                        "  [ -d \\\"\\$g\\\" ] || continue\\n" +
+                                        "  [ -f \\\"\\$g/max_freq\\\" ] && cat \\\"\\$g/max_freq\\\" > \\\"\\$g/min_freq\\\" 2>/dev/null\\n" +
+                                        "done\\n" +
+                                        "[ -f /sys/class/kgsl/kgsl-3d0/max_gpuclk ] && cat /sys/class/kgsl/kgsl-3d0/max_gpuclk > /sys/class/kgsl/kgsl-3d0/gpuclk 2>/dev/null\\n" +
+                                        "for f in /proc/gpufreq/gpufreq_opp_freq /proc/gpufreqv2/fix_target_opp_index; do\\n" +
+                                        "  [ -f \\\"\\$f\\\" ] && echo 0 > \\\"\\$f\\\" 2>/dev/null\\n" +
+                                        "done\\n" +
+                                        "# thermal + refresh\\n" +
+                                        "for z in /sys/class/thermal/thermal_zone*/mode; do echo disabled > \\\"\\$z\\\" 2>/dev/null; done\\n" +
+                                        "settings put system peak_refresh_rate 120 2>/dev/null\\n" +
+                                        "settings put system min_refresh_rate 120 2>/dev/null\\n"
                                     su("mkdir -p /data/adb/service.d")
                                     su("printf '%s' '" + script.replace("'", "'\\''") + "' > $path ; chmod 755 $path")
                                     su("sed 's/^sleep 20$/sleep 1/' $path > /data/local/tmp/xy_now.sh; chmod 755 /data/local/tmp/xy_now.sh; sh /data/local/tmp/xy_now.sh >/dev/null 2>&1")
@@ -2350,7 +2376,7 @@ private fun ModeButton(
                 color = Color(0x66FFFFFF),
                 fontSize = 9.sp,
                 maxLines = 1,
-                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 6.dp)
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 10.dp)
             )
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
