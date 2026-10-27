@@ -166,7 +166,7 @@ fun SettingScreen(navigator: DestinationsNavigator) {
 
     Scaffold(
         topBar = {
-            TopBar(scrollBehavior = scrollBehavior)
+            TopBar(scrollBehavior = scrollBehavior, onBack = { navigator.popBackStack() })
         },
         snackbarHost = { SnackbarHost(snackBarHost, modifier = Modifier.padding(bottom = navBarPadding)) },
         contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
@@ -244,12 +244,43 @@ fun SettingScreen(navigator: DestinationsNavigator) {
                     )
                 }
             )
+            var selinuxHide by remember { mutableStateOf(false) }
+            LaunchedEffect(Unit) {
+                selinuxHide = runCatching { Natives.isSelinuxHideEnabled() }.getOrDefault(false)
+            }
+            ListItem(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable {
+                        val next = !selinuxHide
+                        selinuxHide = next
+                        scope.launch {
+                            withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                runCatching { Natives.setSelinuxHideEnabled(next) }
+                            }
+                        }
+                    },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                leadingContent = { Icon(Icons.Filled.Policy, null) },
+                headlineContent = {
+                    Text(
+                        text = "隐藏 SELinux 修改",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
+                supportingContent = { Text("阻止应用检测 SELinux 修改") },
+                trailingContent = {
+                    Switch(checked = selinuxHide, onCheckedChange = null)
+                }
+            )
             ListItem(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(8.dp)),
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                leadingContent = { Icon(Icons.Filled.Security, null) },
+                leadingContent = { Icon(Icons.Filled.Memory, null) },
                 headlineContent = {
                     Text(
                         text = "Zygisk 注入",
@@ -259,6 +290,48 @@ fun SettingScreen(navigator: DestinationsNavigator) {
                 },
                 supportingContent = {
                     Text(if (zygiskOn) "已启用" else "未启用")
+                }
+            )
+            var lkmLoaded by remember { mutableStateOf(false) }
+            var lkmBusy by remember { mutableStateOf(false) }
+            LaunchedEffect(Unit) {
+                lkmLoaded = runCatching { com.rifsxd.ksunext.ui.util.isSusfsGuardLkmLoaded() }
+                    .getOrDefault(false)
+            }
+            ListItem(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable(enabled = !lkmBusy) {
+                        lkmBusy = true
+                        scope.launch {
+                            val ok = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                runCatching {
+                                    if (lkmLoaded) {
+                                        com.rifsxd.ksunext.ui.util.unloadSusfsGuardLkm()
+                                    } else {
+                                        com.rifsxd.ksunext.ui.util.loadSusfsGuardLkm(null)
+                                    }
+                                }.getOrDefault(false)
+                            }
+                            if (ok) lkmLoaded = !lkmLoaded
+                            lkmBusy = false
+                        }
+                    },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                leadingContent = { Icon(Icons.Filled.Memory, null) },
+                headlineContent = {
+                    Text(
+                        text = "Load SUSFS LKM",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
+                supportingContent = {
+                    Text(
+                        if (lkmLoaded) "已装载，点击卸载"
+                        else "Load the SUSFS guard kernel module."
+                    )
                 }
             )
             Spacer(Modifier)
@@ -1290,8 +1363,16 @@ fun rememberUninstallDialog(onSelected: (UninstallType) -> Unit): DialogHandle {
 @Composable
 private fun TopBar(
     scrollBehavior: TopAppBarScrollBehavior? = null,
+    onBack: (() -> Unit)? = null,
 ) {
     TopAppBar(
+        navigationIcon = {
+            if (onBack != null) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                }
+            }
+        },
         title = {
             Text(
                 text = stringResource(R.string.settings),
