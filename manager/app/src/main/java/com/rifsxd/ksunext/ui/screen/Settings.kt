@@ -210,38 +210,57 @@ fun SettingScreen(navigator: DestinationsNavigator) {
                 }
             }
 
-            if (ksuVersion != null) {
-                KernelFeaturesCard(
-                    suCompatStatus = suCompatStatus,
-                    kernelUmountStatus = kernelUmountStatus,
-                    sulogStatusParam = sulogStatus,
-                    isSulogEnabled = isSulogEnabled,
-                    onSulogEnabledChange = { isSulogEnabled = it },
-                    adbRootStatus = adbRootStatus,
-                    shellSuAdbOnlyStatusParam = shellSuAdbOnlyStatus,
-                    isShellSuAdbOnlyEnabled = isShellSuAdbOnlyEnabled,
-                    onShellSuAdbOnlyEnabledChange = { isShellSuAdbOnlyEnabled = it },
-                    selinuxHideStatus = selinuxHideStatus,
-                    avcSpoofStatus = avcSpoofStatus,
-                    scope = scope
-                )
-                SecurityCard(
-                    navigator = navigator,
-                    loadingDialog = loadingDialog
-                )
+            // Stripped settings page: only the live kernel status is shown.
+            var susfsSupp by remember { mutableStateOf(false) }
+            var susfsVer by remember { mutableStateOf("") }
+            var susfsVariant by remember { mutableStateOf("") }
+            var zygiskOn by remember { mutableStateOf(false) }
+            LaunchedEffect(Unit) {
+                susfsSupp = runCatching { com.rifsxd.ksunext.ui.util.getSuSFS() == "Supported" }
+                    .getOrDefault(false)
+                susfsVer = runCatching { com.rifsxd.ksunext.ui.util.getSuSFSVersion() }
+                    .getOrDefault("")
+                susfsVariant = runCatching { com.rifsxd.ksunext.ui.util.getSuSFSVariant() }
+                    .getOrDefault("")
+                zygiskOn = runCatching { Natives.isZygiskEnabled() }.getOrDefault(false)
             }
-
-            AppSettingsCard(
-                navigator = navigator,
-                prefs = prefs,
-                aboutDialog = aboutDialog,
-                exportBugreportLauncher = exportBugreportLauncher,
-                loadingDialog = loadingDialog,
-                scope = scope,
-                context = context,
-                isUnrooted = isUnrooted
+            ListItem(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp)),
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                leadingContent = { Icon(Icons.Filled.Memory, null) },
+                headlineContent = {
+                    Text(
+                        text = "SuSFS 版本",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
+                supportingContent = {
+                    Text(
+                        if (susfsSupp) "支持 | " + susfsVer + " (" + susfsVariant + ")"
+                        else "不支持"
+                    )
+                }
             )
-
+            ListItem(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp)),
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                leadingContent = { Icon(Icons.Filled.Security, null) },
+                headlineContent = {
+                    Text(
+                        text = "Zygisk 注入",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
+                supportingContent = {
+                    Text(if (zygiskOn) "已启用" else "未启用")
+                }
+            )
             Spacer(Modifier)
         }
     }
