@@ -2211,7 +2211,6 @@ private fun ModePanel(onDismiss: () -> Unit, onRunExec: (String) -> Unit = {}) {
             ModeButton(Icons.Outlined.AcUnit, "性能模式")
             ModeButton(Icons.Outlined.Person, "隐藏BL")
             ModeButton(Icons.Outlined.Smartphone, "刷入RT驱动")
-            ModeButton(Icons.Outlined.Lock, "刷入内核模块")
             ModeButton(Icons.Outlined.Folder, "执行此文件", onRun = {
                 onDismiss()
                 onRunExec(it)
@@ -2266,7 +2265,16 @@ private fun ModeButton(
     LaunchedEffect(title) {
         if (title == "性能模式") {
             on = withContext(kotlinx.coroutines.Dispatchers.IO) {
-                java.io.File("/data/adb/service.d/xy_perf.sh").exists()
+                try {
+                    val pr = Runtime.getRuntime().exec(
+                        arrayOf("su", "-c", "[ -f /data/adb/service.d/xy_perf.sh ] && echo y || echo n")
+                    )
+                    val o = pr.inputStream.bufferedReader().readText()
+                    pr.waitFor()
+                    o.trim() == "y"
+                } catch (t: Throwable) {
+                    false
+                }
             }
         }
         if (title == "执行此文件") {
@@ -2291,7 +2299,16 @@ private fun ModeButton(
         }
         if (title == "放开通行") {
             on = withContext(kotlinx.coroutines.Dispatchers.IO) {
-                java.io.File("/data/adb/service.d/xy_open_access.sh").exists()
+                try {
+                    val pr = Runtime.getRuntime().exec(
+                        arrayOf("su", "-c", "[ -f /data/adb/service.d/xy_open_access.sh ] && echo y || echo n")
+                    )
+                    val o = pr.inputStream.bufferedReader().readText()
+                    pr.waitFor()
+                    o.trim() == "y"
+                } catch (t: Throwable) {
+                    false
+                }
             }
             refreshLatency()
         }
