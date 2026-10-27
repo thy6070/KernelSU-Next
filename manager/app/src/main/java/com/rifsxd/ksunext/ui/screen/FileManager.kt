@@ -2128,7 +2128,7 @@ private fun ModePanel(onDismiss: () -> Unit) {
         ) {
             ModeButton(Icons.Outlined.DarkMode, "放开通行")
             ModeButton(Icons.Outlined.AcUnit, "性能模式")
-            ModeButton(Icons.Outlined.Person, "个人")
+            ModeButton(Icons.Outlined.Person, "隐藏BL")
             ModeButton(Icons.Outlined.Smartphone, "工作")
             ModeButton(Icons.Outlined.Hotel, "睡眠")
         }
@@ -2376,7 +2376,7 @@ private fun ModeButton(
                 color = Color(0x66FFFFFF),
                 fontSize = 9.sp,
                 maxLines = 1,
-                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 10.dp)
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 2.dp)
             )
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
