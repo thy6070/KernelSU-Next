@@ -470,10 +470,33 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                         "export KSU_VER=1.0.0 ; export KSU_VER_CODE=12100 ; export KSU_KERNEL_VER_CODE=12100 ; " +
                         "'" + ksud + "' module install " + q + " 2>&1"
                     try {
-                        val result = withContext(Dispatchers.IO) {
-                            Shell.cmd(cmd).exec()
+                        val bb = listOf(
+                            "/data/adb/ksu/bin/busybox",
+                            "/data/adb/magisk/busybox",
+                            "/system/bin/busybox",
+                            "/system/xbin/busybox",
+                            "/data/adb/modules/busybox-ndk/system/bin/busybox"
+                        ).firstOrNull { java.io.File(it).isFile }
+                        val qq = { s: String -> "'" + s.replace("'", "'\\''") + "'" }
+                        val wrapped = if (bb != null) {
+                            "exec " + qq(bb) + " script -q /dev/null -c " + qq(cmd + " 2>&1")
+                        } else {
+                            cmd + " 2>&1"
                         }
-                        termText = (result.out + result.err).joinToString("\n").takeLast(20000)
+                        withContext(Dispatchers.IO) {
+                            val pb = ProcessBuilder("/system/bin/sh", "-c", "su -c " + qq(wrapped))
+                            pb.redirectErrorStream(true)
+                            val proc = pb.start()
+                            activeProc = proc
+                            proc.inputStream.bufferedReader().useLines { lines ->
+                                lines.forEach { line ->
+                                    withContext(Dispatchers.Main) {
+                                        termText = (termText + line + "\n").takeLast(20000)
+                                    }
+                                }
+                            }
+                            proc.waitFor()
+                        }
                     } catch (t: Throwable) {
                         termText += "挂载失败: " + (t.message ?: "") + "\n"
                     }
