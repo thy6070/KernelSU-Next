@@ -2127,7 +2127,7 @@ private fun ModePanel(onDismiss: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             ModeButton(Icons.Outlined.DarkMode, "放开通行")
-            ModeButton(Icons.Outlined.AcUnit, "小鱼儿")
+            ModeButton(Icons.Outlined.AcUnit, "性能模式")
             ModeButton(Icons.Outlined.Person, "个人")
             ModeButton(Icons.Outlined.Smartphone, "工作")
             ModeButton(Icons.Outlined.Hotel, "睡眠")
@@ -2274,7 +2274,7 @@ private fun ModeButton(
         )
         Spacer(modifier = Modifier.weight(1f))
         Column(
-            modifier = Modifier.height(40.dp),
+            modifier = Modifier.wrapContentHeight(),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
