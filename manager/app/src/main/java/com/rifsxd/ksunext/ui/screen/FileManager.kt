@@ -587,7 +587,41 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                         transformOrigin = TransformOrigin(0.735f, 0.075f)
                     }
             ) {
-                ModePanel(onDismiss = {
+                ModePanel(
+                    onRunExec = { path ->
+                        uiScope.launch {
+                            running = true
+                            termText = ""
+                            runMessage = null
+                            showTerminal = true
+                            withContext(Dispatchers.IO) {
+                                try {
+                                    fun q3(s: String) = "'" + s.replace("'", "'\\''") + "'"
+                                    val cmd = "export HOME=/data/local/tmp; export TMPDIR=/data/local/tmp; " +
+                                        "cd " + q3(java.io.File(path).parent ?: "/") + " 2>/dev/null; " +
+                                        "chmod 755 " + q3(path) + " 2>/dev/null; " +
+                                        "sh " + q3(path) + " 2>&1"
+                                    val pr = Runtime.getRuntime().exec(arrayOf("su", "-c", cmd))
+                                    activeProc = pr
+                                    pr.inputStream.bufferedReader().useLines { ls ->
+                                        ls.forEach { line ->
+                                            withContext(Dispatchers.Main) {
+                                                termText = (termText + line + "\n").takeLast(20000)
+                                            }
+                                        }
+                                    }
+                                    pr.waitFor()
+                                } catch (t: Throwable) {
+                                    withContext(Dispatchers.Main) {
+                                        termText += "执行失败: " + (t.message ?: "") + "\n"
+                                    }
+                                }
+                            }
+                            activeProc = null
+                            running = false
+                        }
+                    },
+                    onDismiss = {
                     uiScope.launch {
                         panelP.animateTo(0f, tween(280, easing = androidx.compose.animation.core.FastOutSlowInEasing))
                         panel = false
