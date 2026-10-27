@@ -512,6 +512,10 @@ private fun ProMaxIsland(
     onAction: (String) -> Unit,
     onArchiveEnter: () -> Unit,
     onArchiveMount: () -> Unit,
+    longPressPath: String?,
+    longPressIsDir: Boolean,
+    oppositePath: String,
+    onFileOp: (String, String) -> Unit,
     onOpen: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -522,6 +526,7 @@ private fun ProMaxIsland(
     var jumpStep by remember { mutableStateOf(0) }
     var jumpSide by remember { mutableStateOf(0) }
     var jumpInput by remember { mutableStateOf("") }
+    var renameInput by remember { mutableStateOf("") }
     var paneTarget by remember { mutableStateOf("/storage/emulated/0/") }
     var createIsDir by remember { mutableStateOf(true) }
     var extractDone by remember { mutableStateOf(false) }
@@ -661,6 +666,22 @@ private fun ProMaxIsland(
         }
     }
 
+    LaunchedEffect(longPressPath) {
+        val lp = longPressPath ?: return@LaunchedEffect
+        if (lp.isNotEmpty()) {
+            navClosing = true
+            expanded = false
+            jumpStep = 0
+            kotlinx.coroutines.delay(240)
+            navMode = true
+            navTarget = "home"
+            jumpStep = 9
+            renameInput = lp.substringAfterLast('/')
+            navClosing = false
+            expanded = true
+        }
+    }
+
     fun openArchive() {
         reopenScope.launch {
             navClosing = true
@@ -729,7 +750,7 @@ private fun ProMaxIsland(
         lowerSel.endsWith(".apk") -> "安装"
         lowerSel.endsWith(".so") -> "启动"
         lowerSel.endsWith(".zip") || lowerSel.endsWith(".tar") || lowerSel.endsWith(".gz") ||
-            lowerSel.endsWith(".7z") || lowerSel.endsWith(".rar") || lowerSel.endsWith(".xz") -> "···"
+            lowerSel.endsWith(".7z") || lowerSel.endsWith(".rar") || lowerSel.endsWith(".xz") -> "更多"
         else -> "执行"
     }
     val actionColor = Color(0xFF0A84FF)
@@ -1465,7 +1486,7 @@ private fun ProMaxIsland(
                         }
                         Box(modifier = Modifier.weight(1f)) {
                             IslandActionButton(actionLabel, actionColor) {
-                                if (actionLabel == "···") openArchive()
+                                if (actionLabel == "更多") openArchive()
                                 else if (lowerSel.endsWith(".so")) soPanel = true
                                 else onAction("")
                             }
