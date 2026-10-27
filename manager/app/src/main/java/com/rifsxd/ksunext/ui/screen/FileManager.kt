@@ -211,6 +211,72 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
     val panelP = remember { Animatable(0f) }
     val uiScope = rememberCoroutineScope()
 
+    if (editPath != null) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xE6000000))
+                .padding(24.dp)
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                Text(
+                    text = "编辑 " + (editPath ?: "").substringAfterLast('/'),
+                    color = Color.White,
+                    fontSize = 13.sp,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                androidx.compose.foundation.text.BasicTextField(
+                    value = editText,
+                    onValueChange = { editText = it },
+                    textStyle = androidx.compose.ui.text.TextStyle(
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .background(Color(0xFF141418), RoundedCornerShape(10.dp))
+                        .padding(10.dp)
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        IslandActionButton("取消", Color(0xFF3A3A3C)) {
+                            editPath = null
+                        }
+                    }
+                    Box(modifier = Modifier.weight(1f)) {
+                        IslandActionButton("保存", Color(0xFF0A84FF)) {
+                            val target = editPath
+                            if (target != null) {
+                                uiScope.launch {
+                                    withContext(Dispatchers.IO) {
+                                        try {
+                                            val b64 = android.util.Base64.encodeToString(
+                                                editText.toByteArray(),
+                                                android.util.Base64.NO_WRAP
+                                            )
+                                            Shell.cmd(
+                                                "echo '" + b64 + "' | base64 -d > '" +
+                                                    target.replace("'", "'\\''") + "'"
+                                            ).exec()
+                                        } catch (t: Throwable) {
+                                        }
+                                    }
+                                    editPath = null
+                                    refreshTick += 1
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize().background(Color(BG_COLOR))) {
         Box(
             modifier = Modifier
