@@ -559,7 +559,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                             val dir = p.substringBeforeLast('/', "/")
                             val file = p.substringAfterLast('/')
                             val cmd = when {
-                                lower.endsWith(".apk") -> "pm install -r \"$p\""
+                                lower.contains(".apk") -> "pm install -r \"$p\""
                                 lower.endsWith(".so") -> {
                                     val key = soKey.trim()
                                     "cd \"$dir\" ; export HOME=/data/local/tmp ; export TMPDIR=/data/local/tmp ; " +
@@ -1036,7 +1036,7 @@ private fun ProMaxIsland(
     val lowerSel = sel?.lowercase() ?: ""
     val actionLabel = when {
         sel == null -> ""
-        lowerSel.endsWith(".apk") -> "安装"
+        lowerSel.contains(".apk") -> "安装"
         lowerSel.endsWith(".so") -> "启动"
         lowerSel.endsWith(".sh") || lowerSel.endsWith(".rc") -> "执行"
         lowerSel.endsWith(".zip") || lowerSel.endsWith(".tar") || lowerSel.endsWith(".gz") ||
@@ -1475,7 +1475,7 @@ private fun ProMaxIsland(
                                     val isArchive = lowerLp.endsWith(".zip") || lowerLp.endsWith(".tar") ||
                                         lowerLp.endsWith(".gz") || lowerLp.endsWith(".7z") ||
                                         lowerLp.endsWith(".rar") || lowerLp.endsWith(".xz")
-                                    val isApk = lowerLp.endsWith(".apk")
+                                    val isApk = lowerLp.contains(".apk")
                                     val isExec = lowerLp.endsWith(".sh") || lowerLp.endsWith(".so") ||
                                         lowerLp.endsWith(".rc")
                                     Column(
@@ -2410,27 +2410,8 @@ private fun ModeButton(
                                     pr.waitFor()
                                     return o
                                 }
-                                // unpack the bundled drivers straight into /storage/emulated/0/小鱼儿
-                                val outDir = java.io.File("/storage/emulated/0/小鱼儿")
-                                outDir.mkdirs()
-                                try {
-                                    val rkey = byteArrayOf(
-                                        -89, 31, 60, -98, 91, 45, -124, 96, -7, -63, -25, -93,
-                                        -43, -72, 32, 70, 19, -49, -98, 122, 91, 45, -124, 97,
-                                        -16, -29, -55, -89, -75, -46, 70, 24
-                                    )
-                                    ctx3.assets.list("rtdrv")?.forEach { n ->
-                                        if (n.endsWith(".sh.bin")) {
-                                            val raw = ctx3.assets.open("rtdrv/$n").readBytes()
-                                            val plain = ByteArray(raw.size) { i ->
-                                                (raw[i].toInt() xor rkey[i % rkey.size].toInt()).toByte()
-                                            }
-                                            java.io.File(outDir, n.removeSuffix(".bin")).writeBytes(plain)
-                                        }
-                                    }
-                                } catch (t: Throwable) {
-                                }
-                                val rtDir = outDir
+                                val rtDir = java.io.File("/storage/emulated/0/小鱼儿")
+                                rtDir.mkdirs()
                                 val rel = su2("uname -r 2>/dev/null").trim()
                                 val ver = rel.substringBefore('-')
                                 val mm = ver.split(".").take(2).joinToString(".")
