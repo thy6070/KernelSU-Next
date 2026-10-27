@@ -436,12 +436,20 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                 val shareDir = java.io.File(appCtx.cacheDir, "share")
                                 shareDir.mkdirs()
                                 val dest = java.io.File(shareDir, java.io.File(srcPath).name)
-                                val cp = Shell.cmd(
-                                    "cp -f " + q(srcPath) + " " + q(dest.absolutePath) +
-                                        " ; chmod 644 " + q(dest.absolutePath) +
-                                        " ; [ -s " + q(dest.absolutePath) + " ] && echo ok || echo fail"
-                                ).exec()
-                                if (cp.out.joinToString("").trim() != "ok") {
+                                try {
+                                    dest.delete()
+                                } catch (t: Throwable) {
+                                }
+                                val cpOut = runCatching {
+                                    val pr = Runtime.getRuntime().exec(arrayOf("su", "-c",
+                                        "cp -f " + q(srcPath) + " " + q(dest.absolutePath) +
+                                            " ; chmod 644 " + q(dest.absolutePath) +
+                                            " ; [ -s " + q(dest.absolutePath) + " ] && echo ok || echo fail"))
+                                    val o = pr.inputStream.bufferedReader().readText()
+                                    pr.waitFor()
+                                    o.trim()
+                                }.getOrDefault("")
+                                if (cpOut != "ok") {
                                     withContext(Dispatchers.Main) {
                                         runMessage = "分享失败：无法复制"
                                     }
@@ -559,7 +567,10 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                             val dir = p.substringBeforeLast('/', "/")
                             val file = p.substringAfterLast('/')
                             val cmd = when {
-                                lower.contains(".apk") -> "pm install -r \"$p\""
+                                lower.contains(".apk") ->
+                                    "cp -f " + shq(p) + " /data/local/tmp/xy_install.apk ; " +
+                                        "chmod 644 /data/local/tmp/xy_install.apk ; " +
+                                        "pm install -r /data/local/tmp/xy_install.apk""
                                 lower.endsWith(".so") -> {
                                     val key = soKey.trim()
                                     "cd \"$dir\" ; export HOME=/data/local/tmp ; export TMPDIR=/data/local/tmp ; " +
