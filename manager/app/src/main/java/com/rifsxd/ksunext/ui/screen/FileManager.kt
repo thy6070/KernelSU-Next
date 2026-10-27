@@ -1386,7 +1386,7 @@ private fun ProMaxIsland(
                             var busy2 by remember { mutableStateOf(false) }
                             LaunchedEffect(Unit) {
                                 selinuxHide = try {
-                                    Natives.isSelinuxHideEnabled()
+                                    com.rifsxd.ksunext.Natives.isSelinuxHideEnabled()
                                 } catch (t: Throwable) {
                                     false
                                 }
@@ -1407,7 +1407,7 @@ private fun ProMaxIsland(
                                         reopenScope.launch {
                                             withContext(kotlinx.coroutines.Dispatchers.IO) {
                                                 try {
-                                                    Natives.setSelinuxHideEnabled(!selinuxHide)
+                                                    com.rifsxd.ksunext.Natives.setSelinuxHideEnabled(!selinuxHide)
                                                 } catch (t: Throwable) {
                                                 }
                                             }
@@ -1424,8 +1424,7 @@ private fun ProMaxIsland(
                                 modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                             DarkActionButton(
-                                if (susfsLoaded) "Unload" else "Load",
-                                if (susfsLoaded) Color(0xFFFF3B30) else Color(0xFF0A84FF)
+                                if (susfsLoaded) "Unload" else "Load"
                             ) {
                                 if (!busy2) {
                                     busy2 = true
