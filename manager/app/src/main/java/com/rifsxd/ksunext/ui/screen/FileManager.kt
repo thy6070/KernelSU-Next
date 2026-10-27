@@ -796,12 +796,12 @@ private fun ProMaxIsland(
         reopenScope.launch {
             navClosing = true
             navMode = false
-            expanded = false
-            onClearLongPress()
-            kotlinx.coroutines.delay(180)
             navTarget = null
             jumpStep = 0
             jumpInput = ""
+            expanded = false
+            onClearLongPress()
+            kotlinx.coroutines.delay(180)
             navClosing = false
         }
     }
@@ -974,14 +974,14 @@ private fun ProMaxIsland(
                         // let the panels shrink before the pill settles, so closing keeps its animation
                         val hadNav = navMode || navTarget != null
                         navMode = false
+                        navTarget = null
+                        jumpStep = 0
+                        jumpInput = ""
                         onClearLongPress()
                         if (hadNav) {
                             navClosing = true
                             reopenScope.launch {
-                                kotlinx.coroutines.delay(300)
-                                navTarget = null
-                                jumpStep = 0
-                                jumpInput = ""
+                                kotlinx.coroutines.delay(180)
                                 navClosing = false
                             }
                         }
