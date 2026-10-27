@@ -1349,35 +1349,52 @@ private fun ProMaxIsland(
                                     val isExec = lowerLp.endsWith(".sh") || lowerLp.endsWith(".so") ||
                                         lowerLp.endsWith(".rc")
                                     Column(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .heightIn(max = 300.dp)
-                                            .verticalScroll(rememberScrollState()),
+                                        modifier = Modifier.fillMaxWidth(),
                                         verticalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
-                                        IslandActionButton("移动/复制", Color(0xFF0A84FF)) {
-                                            switchStep(10)
-                                        }
-                                        IslandActionButton(
-                                            if (isArchive) "解压" else "压缩",
-                                            Color(0xFF0A84FF)
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                                         ) {
-                                            if (isArchive) onFileOp("unzip", oppositePath)
-                                            else onFileOp("zip", "")
-                                            closeIsland()
-                                        }
-                                        IslandActionButton("重命名", Color(0xFF0A84FF)) {
-                                            switchStep(11)
-                                        }
-                                        if (longPressIsDir) {
-                                            IslandActionButton("删除", Color(0xFFFF3B30)) {
-                                                switchStep(12)
+                                            Box(modifier = Modifier.weight(1f)) {
+                                                IslandActionButton("移动/复制", Color(0xFF0A84FF)) {
+                                                    switchStep(10)
+                                                }
                                             }
-                                        } else {
-                                            IslandActionButton("分享", Color(0xFF0A84FF)) {
-                                                onFileOp("share", "")
-                                                closeIsland()
+                                            Box(modifier = Modifier.weight(1f)) {
+                                                IslandActionButton(
+                                                    if (isArchive) "解压" else "压缩",
+                                                    Color(0xFF0A84FF)
+                                                ) {
+                                                    if (isArchive) onFileOp("unzip", oppositePath)
+                                                    else onFileOp("zip", "")
+                                                    closeIsland()
+                                                }
                                             }
+                                        }
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Box(modifier = Modifier.weight(1f)) {
+                                                IslandActionButton("重命名", Color(0xFF0A84FF)) {
+                                                    switchStep(11)
+                                                }
+                                            }
+                                            Box(modifier = Modifier.weight(1f)) {
+                                                if (longPressIsDir) {
+                                                    IslandActionButton("删除", Color(0xFFFF3B30)) {
+                                                        switchStep(12)
+                                                    }
+                                                } else {
+                                                    IslandActionButton("分享", Color(0xFF0A84FF)) {
+                                                        onFileOp("share", "")
+                                                        closeIsland()
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        if (!longPressIsDir) {
                                             IslandActionButton(
                                                 when {
                                                     isApk -> "安装"
