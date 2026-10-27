@@ -1422,12 +1422,7 @@ private fun ProMaxIsland(
                                         IslandActionButton("重命名", Color(0xFF0A84FF)) {
                                             switchStep(11)
                                         }
-                                        if (longPressIsDir) {
-                                            IslandActionButton("删除", Color(0xFFFF3B30)) {
-                                                switchStep(12)
-                                            }
-                                        } else {
-                                            IslandActionButton("复制路径", Color(0xFF0A84FF)) {
+                                        IslandActionButton("复制路径", Color(0xFF0A84FF)) {
                                             try {
                                                 val cm = ctxNav.getSystemService(
                                                     android.content.Context.CLIPBOARD_SERVICE
@@ -1439,7 +1434,12 @@ private fun ProMaxIsland(
                                             }
                                             closeIsland()
                                         }
-                                        IslandActionButton("分享", Color(0xFF0A84FF)) {
+                                        if (longPressIsDir) {
+                                            IslandActionButton("删除", Color(0xFFFF3B30)) {
+                                                switchStep(12)
+                                            }
+                                        } else {
+                                            IslandActionButton("分享", Color(0xFF0A84FF)) {
                                                 onFileOp("share", "")
                                                 closeIsland()
                                             }
@@ -2236,13 +2236,29 @@ private fun ModeButton(
                                     return o
                                 }
                                 val rel = su2("uname -r 2>/dev/null").trim()
-                                val major = rel.split(".").take(2).joinToString(".")
-                                val cands = listOf(
-                                    major + ".sh",
-                                    major + "c.sh",
-                                    major + "b.sh",
-                                    major.split(".")[0] + "." + major.split(".")[1] + ".sh"
-                                )
+                                val ver = rel.substringBefore('-')
+                                val mm = ver.split(".").take(2).joinToString(".")
+                                val allNames = rtDir.listFiles()
+                                    ?.filter { it.name.endsWith(".sh") }
+                                    ?.map { it.name }
+                                    ?: emptyList()
+                                fun baseOf(n: String): String {
+                                    var b = n.removeSuffix(".sh")
+                                    while (b.isNotEmpty() && (b.last() == 'b' || b.last() == 'c')) {
+                                        b = b.dropLast(1)
+                                    }
+                                    return b
+                                }
+                                val exactName = allNames.firstOrNull { baseOf(it) == ver }
+                                val sameMinor = allNames.filter {
+                                    baseOf(it).split(".").take(2).joinToString(".") == mm
+                                }
+                                val chosenName = exactName ?: sameMinor.firstOrNull()
+                                val cands = if (chosenName != null) {
+                                    listOf(chosenName)
+                                } else {
+                                    listOf(mm + ".sh")
+                                }
                                 val rtDir = java.io.File(ctx3.filesDir, "rtdrv")
                                 try {
                                     if ((rtDir.listFiles()?.size ?: 0) < 5) {
