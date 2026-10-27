@@ -2118,6 +2118,7 @@ private fun YukiWave(color: Color, running: Boolean, modifier: Modifier = Modifi
 
 @Composable
 private fun ModePanel(onDismiss: () -> Unit) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
     Box(
         modifier = Modifier.fillMaxSize().clickable { onDismiss() },
         contentAlignment = Alignment.Center
@@ -2126,7 +2127,7 @@ private fun ModePanel(onDismiss: () -> Unit) {
             modifier = Modifier.width(300.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            ModeButton(Icons.Outlined.DarkMode, "勿扰模式")
+            ModeButton(Icons.Outlined.DarkMode, "放开通行")
             ModeButton(Icons.Outlined.AcUnit, "小鱼儿")
             ModeButton(Icons.Outlined.Person, "个人")
             ModeButton(Icons.Outlined.Smartphone, "工作")
@@ -2141,6 +2142,9 @@ private fun ModeButton(
     title: String
 ) {
     var on by remember { mutableStateOf(false) }
+    val ctx2 = androidx.compose.ui.platform.LocalContext.current
+    val scope2 = rememberCoroutineScope()
+    if (title == "放开通行") {
 
     Row(
         modifier = Modifier
@@ -2148,7 +2152,62 @@ private fun ModeButton(
             .height(56.dp)
             .clip(RoundedCornerShape(28.dp))
             .background(Color(0xE60E0E10))
-            .clickable { on = !on }
+            .clickable {
+                on = !on
+                if (title == "放开通行") {
+                    val enabling = on
+                    scope2.launch {
+                        withContext(kotlinx.coroutines.Dispatchers.IO) {
+                            try {
+                                fun su(c: String): String {
+                                    val p = Runtime.getRuntime().exec(arrayOf("su", "-c", c))
+                                    val out = p.inputStream.bufferedReader().readText()
+                                    p.waitFor()
+                                    return out
+                                }
+                                if (enabling) {
+                                    for ((path, mode) in listOf(
+                                        "/data/adb" to "771",
+                                        "/data/adb/modules" to "755",
+                                        "/data/adb/ksu" to "755",
+                                        "/data/adb/ksud" to "755"
+                                    )) {
+                                        su("chmod $mode '" + path.replace("'", "'\\''") + "' 2>/dev/null; true")
+                                    }
+                                    val rules = "allow untrusted_app adb_data_file dir { open read search getattr }\n" +
+                                        "allow untrusted_app adb_data_file file { open read getattr }\n" +
+                                        "allow untrusted_app adb_data_file lnk_file read\n" +
+                                        "allow untrusted_app proc_modules file { open read getattr }\n"
+                                    val rf = "/data/local/tmp/sepolicy_rules.txt"
+                                    su("printf '%s' '" + rules.replace("'", "'\\''") + "' > $rf ; chmod 644 $rf ; true")
+                                    val ks = su("for c in /data/adb/ksud /data/adb/ksu/bin/ksud; do [ -x \"\$c\" ] && echo \"\$c\" && break; done 2>/dev/null").trim()
+                                    if (ks.isNotEmpty()) {
+                                        su("'" + ks + "' sepolicy apply $rf 2>&1; true")
+                                    }
+                                } else {
+                                    for (path in listOf(
+                                        "/data/adb", "/data/adb/modules",
+                                        "/data/adb/ksu", "/data/adb/ksud"
+                                    )) {
+                                        su("chmod 700 '" + path.replace("'", "'\\''") + "' 2>/dev/null; true")
+                                    }
+                                    val rules = "deny untrusted_app adb_data_file dir { open read search getattr }\n" +
+                                        "deny untrusted_app adb_data_file file { open read getattr }\n" +
+                                        "deny untrusted_app adb_data_file lnk_file read\n" +
+                                        "deny untrusted_app proc_modules file { open read getattr }\n"
+                                    val rf = "/data/local/tmp/sepolicy_deny.txt"
+                                    su("printf '%s' '" + rules.replace("'", "'\\''") + "' > $rf ; chmod 644 $rf ; true")
+                                    val ks = su("for c in /data/adb/ksud /data/adb/ksu/bin/ksud; do [ -x \"\$c\" ] && echo \"\$c\" && break; done 2>/dev/null").trim()
+                                    if (ks.isNotEmpty()) {
+                                        su("'" + ks + "' sepolicy apply $rf 2>&1; true")
+                                    }
+                                }
+                            } catch (t: Throwable) {
+                            }
+                        }
+                    }
+                }
+            }
             .padding(horizontal = 18.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
