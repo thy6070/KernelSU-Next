@@ -2218,14 +2218,23 @@ private fun ModeButton(
                                         "settings put system min_refresh_rate 120 2>/dev/null\n"
                                     su("mkdir -p /data/adb/service.d")
                                     su("printf '%s' '" + script.replace("'", "'\\''") + "' > $path ; chmod 755 $path")
-                                    su("sh $path >/dev/null 2>&1")
+                                    su("sed 's/^sleep 20$/sleep 1/' $path > /data/local/tmp/xy_now.sh; chmod 755 /data/local/tmp/xy_now.sh; sh /data/local/tmp/xy_now.sh >/dev/null 2>&1")
                                     val gov = su("cat /sys/devices/system/cpu/cpu7/cpufreq/scaling_governor 2>/dev/null || cat /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor 2>/dev/null").trim()
-                                    if (gov == "performance") "已开启 · performance" else "开启失败 · " + gov.ifEmpty { "?" }
+                                    val fps = su("settings get system peak_refresh_rate 2>/dev/null").trim()
+                                    val th = su("cat /sys/class/thermal/thermal_zone0/mode 2>/dev/null").trim()
+                                    val govOk = gov == "performance"
+                                    val fpsOk = fps.toIntOrNull()?.let { it >= 120 } == true
+                                    val thOk = th == "disabled"
+                                    "FPS" + fps.ifEmpty { "?" } + (if (fpsOk) "✓" else "✗") +
+                                        " 温控" + (if (thOk) "✓" else "✗") +
+                                        " CPU" + (if (govOk) "✓" else "✗")
                                 } else {
                                     su("rm -f $path")
                                     su("for c in /sys/devices/system/cpu/cpu*/cpufreq; do [ -f \"\$c/scaling_governor\" ] && grep -q schedutil \"\$c/scaling_available_governors\" 2>/dev/null && echo schedutil > \"\$c/scaling_governor\" 2>/dev/null; done; settings delete system peak_refresh_rate 2>/dev/null; settings delete system min_refresh_rate 2>/dev/null; true")
                                     val gov = su("cat /sys/devices/system/cpu/cpu7/cpufreq/scaling_governor 2>/dev/null").trim()
-                                    "已恢复 · " + gov.ifEmpty { "?" }
+                                    val fps = su("settings get system peak_refresh_rate 2>/dev/null").trim()
+                                    "已恢复 · " + (gov.ifEmpty { "?" }) +
+                                        " · FPS" + (fps.ifEmpty { "默认" })
                                 }
                             } catch (t: Throwable) {
                                 "操作失败"
@@ -2320,6 +2329,7 @@ private fun ModeButton(
         )
         Spacer(modifier = Modifier.weight(1f))
         Column(
+            modifier = Modifier.padding(top = 3.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
