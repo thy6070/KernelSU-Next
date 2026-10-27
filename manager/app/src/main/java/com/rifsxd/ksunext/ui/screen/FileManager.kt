@@ -2142,7 +2142,37 @@ private fun ModeButton(
     subtitle: String? = null
 ) {
     var on by remember { mutableStateOf(false) }
+    var latencyMsg by remember { mutableStateOf<String?>(null) }
     val scope2 = rememberCoroutineScope()
+    LaunchedEffect(title) {
+        if (title == "放开通行") {
+            latencyMsg = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                try {
+                    fun measure(p: String): Double {
+                        var best = Double.MAX_VALUE
+                        for (r in 0 until 3) {
+                            val iter = 8000
+                            val t0 = System.nanoTime()
+                            for (i in 0 until iter) {
+                                try {
+                                    android.system.Os.stat(p)
+                                } catch (e: Throwable) {
+                                }
+                            }
+                            val per = (System.nanoTime() - t0).toDouble() / iter
+                            if (per < best) best = per
+                        }
+                        return best
+                    }
+                    val den = (measure("/data/system") + measure("/data/misc")) / 2.0
+                    val mod = measure("/data/adb/modules")
+                    if (mod - den > 500.0) "会拉闸" else "不会拉闸"
+                } catch (t: Throwable) {
+                    null
+                }
+            }
+        }
+    }
 
     Row(
         modifier = Modifier
