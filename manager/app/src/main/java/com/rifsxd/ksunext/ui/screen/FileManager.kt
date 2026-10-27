@@ -195,6 +195,8 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
     var longPressPath by remember { mutableStateOf<String?>(null) }
     var longPressIsDir by remember { mutableStateOf(false) }
     var longPressTick by remember { mutableStateOf(0) }
+    var editPath by remember { mutableStateOf<String?>(null) }
+    var editText by remember { mutableStateOf("") }
     LaunchedEffect(FileLocate.tick) {
         val target = FileLocate.path ?: return@LaunchedEffect
         val dir = target.substringBeforeLast('/', "/")
@@ -401,13 +403,36 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                 else -> ""
                             }
                             if (cmd.isNotEmpty()) Shell.cmd(cmd).exec()
+                            if (op == "share") {
+                                val uri = androidx.core.content.FileProvider.getUriForFile(
+                                    appCtx,
+                                    appCtx.packageName + ".fileprovider",
+                                    java.io.File(srcPath)
+                                )
+                                withContext(Dispatchers.Main) {
+                                    val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                        type = "*/*"
+                                        putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                                        addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    }
+                                    appCtx.startActivity(
+                                        android.content.Intent.createChooser(send, "分享")
+                                    )
+                                }
+                            }
+                            if (op == "edit") {
+                                val content = try {
+                                    Shell.cmd("cat " + q(srcPath)).exec().out.joinToString("\n")
+                                } catch (t: Throwable) {
+                                    ""
+                                }
+                                withContext(Dispatchers.Main) {
+                                    editPath = srcPath
+                                    editText = content
+                                }
+                            }
                         } catch (t: Throwable) {
                         }
-                    }
-                    if (op == "edit") {
-                        termText = ""
-                        termInput = "vi " + srcPath
-                        showTerminal = true
                     }
                     refreshTick += 1
                     longPressPath = null
