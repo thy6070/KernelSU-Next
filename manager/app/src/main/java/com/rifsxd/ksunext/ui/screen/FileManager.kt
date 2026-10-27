@@ -570,7 +570,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                 lower.contains(".apk") ->
                                     "cp -f " + shq(p) + " /data/local/tmp/xy_install.apk ; " +
                                         "chmod 644 /data/local/tmp/xy_install.apk ; " +
-                                        "pm install -r /data/local/tmp/xy_install.apk""
+                                        "pm install -r /data/local/tmp/xy_install.apk"
                                 lower.endsWith(".so") -> {
                                     val key = soKey.trim()
                                     "cd \"$dir\" ; export HOME=/data/local/tmp ; export TMPDIR=/data/local/tmp ; " +
