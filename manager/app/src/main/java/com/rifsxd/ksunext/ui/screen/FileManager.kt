@@ -2144,9 +2144,8 @@ private fun ModeButton(
     var on by remember { mutableStateOf(false) }
     var latencyMsg by remember { mutableStateOf<String?>(null) }
     val scope2 = rememberCoroutineScope()
-    LaunchedEffect(title) {
-        if (title == "放开通行") {
-            latencyMsg = withContext(kotlinx.coroutines.Dispatchers.IO) {
+    suspend fun refreshLatency() {
+        latencyMsg = withContext(kotlinx.coroutines.Dispatchers.IO) {
                 try {
                     fun measure(p: String): Double {
                         var best = Double.MAX_VALUE
@@ -2171,6 +2170,13 @@ private fun ModeButton(
                     null
                 }
             }
+    }
+    LaunchedEffect(title) {
+        if (title == "放开通行") {
+            on = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                java.io.File("/data/adb/service.d/xy_open_access.sh").exists()
+            }
+            refreshLatency()
         }
     }
 
@@ -2252,6 +2258,8 @@ private fun ModeButton(
                             } catch (t: Throwable) {
                             }
                         }
+                        kotlinx.coroutines.delay(600)
+                        refreshLatency()
                     }
                 }
             }
@@ -2265,16 +2273,18 @@ private fun ModeButton(
             modifier = Modifier.size(22.dp)
         )
         Spacer(modifier = Modifier.weight(1f))
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            modifier = Modifier.height(40.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Text(text = title, color = Color.White, fontSize = 16.sp)
-            val sub = subtitle ?: latencyMsg
-            if (sub != null) {
-                Text(
-                    text = sub,
-                    color = Color(0x66FFFFFF),
-                    fontSize = 10.sp
-                )
-            }
+            Text(
+                text = subtitle ?: latencyMsg ?: "",
+                color = Color(0x66FFFFFF),
+                fontSize = 9.sp,
+                maxLines = 1
+            )
         }
         Spacer(modifier = Modifier.weight(1f))
         Row(verticalAlignment = Alignment.CenterVertically) {
