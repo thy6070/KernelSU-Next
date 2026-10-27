@@ -2216,6 +2216,11 @@ private fun ModeButton(
                                         "for u in /dev/cpuset/top-app/cpus /sys/fs/cgroup/top-app/cpuset.cpus; do [ -f \"\$u\" ] && echo 4-7 > \"\$u\" 2>/dev/null; done\n" +
                                         "for u in /dev/cpuset/background/cpus /sys/fs/cgroup/background/cpuset.cpus /dev/cpuset/system-background/cpus; do [ -f \"\$u\" ] && echo 0-1 > \"\$u\" 2>/dev/null; done\n" +
                                         "for u in /dev/cpuset/top-app/uclamp.min /sys/fs/cgroup/top-app/uclamp.min; do [ -f \"\$u\" ] && echo 1024 > \"\$u\" 2>/dev/null; done\n" +
+                                        "echo 1024 > /proc/sys/kernel/sched_util_clamp_min 2>/dev/null\n" +
+                                        "echo 1 > /proc/sys/kernel/sched_boost 2>/dev/null\n" +
+                                        "for c in /sys/devices/system/cpu/cpu*/cpufreq; do [ -f \"\$c/cpuinfo_max_freq\" ] && cat \"\$c/cpuinfo_max_freq\" > \"\$c/scaling_min_freq\" 2>/dev/null; done\n" +
+                                        "for g in /sys/class/kgsl/kgsl-3d0/devfreq/max_freq; do [ -f \"\$g\" ] && cat \"\$g\" > /sys/class/kgsl/kgsl-3d0/devfreq/min_freq 2>/dev/null; done\n" +
+                                        "for g in /sys/class/kgsl/kgsl-3d0/max_gpuclk; do [ -f \"\$g\" ] && cat \"\$g\" > /sys/class/kgsl/kgsl-3d0/gpuclk 2>/dev/null; done\n" +
                                         "for z in /sys/class/thermal/thermal_zone*/mode; do echo disabled > \"\$z\" 2>/dev/null; done\n" +
                                         "settings put system peak_refresh_rate 120 2>/dev/null\n" +
                                         "settings put system min_refresh_rate 120 2>/dev/null\n"
