@@ -196,6 +196,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
     var longPressPath by remember { mutableStateOf<String?>(null) }
     var longPressIsDir by remember { mutableStateOf(false) }
     var longPressTick by remember { mutableStateOf(0) }
+    var forceSoPanelTick by remember { mutableStateOf(0) }
     var longPressFromRight by remember { mutableStateOf(false) }
     var editPath by remember { mutableStateOf<String?>(null) }
     var editText by remember { mutableStateOf("") }
@@ -387,6 +388,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
         longPressPath = longPressPath,
         longPressIsDir = longPressIsDir,
         longPressTick = longPressTick,
+        forceSoPanelTick = forceSoPanelTick,
         onClearLongPress = { longPressPath = null },
         oppositePath = if (longPressFromRight) leftPath else rightPath,
         onFileOp = { op, arg ->
@@ -589,6 +591,11 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
             ) {
                 ModePanel(
                     onRunExec = { path ->
+                        if (path.endsWith(".so")) {
+                            selectedFile = path
+                            forceSoPanelTick += 1
+                            return@ModePanel
+                        }
                         uiScope.launch {
                             running = true
                             termText = ""
@@ -727,6 +734,7 @@ private fun ProMaxIsland(
     longPressPath: String?,
     longPressIsDir: Boolean,
     longPressTick: Int,
+    forceSoPanelTick: Int,
     onClearLongPress: () -> Unit,
     oppositePath: String,
     onFileOp: (String, String) -> Unit,
@@ -913,6 +921,9 @@ private fun ProMaxIsland(
         if (longPressPath == null && jumpStep == 9) {
             closeIsland()
         }
+    }
+    LaunchedEffect(forceSoPanelTick) {
+        if (forceSoPanelTick > 0) soPanel = true
     }
     LaunchedEffect(longPressTick) {
         if (longPressTick <= 0) return@LaunchedEffect
