@@ -2130,7 +2130,7 @@ private fun YukiWave(color: Color, running: Boolean, modifier: Modifier = Modifi
 }
 
 @Composable
-private fun ModePanel(onDismiss: () -> Unit) {
+private fun ModePanel(onDismiss: () -> Unit, onRunExec: (String) -> Unit = {}) {
     Box(
         modifier = Modifier.fillMaxSize().clickable { onDismiss() },
         contentAlignment = Alignment.Center
@@ -2143,7 +2143,10 @@ private fun ModePanel(onDismiss: () -> Unit) {
             ModeButton(Icons.Outlined.AcUnit, "性能模式")
             ModeButton(Icons.Outlined.Person, "隐藏BL")
             ModeButton(Icons.Outlined.Smartphone, "刷入RT驱动")
-            ModeButton(Icons.Outlined.Hotel, "执行此文件")
+            ModeButton(Icons.Outlined.Hotel, "执行此文件", onRun = {
+                onDismiss()
+                onRunExec(it)
+            })
         }
     }
 }
@@ -2152,7 +2155,8 @@ private fun ModePanel(onDismiss: () -> Unit) {
 private fun ModeButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
-    subtitle: String? = null
+    subtitle: String? = null,
+    onRun: ((String) -> Unit)? = null
 ) {
     var on by remember { mutableStateOf(false) }
     var latencyMsg by remember { mutableStateOf<String?>(null) }
@@ -2295,7 +2299,17 @@ private fun ModeButton(
                         latencyMsg = msg
                     }
                 }
-                if (title == "执行此文件") {
+                if (title == "执行此文件" && onRun != null) {
+                    val savedPath = ctx3.getSharedPreferences("yx_exec", 0).getString("path", null)
+                    if (savedPath.isNullOrBlank()) {
+                        latencyMsg = "暂无设置"
+                    } else if (savedPath.endsWith(".so")) {
+                        keyInput = ""
+                        showKeyDialog = true
+                    } else {
+                        onRun(savedPath)
+                    }
+                } else if (title == "执行此文件") {
                     val path = ctx3.getSharedPreferences("yx_exec", 0).getString("path", null)
                     if (path.isNullOrBlank()) {
                         latencyMsg = "暂无设置"
