@@ -190,27 +190,6 @@ fun SettingScreen(navigator: DestinationsNavigator) {
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { navigator.navigate(HomeContentScreenDestination) }
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Filled.Home, contentDescription = null)
-                    Spacer(Modifier.width(16.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text("首页功能", style = MaterialTheme.typography.titleMedium)
-                        Text("状态 / 超级用户 / 模块入口", style = MaterialTheme.typography.bodySmall)
-                    }
-                    Icon(Icons.Filled.ChevronRight, contentDescription = null)
-                }
-            }
-
             // Stripped settings page: only the live kernel status is shown.
             var susfsSupp by remember { mutableStateOf(false) }
             var susfsVer by remember { mutableStateOf("") }
