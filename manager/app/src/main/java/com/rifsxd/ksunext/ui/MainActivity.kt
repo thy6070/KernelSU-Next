@@ -126,7 +126,7 @@ fun Modifier.horizontalSwipeNavigator(
     destinations: List<BottomBarDestination>,
     isRtl: Boolean,
     onNavigate: (Int) -> Unit
-): Modifier = pointerInput(currentRoute, isRtl) {
+): Modifier = this /* swipe navigation disabled on purpose */
 
     var totalDrag = 0f
 
