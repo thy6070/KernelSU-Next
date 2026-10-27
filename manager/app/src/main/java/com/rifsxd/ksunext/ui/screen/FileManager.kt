@@ -1235,86 +1235,56 @@ private fun ProMaxIsland(
                                 }
                                 9 -> {
                                     val lp = longPressPath ?: ""
-                                    val lpName = lp.substringAfterLast('/')
                                     val lowerLp = lp.lowercase()
                                     val isArchive = lowerLp.endsWith(".zip") || lowerLp.endsWith(".tar") ||
                                         lowerLp.endsWith(".gz") || lowerLp.endsWith(".7z") ||
                                         lowerLp.endsWith(".rar") || lowerLp.endsWith(".xz")
                                     val isApk = lowerLp.endsWith(".apk")
+                                    val isExec = lowerLp.endsWith(".sh") || lowerLp.endsWith(".so") ||
+                                        lowerLp.endsWith(".rc")
                                     Column(
                                         modifier = Modifier.fillMaxWidth(),
                                         verticalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                        ) {
-                                            Box(modifier = Modifier.weight(1f)) {
-                                                IslandActionButton("移动/复制", Color(0xFF0A84FF)) {
-                                                    switchStep(10)
-                                                }
-                                            }
-                                            Box(modifier = Modifier.weight(1f)) {
-                                                IslandActionButton(
-                                                    if (isArchive) "解压" else "压缩",
-                                                    Color(0xFF0A84FF)
-                                                ) {
-                                                    if (isArchive) {
-                                                        onFileOp("unzip", oppositePath)
-                                                    } else {
-                                                        onFileOp("zip", "")
-                                                    }
-                                                    closeIsland()
-                                                }
-                                            }
+                                        IslandActionButton("移动/复制", Color(0xFF0A84FF)) {
+                                            switchStep(10)
                                         }
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                        IslandActionButton(
+                                            if (isArchive) "解压" else "压缩",
+                                            Color(0xFF0A84FF)
                                         ) {
-                                            Box(modifier = Modifier.weight(1f)) {
-                                                IslandActionButton("重命名", Color(0xFF0A84FF)) {
-                                                    switchStep(11)
-                                                }
-                                            }
-                                            Box(modifier = Modifier.weight(1f)) {
-                                                if (longPressIsDir) {
-                                                    IslandActionButton("删除", Color(0xFFFF3B30)) {
-                                                        switchStep(12)
-                                                    }
-                                                } else {
-                                                    IslandActionButton("分享", Color(0xFF0A84FF)) {
-                                                        onFileOp("share", "")
-                                                        closeIsland()
-                                                    }
-                                                }
-                                            }
+                                            if (isArchive) onFileOp("unzip", oppositePath)
+                                            else onFileOp("zip", "")
+                                            closeIsland()
                                         }
-                                        if (!longPressIsDir) {
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                        IslandActionButton("重命名", Color(0xFF0A84FF)) {
+                                            switchStep(11)
+                                        }
+                                        if (longPressIsDir) {
+                                            IslandActionButton("删除", Color(0xFFFF3B30)) {
+                                                switchStep(12)
+                                            }
+                                        } else {
+                                            IslandActionButton("分享", Color(0xFF0A84FF)) {
+                                                onFileOp("share", "")
+                                                closeIsland()
+                                            }
+                                            IslandActionButton(
+                                                when {
+                                                    isApk -> "安装"
+                                                    isArchive -> "进入"
+                                                    isExec -> "执行"
+                                                    else -> "编辑"
+                                                },
+                                                Color(0xFF0A84FF)
                                             ) {
-                                                Box(modifier = Modifier.weight(1f)) {
-                                                    IslandActionButton(
-                                                        when {
-                                                            isApk -> "安装"
-                                                            isArchive -> "进入"
-                                                            lp.endsWith(".so") || lp.endsWith(".sh") -> "执行"
-                                                            else -> "编辑"
-                                                        },
-                                                        Color(0xFF0A84FF)
-                                                    ) {
-                                                        when {
-                                                            isApk -> onFileOp("install", "")
-                                                            isArchive -> onArchiveEnter()
-                                                            lp.endsWith(".so") || lp.endsWith(".sh") ->
-                                                                onAction("")
-                                                            else -> onFileOp("edit", "")
-                                                        }
-                                                        closeIsland()
-                                                    }
+                                                when {
+                                                    isApk -> onFileOp("install", "")
+                                                    isArchive -> onArchiveEnter()
+                                                    isExec -> onAction("")
+                                                    else -> onFileOp("edit", "")
                                                 }
+                                                closeIsland()
                                             }
                                         }
                                     }
