@@ -168,6 +168,7 @@ data class FsEntry(val name: String, val isDir: Boolean)
 
 @Composable
 fun FileManagerScreen(navigator: DestinationsNavigator) {
+    val appCtx = LocalContext.current
     val view = LocalView.current
 
     DisposableEffect(Unit) {
@@ -370,7 +371,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                     termText = ""
                     runMessage = null
                     showTerminal = true
-                    val ksud = LocalContext.current.applicationInfo.nativeLibraryDir + "/libksud.so"
+                    val ksud = appCtx.applicationInfo.nativeLibraryDir + "/libksud.so"
                     val q = "'" + p.replace("'", "'\\''") + "'"
                     val cmd = "export HOME=/data/local/tmp ; export TMPDIR=/data/local/tmp ; " +
                         "export KSU_VER=1.0.0 ; export KSU_VER_CODE=12100 ; export KSU_KERNEL_VER_CODE=12100 ; " +
