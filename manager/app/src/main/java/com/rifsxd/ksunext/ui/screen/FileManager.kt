@@ -2265,7 +2265,17 @@ private fun ModeButton(
             modifier = Modifier.size(22.dp)
         )
         Spacer(modifier = Modifier.weight(1f))
-        Text(text = title, color = Color.White, fontSize = 16.sp)
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(text = title, color = Color.White, fontSize = 16.sp)
+            val sub = subtitle ?: latencyMsg
+            if (sub != null) {
+                Text(
+                    text = sub,
+                    color = Color(0x66FFFFFF),
+                    fontSize = 10.sp
+                )
+            }
+        }
         Spacer(modifier = Modifier.weight(1f))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
