@@ -232,6 +232,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                     longPressTick += 1
                 },
                 onFileClick = { picked ->
+                    if (longPressPath != null) longPressPath = null
                     if (selectedFile != null && selectedFile != picked) {
                         selectedFile = null
                         uiScope.launch {
@@ -260,6 +261,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                     longPressTick += 1
                 },
                 onFileClick = { picked ->
+                    if (longPressPath != null) longPressPath = null
                     if (selectedFile != null && selectedFile != picked) {
                         selectedFile = null
                         uiScope.launch {
@@ -824,6 +826,15 @@ private fun ProMaxIsland(
         }
     }
 
+    LaunchedEffect(longPressPath) {
+        // a cleared long press (file tapped elsewhere) must fold the menu
+        if (longPressPath == null && jumpStep == 9) {
+            expanded = false
+            navMode = false
+            navClosing = false
+            jumpStep = 0
+        }
+    }
     LaunchedEffect(longPressTick) {
         if (longPressTick <= 0) return@LaunchedEffect
         val lp = longPressPath ?: return@LaunchedEffect
