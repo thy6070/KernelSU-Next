@@ -226,7 +226,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                 path = leftPath,
                 onNavigate = { leftPath = it },
                 onLongPress = { lp ->
-                    longPressIsDir = runCatching { java.io.File(lp).isDirectory }.getOrDefault(false)
+                    longPressIsDir = runCatching { java.io.File(lp).isDirectory }.getOrDefault(false) || !lp.substringAfterLast("/").contains(".")
                     longPressFromRight = false
                     longPressPath = lp
                     longPressTick += 1
@@ -255,7 +255,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                 path = rightPath,
                 onNavigate = { rightPath = it },
                 onLongPress = { lp ->
-                    longPressIsDir = runCatching { java.io.File(lp).isDirectory }.getOrDefault(false)
+                    longPressIsDir = runCatching { java.io.File(lp).isDirectory }.getOrDefault(false) || !lp.substringAfterLast("/").contains(".")
                     longPressFromRight = true
                     longPressPath = lp
                     longPressTick += 1
