@@ -2270,7 +2270,8 @@ private fun ModeButton(
     }
     LaunchedEffect(title) {
         if (title == "性能模式") {
-            on = withContext(kotlinx.coroutines.Dispatchers.IO) {
+            on = ctx3.getSharedPreferences("yx_mode", 0).getBoolean("perf", false) ||
+                withContext(kotlinx.coroutines.Dispatchers.IO) {
                 try {
                     val pr = Runtime.getRuntime().exec(
                         arrayOf("su", "-c", "[ -f /data/adb/service.d/xy_perf.sh ] && echo y || echo n")
@@ -2287,7 +2288,8 @@ private fun ModeButton(
             execPath = ctx3.getSharedPreferences("yx_exec", 0).getString("path", null)
         }
         if (title == "隐藏BL") {
-            on = withContext(kotlinx.coroutines.Dispatchers.IO) {
+            on = ctx3.getSharedPreferences("yx_mode", 0).getBoolean("bl", false) ||
+                withContext(kotlinx.coroutines.Dispatchers.IO) {
                 try {
                     fun q(c: String): String {
                         val pr = Runtime.getRuntime().exec(arrayOf("su", "-c", c))
@@ -2304,7 +2306,8 @@ private fun ModeButton(
             }
         }
         if (title == "放开通行") {
-            on = withContext(kotlinx.coroutines.Dispatchers.IO) {
+            on = ctx3.getSharedPreferences("yx_mode", 0).getBoolean("open", false) ||
+                withContext(kotlinx.coroutines.Dispatchers.IO) {
                 try {
                     val pr = Runtime.getRuntime().exec(
                         arrayOf("su", "-c", "[ -f /data/adb/service.d/xy_open_access.sh ] && echo y || echo n")
@@ -2387,6 +2390,15 @@ private fun ModeButton(
                         latencyMsg = msg
                     }
                 }
+                ctx3.getSharedPreferences("yx_mode", 0).edit().putBoolean(
+                    when (title) {
+                        "性能模式" -> "perf"
+                        "放开通行" -> "open"
+                        "隐藏BL" -> "bl"
+                        else -> "none"
+                    },
+                    on
+                ).apply()
                 if (title == "刷入RT驱动") {
                     latencyMsg = "刷入中…"
                     scope2.launch {
