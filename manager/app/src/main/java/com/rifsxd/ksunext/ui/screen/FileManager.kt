@@ -2218,7 +2218,7 @@ private fun ModeButton(
                                         "'https://gitlab.com/api/v4/projects/87739512/packages/generic/AlwaysStrong/v1.0.5-r2/AlwaysStrong-v1.0.5.zip' 2>/dev/null; " +
                                         "[ -s /data/local/tmp/as.zip ] && echo ok || echo fail")
                                     val ksud = "/data/adb/ksud"
-                                    val installed = su("[ -x \"$ksud\" ] && \"$ksud\" module install /data/local/tmp/as.zip 2>&1 || echo noksud")
+                                    val installed = su("[ -x \"\$ksud\" ] && \"\$ksud\" module install /data/local/tmp/as.zip 2>&1 || echo noksud")
                                     val vs = su("getprop ro.boot.verifiedbootstate 2>/dev/null").trim()
                                     val lk = su("getprop ro.boot.flash.locked 2>/dev/null").trim()
                                     val ok = vs == "green" && lk == "1"
@@ -2230,7 +2230,7 @@ private fun ModeButton(
                                         "resetprop --delete ro.boot.veritymode 2>/dev/null; " +
                                         "resetprop --delete ro.secureboot.lockstate 2>/dev/null; " +
                                         "resetprop --delete ro.boot.warranty_bit 2>/dev/null; true")
-                                    su("for m in /data/adb/modules/AlwaysStrong /data/adb/modules/alwaysstrong; do [ -d \"$m\" ] && touch \"$m/remove\"; done 2>/dev/null; true")
+                                    su("for m in /data/adb/modules/AlwaysStrong /data/adb/modules/alwaysstrong; do [ -d \"\$m\" ] && touch \"$m/remove\"; done 2>/dev/null; true")
                                     "已恢复 BL 状态"
                                 }
                             } catch (t: Throwable) {
