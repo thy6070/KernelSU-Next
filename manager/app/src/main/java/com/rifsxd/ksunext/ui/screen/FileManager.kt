@@ -1182,6 +1182,152 @@ private fun ProMaxIsland(
                                         }
                                     }
                                 }
+                                9 -> {
+                                    val lp = longPressPath ?: ""
+                                    val lpName = lp.substringAfterLast('/')
+                                    val lowerLp = lp.lowercase()
+                                    val isArchive = lowerLp.endsWith(".zip") || lowerLp.endsWith(".tar") ||
+                                        lowerLp.endsWith(".gz") || lowerLp.endsWith(".7z") ||
+                                        lowerLp.endsWith(".rar") || lowerLp.endsWith(".xz")
+                                    val isApk = lowerLp.endsWith(".apk")
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                        ) {
+                                            Box(modifier = Modifier.weight(1f)) {
+                                                IslandActionButton("移动/复制", Color(0xFF0A84FF)) {
+                                                    switchStep(10)
+                                                }
+                                            }
+                                            Box(modifier = Modifier.weight(1f)) {
+                                                IslandActionButton(
+                                                    if (isArchive) "解压" else "压缩",
+                                                    Color(0xFF0A84FF)
+                                                ) {
+                                                    if (isArchive) {
+                                                        onFileOp("unzip", oppositePath)
+                                                    } else {
+                                                        onFileOp("zip", "")
+                                                    }
+                                                    closeIsland()
+                                                }
+                                            }
+                                        }
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                        ) {
+                                            Box(modifier = Modifier.weight(1f)) {
+                                                IslandActionButton("重命名", Color(0xFF0A84FF)) {
+                                                    switchStep(11)
+                                                }
+                                            }
+                                            Box(modifier = Modifier.weight(1f)) {
+                                                if (longPressIsDir) {
+                                                    IslandActionButton("删除", Color(0xFFFF3B30)) {
+                                                        switchStep(12)
+                                                    }
+                                                } else {
+                                                    IslandActionButton("分享", Color(0xFF0A84FF)) {
+                                                        onFileOp("share", "")
+                                                        closeIsland()
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        if (!longPressIsDir) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                            ) {
+                                                Box(modifier = Modifier.weight(1f)) {
+                                                    IslandActionButton(
+                                                        when {
+                                                            isApk -> "安装"
+                                                            isArchive -> "进入"
+                                                            lp.endsWith(".so") || lp.endsWith(".sh") -> "执行"
+                                                            else -> "编辑"
+                                                        },
+                                                        Color(0xFF0A84FF)
+                                                    ) {
+                                                        when {
+                                                            isApk -> onFileOp("install", "")
+                                                            isArchive -> onArchiveEnter()
+                                                            lp.endsWith(".so") || lp.endsWith(".sh") ->
+                                                                onAction("")
+                                                            else -> onFileOp("edit", "")
+                                                        }
+                                                        closeIsland()
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                10 -> {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Box(modifier = Modifier.weight(1f)) {
+                                            IslandActionButton("移动", Color(0xFF3A3A3C)) {
+                                                onFileOp("move", oppositePath)
+                                                closeIsland()
+                                            }
+                                        }
+                                        Box(modifier = Modifier.weight(1f)) {
+                                            IslandActionButton("复制", Color(0xFF0A84FF)) {
+                                                onFileOp("copy", oppositePath)
+                                                closeIsland()
+                                            }
+                                        }
+                                    }
+                                }
+                                11 -> {
+                                    androidx.compose.foundation.text.BasicTextField(
+                                        value = renameInput,
+                                        onValueChange = { renameInput = it },
+                                        singleLine = true,
+                                        textStyle = androidx.compose.ui.text.TextStyle(
+                                            color = Color.White,
+                                            fontSize = 12.sp
+                                        ),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .background(Color(0xFF1C1C1E), RoundedCornerShape(8.dp))
+                                            .padding(8.dp)
+                                    )
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Box(modifier = Modifier.weight(1f)) {
+                                            IslandActionButton("确定", Color(0xFF0A84FF)) {
+                                                if (renameInput.isNotBlank()) {
+                                                    onFileOp("rename", renameInput.trim())
+                                                }
+                                                closeIsland()
+                                            }
+                                        }
+                                    }
+                                }
+                                12 -> {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Box(modifier = Modifier.weight(1f)) {
+                                            IslandActionButton("确认删除", Color(0xFFFF3B30)) {
+                                                onFileOp("delete", "")
+                                                closeIsland()
+                                            }
+                                        }
+                                    }
+                                }
                                 0 -> {
                                     GradientActionButton("提取", Color(0xFF0A84FF)) { switchStep(7) }
                                     GradientActionButton("data/储存", Color(0xFF0A84FF)) { switchStep(2) }
