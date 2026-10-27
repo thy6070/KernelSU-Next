@@ -2129,8 +2129,8 @@ private fun ModePanel(onDismiss: () -> Unit) {
             ModeButton(Icons.Outlined.DarkMode, "放开通行")
             ModeButton(Icons.Outlined.AcUnit, "性能模式")
             ModeButton(Icons.Outlined.Person, "隐藏BL")
-            ModeButton(Icons.Outlined.Smartphone, "工作")
-            ModeButton(Icons.Outlined.Hotel, "睡眠")
+            ModeButton(Icons.Outlined.Smartphone, "刷入RT驱动")
+            ModeButton(Icons.Outlined.Hotel, "执行此文件")
         }
     }
 }
@@ -2176,6 +2176,23 @@ private fun ModeButton(
         if (title == "性能模式") {
             on = withContext(kotlinx.coroutines.Dispatchers.IO) {
                 java.io.File("/data/adb/service.d/xy_perf.sh").exists()
+            }
+        }
+        if (title == "隐藏BL") {
+            on = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                try {
+                    fun q(c: String): String {
+                        val pr = Runtime.getRuntime().exec(arrayOf("su", "-c", c))
+                        val o = pr.inputStream.bufferedReader().readText()
+                        pr.waitFor()
+                        return o
+                    }
+                    val mod = q("grep -l '小鱼儿附属' /data/adb/modules/*/module.prop 2>/dev/null | head -n1").trim()
+                    val vs = q("getprop ro.boot.verifiedbootstate 2>/dev/null").trim()
+                    mod.isNotEmpty() || vs == "green"
+                } catch (t: Throwable) {
+                    false
+                }
             }
         }
         if (title == "放开通行") {
