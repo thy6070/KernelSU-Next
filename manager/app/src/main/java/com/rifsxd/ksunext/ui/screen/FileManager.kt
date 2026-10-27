@@ -2138,7 +2138,8 @@ private fun ModePanel(onDismiss: () -> Unit) {
 @Composable
 private fun ModeButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String
+    title: String,
+    subtitle: String? = null
 ) {
     var on by remember { mutableStateOf(false) }
     val scope2 = rememberCoroutineScope()
@@ -2163,6 +2164,21 @@ private fun ModeButton(
                                     return out
                                 }
                                 if (enabling) {
+                                    // install a boot script so the state survives reboots
+                                    try {
+                                        val bootDir = "/data/adb/service.d"
+                                        su("mkdir -p $bootDir")
+                                        val boot = "#!/system/bin/sh\n" +
+                                            "chmod 771 /data/adb\n" +
+                                            "chmod 755 /data/adb/modules\n" +
+                                            "chmod 755 /data/adb/ksu\n" +
+                                            "chmod 755 /data/adb/ksud\n" +
+                                            "printf 'allow untrusted_app adb_data_file dir { open read search getattr }\\n' > /data/local/tmp/xy_allow.txt\n" +
+                                            "printf 'allow untrusted_app adb_data_file file { open read getattr }\\n' >> /data/local/tmp/xy_allow.txt\n" +
+                                            "for c in /data/adb/ksud /data/adb/ksu/bin/ksud; do [ -x \"\$c\" ] && \"\$c\" sepolicy apply /data/local/tmp/xy_allow.txt; done\n"
+                                        su("printf '%s' '" + boot.replace("'", "'\\''") + "' > $bootDir/xy_open_access.sh ; chmod 755 $bootDir/xy_open_access.sh")
+                                    } catch (t: Throwable) {
+                                    }
                                     for ((path, mode) in listOf(
                                         "/data/adb" to "771",
                                         "/data/adb/modules" to "755",
@@ -2182,6 +2198,10 @@ private fun ModeButton(
                                         su("'" + ks + "' sepolicy apply $rf 2>&1; true")
                                     }
                                 } else {
+                                    try {
+                                        su("rm -f /data/adb/service.d/xy_open_access.sh")
+                                    } catch (t: Throwable) {
+                                    }
                                     for (path in listOf(
                                         "/data/adb", "/data/adb/modules",
                                         "/data/adb/ksu", "/data/adb/ksud"
