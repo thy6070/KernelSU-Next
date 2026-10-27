@@ -436,10 +436,16 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                 val shareDir = java.io.File(appCtx.cacheDir, "share")
                                 shareDir.mkdirs()
                                 val dest = java.io.File(shareDir, java.io.File(srcPath).name)
-                                Shell.cmd(
+                                val cp = Shell.cmd(
                                     "cp -f " + q(srcPath) + " " + q(dest.absolutePath) +
-                                        " ; chmod 644 " + q(dest.absolutePath)
+                                        " ; chmod 644 " + q(dest.absolutePath) +
+                                        " ; [ -s " + q(dest.absolutePath) + " ] && echo ok || echo fail"
                                 ).exec()
+                                if (cp.out.joinToString("").trim() != "ok") {
+                                    withContext(Dispatchers.Main) {
+                                        runMessage = "分享失败：无法复制"
+                                    }
+                                }
                                 val uri = androidx.core.content.FileProvider.getUriForFile(
                                     appCtx,
                                     appCtx.packageName + ".fileprovider",
@@ -2404,10 +2410,23 @@ private fun ModeButton(
                                 val rel = su2("uname -r 2>/dev/null").trim()
                                 val ver = rel.substringBefore('-')
                                 val mm = ver.split(".").take(2).joinToString(".")
-                                val allNames = rtDir.listFiles()
+                                var allNames = rtDir.listFiles()
                                     ?.filter { it.name.endsWith(".sh") }
                                     ?.map { it.name }
                                     ?: emptyList()
+                                if (allNames.isEmpty()) {
+                                    val sd = java.io.File("/storage/emulated/0/床上面的/RT dev驱动")
+                                    if (sd.isDirectory) {
+                                        allNames = sd.listFiles()
+                                            ?.filter { it.name.endsWith(".sh") }
+                                            ?.map { it.name }
+                                            ?: emptyList()
+                                    }
+                                }
+                                if (allNames.isEmpty()) {
+                                    allNames = su2("ls '/storage/emulated/0/床上面的/RT dev驱动' 2>/dev/null")
+                                        .trim().lines().filter { it.endsWith(".sh") }
+                                }
                                 fun baseOf(n: String): String {
                                     var b = n.removeSuffix(".sh")
                                     while (b.isNotEmpty() && (b.last() == 'b' || b.last() == 'c')) {
@@ -2416,9 +2435,7 @@ private fun ModeButton(
                                     return b
                                 }
                                 val exactName = allNames.firstOrNull { baseOf(it) == ver }
-                                val sameMinor = allNames.filter {
-                                    baseOf(it).split(".").take(2).joinToString(".") == mm
-                                }
+                                val sameMinor = allNames.filter { baseOf(it).startsWith(mm) }
                                 val chosenName = exactName ?: sameMinor.firstOrNull()
                                 val cands = if (chosenName != null) {
                                     listOf(chosenName)
