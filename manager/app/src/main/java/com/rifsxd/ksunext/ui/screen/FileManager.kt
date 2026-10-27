@@ -676,6 +676,20 @@ private fun ProMaxIsland(
     var jumpSide by remember { mutableStateOf(0) }
     var jumpInput by remember { mutableStateOf("") }
     var renameInput by remember { mutableStateOf("") }
+    var susfsVer by remember { mutableStateOf("") }
+    var zygiskOn by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        susfsVer = try {
+            com.rifsxd.ksunext.ui.util.getSuSFSVersion()
+        } catch (t: Throwable) {
+            ""
+        }
+        zygiskOn = try {
+            com.rifsxd.ksunext.Natives.isZygiskEnabled()
+        } catch (t: Throwable) {
+            false
+        }
+    }
     var paneTarget by remember { mutableStateOf("/storage/emulated/0/") }
     var createIsDir by remember { mutableStateOf(true) }
     var extractDone by remember { mutableStateOf(false) }
@@ -1312,6 +1326,18 @@ private fun ProMaxIsland(
                             }
                         }
                         "settings" -> {
+                            Text(
+                                text = "SuSFS 版本：" + (susfsVer.ifBlank { "不支持" }),
+                                color = Color(0xFFB0B0B8),
+                                fontSize = 11.sp,
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                            Text(
+                                text = "Zygisk 注入：" + (if (zygiskOn) "已启用" else "未启用"),
+                                color = Color(0xFFB0B0B8),
+                                fontSize = 11.sp,
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
                             DarkActionButton("挂载隔离") {
                                 navTarget = null; navMode = false
                                 navigator.navigate(SettingScreenDestination)
