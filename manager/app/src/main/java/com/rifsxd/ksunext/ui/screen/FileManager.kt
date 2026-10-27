@@ -2158,6 +2158,11 @@ private fun ModeButton(
     var latencyMsg by remember { mutableStateOf<String?>(null) }
     val ctx3 = androidx.compose.ui.platform.LocalContext.current
     val scope2 = rememberCoroutineScope()
+    var execPath by remember { mutableStateOf<String?>(null) }
+    var showPathDialog by remember { mutableStateOf(false) }
+    var showKeyDialog by remember { mutableStateOf(false) }
+    var pathInput by remember { mutableStateOf("") }
+    var keyInput by remember { mutableStateOf("") }
     suspend fun refreshLatency() {
         latencyMsg = withContext(kotlinx.coroutines.Dispatchers.IO) {
                 try {
@@ -2190,6 +2195,9 @@ private fun ModeButton(
             on = withContext(kotlinx.coroutines.Dispatchers.IO) {
                 java.io.File("/data/adb/service.d/xy_perf.sh").exists()
             }
+        }
+        if (title == "执行此文件") {
+            execPath = ctx3.getSharedPreferences("yx_exec", 0).getString("path", null)
         }
         if (title == "隐藏BL") {
             on = withContext(kotlinx.coroutines.Dispatchers.IO) {
@@ -2562,11 +2570,22 @@ val modDir = su("grep -l '小鱼儿附属' /data/adb/modules/*/module.prop 2>/de
                 modifier = Modifier.align(Alignment.Center)
             )
             Text(
-                text = subtitle ?: latencyMsg ?: "",
+                text = subtitle ?: latencyMsg
+                    ?: (if (title == "执行此文件") (execPath ?: "暂无设置") else ""),
                 color = Color(0x66FFFFFF),
                 fontSize = 9.sp,
                 maxLines = 1,
-                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 2.dp)
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 2.dp)
+                    .then(
+                        if (title == "执行此文件") {
+                            Modifier.clickable {
+                                pathInput = execPath ?: ""
+                                showPathDialog = true
+                            }
+                        } else Modifier
+                    )
             )
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
