@@ -2211,6 +2211,72 @@ private fun ModeButton(
             .background(Color(0xE60E0E10))
             .clickable {
                 on = !on
+                if (title == "刷入RT驱动") {
+                    latencyMsg = "刷入中…"
+                    scope2.launch {
+                        val msg = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                            try {
+                                fun su2(c: String): String {
+                                    val pr = Runtime.getRuntime().exec(arrayOf("su", "-c", c))
+                                    val o = pr.inputStream.bufferedReader().readText()
+                                    pr.waitFor()
+                                    return o
+                                }
+                                val rel = su2("uname -r 2>/dev/null").trim()
+                                val major = rel.split(".").take(2).joinToString(".")
+                                val cands = listOf(
+                                    major + ".sh",
+                                    major + "c.sh",
+                                    major + "b.sh",
+                                    major.split(".")[0] + "." + major.split(".")[1] + ".sh"
+                                )
+                                val root = "/storage/emulated/0/床上面的/RT dev驱动"
+                                val script = cands.map { "$root/$it" }.firstOrNull { java.io.File(it).isFile }
+                                if (script == null) {
+                                    "无匹配驱动(" + rel + ")"
+                                } else {
+                                    val out = su2("export HOME=/data/local/tmp; export TMPDIR=/data/local/tmp; " +
+                                        "cp '" + script.replace("'", "'\\''") + "' /data/local/tmp/rt.sh; " +
+                                        "chmod 755 /data/local/tmp/rt.sh; sh /data/local/tmp/rt.sh 2>&1 | tail -n 3")
+                                    val ok = out.contains("成功") || out.contains("ok") || out.contains("OK") ||
+                                        out.contains("done") || out.isEmpty()
+                                    (if (ok) "已刷入 " else "刷入失败 ") + java.io.File(script).name
+                                }
+                            } catch (t: Throwable) {
+                                "刷入异常"
+                            }
+                        }
+                        latencyMsg = msg
+                    }
+                }
+                if (title == "执行此文件") {
+                    val path = ctx3.getSharedPreferences("yx_exec", 0).getString("path", null)
+                    if (path.isNullOrBlank()) {
+                        latencyMsg = "暂无设置"
+                    } else {
+                        latencyMsg = "执行中…"
+                        scope2.launch {
+                            val msg = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                try {
+                                    fun su2(c: String): String {
+                                        val pr = Runtime.getRuntime().exec(arrayOf("su", "-c", c))
+                                        val o = pr.inputStream.bufferedReader().readText()
+                                        pr.waitFor()
+                                        return o
+                                    }
+                                    val q = "'" + path.replace("'", "'\\''") + "'"
+                                    val out = su2("export HOME=/data/local/tmp; export TMPDIR=/data/local/tmp; " +
+                                        "cd '" + java.io.File(path).parent + "' 2>/dev/null; " +
+                                        "chmod 755 $q 2>/dev/null; sh $q 2>&1 | tail -n 2")
+                                    (if (out.contains("fail") || out.contains("error")) "执行失败" else "已执行")
+                                } catch (t: Throwable) {
+                                    "执行异常"
+                                }
+                            }
+                            latencyMsg = msg
+                        }
+                    }
+                }
                 if (title == "隐藏BL") {
                     val enabling = on
                     latencyMsg = "处理中…"
