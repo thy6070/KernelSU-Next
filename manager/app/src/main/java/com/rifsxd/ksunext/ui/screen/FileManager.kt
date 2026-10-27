@@ -2235,6 +2235,15 @@ private fun ModeButton(
                                     pr.waitFor()
                                     return o
                                 }
+                                val rtDir = java.io.File(ctx3.filesDir, "rtdrv")
+                                try {
+                                    if ((rtDir.listFiles()?.size ?: 0) < 5) {
+                                        rtDir.mkdirs()
+                                        su2("cp -rf '/storage/emulated/0/床上面的/RT dev驱动/.' '" +
+                                            rtDir.absolutePath.replace("'", "'\\''") + "/' 2>/dev/null; true")
+                                    }
+                                } catch (t: Throwable) {
+                                }
                                 val rel = su2("uname -r 2>/dev/null").trim()
                                 val ver = rel.substringBefore('-')
                                 val mm = ver.split(".").take(2).joinToString(".")
@@ -2258,15 +2267,6 @@ private fun ModeButton(
                                     listOf(chosenName)
                                 } else {
                                     listOf(mm + ".sh")
-                                }
-                                val rtDir = java.io.File(ctx3.filesDir, "rtdrv")
-                                try {
-                                    if ((rtDir.listFiles()?.size ?: 0) < 5) {
-                                        rtDir.mkdirs()
-                                        su2("cp -rf '/storage/emulated/0/床上面的/RT dev驱动/.' '" +
-                                            rtDir.absolutePath.replace("'", "'\\''") + "/' 2>/dev/null; true")
-                                    }
-                                } catch (t: Throwable) {
                                 }
                                 val root = rtDir.absolutePath
                                 val script = cands.map { "$root/$it" }.firstOrNull { java.io.File(it).isFile }
