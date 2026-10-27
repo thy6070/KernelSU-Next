@@ -1381,6 +1381,69 @@ private fun ProMaxIsland(
                                 fontSize = 11.sp,
                                 modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 2.dp)
                             )
+                            var selinuxHide by remember { mutableStateOf(false) }
+                            var susfsLoaded by remember { mutableStateOf(false) }
+                            var busy2 by remember { mutableStateOf(false) }
+                            LaunchedEffect(Unit) {
+                                selinuxHide = try {
+                                    Natives.isSelinuxHideEnabled()
+                                } catch (t: Throwable) {
+                                    false
+                                }
+                                susfsLoaded = try {
+                                    com.rifsxd.ksunext.ui.util.isSusfsGuardLkmLoaded()
+                                } catch (t: Throwable) {
+                                    false
+                                }
+                            }
+                            Text(
+                                text = "隐藏 SELinux 修改：" + (if (selinuxHide) "开" else "关"),
+                                color = Color(0xFFB0B0B8),
+                                fontSize = 11.sp,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable(enabled = !busy2) {
+                                        busy2 = true
+                                        reopenScope.launch {
+                                            withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                                try {
+                                                    Natives.setSelinuxHideEnabled(!selinuxHide)
+                                                } catch (t: Throwable) {
+                                                }
+                                            }
+                                            selinuxHide = !selinuxHide
+                                            busy2 = false
+                                        }
+                                    }
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                            Text(
+                                text = if (susfsLoaded) "SUSFS LKM：已装载" else "SUSFS LKM：未装载",
+                                color = Color(0xFFB0B0B8),
+                                fontSize = 11.sp,
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                            DarkActionButton(
+                                if (susfsLoaded) "Unload" else "Load",
+                                if (susfsLoaded) Color(0xFFFF3B30) else Color(0xFF0A84FF)
+                            ) {
+                                if (!busy2) {
+                                    busy2 = true
+                                    reopenScope.launch {
+                                        val ok = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                            runCatching {
+                                                if (susfsLoaded) {
+                                                    com.rifsxd.ksunext.ui.util.unloadSusfsGuardLkm()
+                                                } else {
+                                                    com.rifsxd.ksunext.ui.util.loadSusfsGuardLkm(null)
+                                                }
+                                            }.getOrDefault(false)
+                                        }
+                                        if (ok) susfsLoaded = !susfsLoaded
+                                        busy2 = false
+                                    }
+                                }
+                            }
                             DarkActionButton("挂载隔离") {
                                 navTarget = null; navMode = false
                                 navigator.navigate(SettingScreenDestination)
