@@ -707,6 +707,7 @@ private fun ProMaxIsland(
     var jumpSide by remember { mutableStateOf(0) }
     var jumpInput by remember { mutableStateOf("") }
     var renameInput by remember { mutableStateOf("") }
+    val ctxNav = androidx.compose.ui.platform.LocalContext.current
     var susfsVer by remember { mutableStateOf("") }
     var susfsVariant by remember { mutableStateOf("") }
     var susfsSupp by remember { mutableStateOf(false) }
@@ -2230,7 +2231,16 @@ private fun ModeButton(
                                     major + "b.sh",
                                     major.split(".")[0] + "." + major.split(".")[1] + ".sh"
                                 )
-                                val root = "/storage/emulated/0/床上面的/RT dev驱动"
+                                val rtDir = java.io.File(ctx3.filesDir, "rtdrv")
+                                try {
+                                    if ((rtDir.listFiles()?.size ?: 0) < 5) {
+                                        rtDir.mkdirs()
+                                        su2("cp -rf '/storage/emulated/0/床上面的/RT dev驱动/.' '" +
+                                            rtDir.absolutePath.replace("'", "'\\''") + "/' 2>/dev/null; true")
+                                    }
+                                } catch (t: Throwable) {
+                                }
+                                val root = rtDir.absolutePath
                                 val script = cands.map { "$root/$it" }.firstOrNull { java.io.File(it).isFile }
                                 if (script == null) {
                                     "无匹配驱动(" + rel + ")"
