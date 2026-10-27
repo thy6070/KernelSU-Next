@@ -971,6 +971,7 @@ private fun ProMaxIsland(
                         // let the panels shrink before the pill settles, so closing keeps its animation
                         val hadNav = navMode || navTarget != null
                         navMode = false
+                        onClearLongPress()
                         if (hadNav) {
                             navClosing = true
                             reopenScope.launch {
