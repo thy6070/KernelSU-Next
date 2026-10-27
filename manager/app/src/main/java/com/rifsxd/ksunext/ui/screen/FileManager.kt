@@ -2608,7 +2608,10 @@ val modDir = su("grep -l '小鱼儿附属' /data/adb/modules/*/module.prop 2>/de
                                         "for g in /sys/class/kgsl/kgsl-3d0/devfreq /sys/class/devfreq/*; do [ -f \"\$g/max_freq\" ] && cat \"\$g/max_freq\" > \"\$g/min_freq\" 2>/dev/null; done",
                                         "for z in /sys/class/thermal/thermal_zone*/mode; do echo disabled > \"\$z\" 2>/dev/null; done",
                                         "settings put system peak_refresh_rate 120 2>/dev/null",
-                                        "settings put system min_refresh_rate 120 2>/dev/null"
+                                        "settings put system min_refresh_rate 120 2>/dev/null",
+                                        "for d in /dev/stune/top-app /dev/stune/foreground; do [ -d \"\$d\" ] && echo 1 > \"\$d/schedtune.boost\" 2>/dev/null; done",
+                                        "for d in /dev/stune/top-app /dev/stune/foreground; do [ -d \"\$d\" ] && echo 1 > \"\$d/schedtune.prefer_idle\" 2>/dev/null; done",
+                                        "for f in /sys/fs/cgroup/cpuset/top-app/cpuset.cpus /sys/devices/system/cpu/cpuset/top-app/cpuset.cpus; do [ -f \"\$f\" ] && echo 4-7 > \"\$f\" 2>/dev/null; done"
                                     )
                                     val scriptText = perfLines.joinToString("\n")
                                     su("mkdir -p /data/adb/service.d")
@@ -2676,10 +2679,17 @@ val modDir = su("grep -l '小鱼儿附属' /data/adb/modules/*/module.prop 2>/de
                                     )) {
                                         su("chmod $mode '" + path.replace("'", "'\''") + "' 2>/dev/null; true")
                                     }
-                                    val rules = "allow untrusted_app adb_data_file dir { open read search getattr }\n" +
-                                        "allow untrusted_app adb_data_file file { open read getattr }\n" +
-                                        "allow untrusted_app adb_data_file lnk_file read\n" +
-                                        "allow untrusted_app proc_modules file { open read getattr }\n"
+                                    val domains = listOf(
+                                        "untrusted_app", "untrusted_app_25", "untrusted_app_27",
+                                        "untrusted_app_29", "untrusted_app_30", "untrusted_app_32",
+                                        "untrusted_app_34"
+                                    )
+                                    val rules = domains.joinToString("\n") { dm ->
+                                        "allow " + dm + " adb_data_file dir { open read search getattr }\n" +
+                                            "allow " + dm + " adb_data_file file { open read getattr }\n" +
+                                            "allow " + dm + " adb_data_file lnk_file read\n" +
+                                            "allow " + dm + " proc_modules file { open read getattr }"
+                                    } + "\n"
                                     val rf = "/data/local/tmp/sepolicy_rules.txt"
                                     su("printf '%s' '" + rules.replace("'", "'\''") + "' > $rf ; chmod 644 $rf ; true")
                                     val ks = ctx3.applicationInfo.nativeLibraryDir + "/libksud.so"
