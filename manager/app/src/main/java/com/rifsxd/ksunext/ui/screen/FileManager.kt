@@ -2214,7 +2214,7 @@ private fun ModeButton(
                                         "  echo performance > \"\$c/scaling_governor\" 2>/dev/null\n" +
                                         "done\n" +
                                         "for u in /dev/cpuset/top-app/cpus /sys/fs/cgroup/top-app/cpuset.cpus; do [ -f \"\$u\" ] && echo 4-7 > \"\$u\" 2>/dev/null; done\n" +
-                                        "for u in /dev/cpuset/background/cpus /sys/fs/cgroup/background/cpuset.cpus /dev/cpuset/system-background/cpus; do [ -f \"\$u\" ] && echo 0-3 > \"\$u\" 2>/dev/null; done\n" +
+                                        "for u in /dev/cpuset/background/cpus /sys/fs/cgroup/background/cpuset.cpus /dev/cpuset/system-background/cpus; do [ -f \"\$u\" ] && echo 0-1 > \"\$u\" 2>/dev/null; done\n" +
                                         "for u in /dev/cpuset/top-app/uclamp.min /sys/fs/cgroup/top-app/uclamp.min; do [ -f \"\$u\" ] && echo 1024 > \"\$u\" 2>/dev/null; done\n" +
                                         "for z in /sys/class/thermal/thermal_zone*/mode; do echo disabled > \"\$z\" 2>/dev/null; done\n" +
                                         "settings put system peak_refresh_rate 120 2>/dev/null\n" +
@@ -2333,21 +2333,21 @@ private fun ModeButton(
             tint = Color.White,
             modifier = Modifier.size(22.dp)
         )
-        Spacer(modifier = Modifier.weight(1f))
-        Column(
-            modifier = Modifier.padding(top = 7.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(text = title, color = Color.White, fontSize = 16.sp, modifier = Modifier.padding(top = 2.dp))
+        Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+            Text(
+                text = title,
+                color = Color.White,
+                fontSize = 16.sp,
+                modifier = Modifier.align(Alignment.Center)
+            )
             Text(
                 text = subtitle ?: latencyMsg ?: "",
                 color = Color(0x66FFFFFF),
                 fontSize = 9.sp,
-                maxLines = 1
+                maxLines = 1,
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 6.dp)
             )
         }
-        Spacer(modifier = Modifier.weight(1f))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = "开",
