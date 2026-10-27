@@ -796,12 +796,12 @@ private fun ProMaxIsland(
         reopenScope.launch {
             navClosing = true
             navMode = false
-            navTarget = null
-            jumpStep = 0
-            jumpInput = ""
             expanded = false
             onClearLongPress()
             kotlinx.coroutines.delay(180)
+            navTarget = null
+            jumpStep = 0
+            jumpInput = ""
             navClosing = false
         }
     }
@@ -819,12 +819,7 @@ private fun ProMaxIsland(
     LaunchedEffect(longPressPath) {
         // a cleared long press (file tapped elsewhere) must fold the menu
         if (longPressPath == null && jumpStep == 9) {
-            expanded = false
-            navMode = false
-            navTarget = null
-            navClosing = false
-            jumpStep = 0
-            jumpInput = ""
+            closeIsland()
         }
     }
     LaunchedEffect(longPressTick) {
@@ -974,14 +969,15 @@ private fun ProMaxIsland(
                         // let the panels shrink before the pill settles, so closing keeps its animation
                         val hadNav = navMode || navTarget != null
                         navMode = false
-                        navTarget = null
-                        jumpStep = 0
-                        jumpInput = ""
+                        expanded = false
                         onClearLongPress()
                         if (hadNav) {
                             navClosing = true
                             reopenScope.launch {
                                 kotlinx.coroutines.delay(180)
+                                navTarget = null
+                                jumpStep = 0
+                                jumpInput = ""
                                 navClosing = false
                             }
                         }
