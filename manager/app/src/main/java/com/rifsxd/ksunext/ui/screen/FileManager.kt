@@ -422,7 +422,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
         },
         onTermClose = { showTerminal = false },
         onArchiveEnter = {
-            val p = selectedFile
+            val p = longPressPath ?: selectedFile
             if (p != null) {
                 uiScope.launch {
                     running = true
@@ -471,7 +471,11 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                 "edit" -> "chmod 644 " + q(srcPath)
                                 else -> ""
                             }
-                            if (cmd.isNotEmpty()) Shell.cmd(cmd).exec()
+                            var ok = true
+                            if (cmd.isNotEmpty()) {
+                                val res = Shell.cmd(cmd).exec()
+                                ok = res.isSuccess
+                            }
                             if (op == "share") {
                                 val uri = androidx.core.content.FileProvider.getUriForFile(
                                     appCtx,
@@ -505,6 +509,8 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                     }
                     refreshTick += 1
                     longPressPath = null
+                    runOk = true
+                    runMessage = if (op == "share") null else ("已完成")
                 }
             }
         },
@@ -545,7 +551,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
             }
         },
         onAction = { soKey ->
-            val p = selectedFile
+            val p = longPressPath ?: selectedFile
             if (p != null) {
                 val lower = p.lowercase()
                 uiScope.launch {
