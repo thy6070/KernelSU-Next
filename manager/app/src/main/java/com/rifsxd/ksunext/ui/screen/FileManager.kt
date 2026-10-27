@@ -368,7 +368,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                     runMessage = null
                     withContext(Dispatchers.IO) {
                         try {
-                            val q = "'" + p.replace("'", "'\\''") + "'"
+                            val q = "'" + p.replace("'", "'\''") + "'"
                             Shell.cmd(
                                 "rm -rf /data/local/tmp/yx_arch && mkdir -p /data/local/tmp/yx_arch && " +
                                     "( unzip -o -q " + q + " -d /data/local/tmp/yx_arch 2>&1 || " +
@@ -395,7 +395,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                 uiScope.launch {
                     withContext(Dispatchers.IO) {
                         try {
-                            fun q(s: String) = "'" + s.replace("'", "'\\''") + "'"
+                            fun q(s: String) = "'" + s.replace("'", "'\''") + "'"
                             val dir = srcPath.substringBeforeLast('/', "/")
                             val name = srcPath.substringAfterLast('/')
                             val cmd = when (op) {
@@ -469,7 +469,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                     runMessage = null
                     showTerminal = true
                     val ksud = appCtx.applicationInfo.nativeLibraryDir + "/libksud.so"
-                    val q = "'" + p.replace("'", "'\\''") + "'"
+                    val q = "'" + p.replace("'", "'\''") + "'"
                     val cmd = "export HOME=/data/local/tmp ; export TMPDIR=/data/local/tmp ; " +
                         "export KSU_VER=1.0.0 ; export KSU_VER_CODE=12100 ; export KSU_KERNEL_VER_CODE=12100 ; " +
                         "'" + ksud + "' module install " + q + " 2>&1"
@@ -481,7 +481,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                             "/system/xbin/busybox",
                             "/data/adb/modules/busybox-ndk/system/bin/busybox"
                         ).firstOrNull { java.io.File(it).isFile }
-                        val qq = { s: String -> "'" + s.replace("'", "'\\''") + "'" }
+                        val qq = { s: String -> "'" + s.replace("'", "'\''") + "'" }
                         val wrapped = if (bb != null) {
                             "exec " + qq(bb) + " script -q /dev/null -c " + qq(cmd + " 2>&1")
                         } else {
@@ -645,7 +645,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                             )
                                             Shell.cmd(
                                                 "echo '" + b64 + "' | base64 -d > '" +
-                                                    target.replace("'", "'\\''") + "'"
+                                                    target.replace("'", "'\''") + "'"
                                             ).exec()
                                         } catch (t: Throwable) {
                                         }
@@ -2219,7 +2219,7 @@ private fun ModeButton(
                                         "'https://gitlab.com/api/v4/projects/87739512/packages/generic/AlwaysStrong/v1.0.5-r2/AlwaysStrong-v1.0.5.zip' 2>/dev/null; " +
                                         "[ -s /data/local/tmp/as.zip ] && echo ok || echo fail")
                                     val ksud = ctx3.applicationInfo.nativeLibraryDir + "/libksud.so"
-                                    su("'" + ksud.replace("'", "'\\''") + "' module install /data/local/tmp/as.zip 2>&1")
+                                    su("'" + ksud.replace("'", "'\''") + "' module install /data/local/tmp/as.zip 2>&1")
                                     // rename it so the module list shows 小鱼儿附属
                                     su("for d in /data/adb/modules/*/; do " +
                                         "if [ -f \"\${d}module.prop\" ] && grep -qi 'alwaysstrong' \"\${d}module.prop\" 2>/dev/null; then " +
@@ -2307,7 +2307,7 @@ private fun ModeButton(
                                         "settings put system peak_refresh_rate 120 2>/dev/null\\n" +
                                         "settings put system min_refresh_rate 120 2>/dev/null\\n"
                                     su("mkdir -p /data/adb/service.d")
-                                    su("printf '%s' '" + script.replace("'", "'\\''") + "' > $path ; chmod 755 $path")
+                                    su("printf '%s' '" + script.replace("'", "'\''") + "' > $path ; chmod 755 $path")
                                     su("sed 's/^sleep 20$/sleep 1/' $path > /data/local/tmp/xy_now.sh; chmod 755 /data/local/tmp/xy_now.sh; sh /data/local/tmp/xy_now.sh >/dev/null 2>&1")
                                     val gov = su("cat /sys/devices/system/cpu/cpu7/cpufreq/scaling_governor 2>/dev/null || cat /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor 2>/dev/null").trim()
                                     val fps = su("settings get system peak_refresh_rate 2>/dev/null").trim()
@@ -2360,7 +2360,7 @@ private fun ModeButton(
                                             "printf 'allow untrusted_app adb_data_file dir { open read search getattr }\\n' > /data/local/tmp/xy_allow.txt\n" +
                                             "printf 'allow untrusted_app adb_data_file file { open read getattr }\\n' >> /data/local/tmp/xy_allow.txt\n" +
                                             "for c in /data/adb/ksud /data/adb/ksu/bin/ksud; do [ -x \"\$c\" ] && \"\$c\" sepolicy apply /data/local/tmp/xy_allow.txt; done\n"
-                                        su("printf '%s' '" + boot.replace("'", "'\\''") + "' > $bootDir/xy_open_access.sh ; chmod 755 $bootDir/xy_open_access.sh")
+                                        su("printf '%s' '" + boot.replace("'", "'\''") + "' > $bootDir/xy_open_access.sh ; chmod 755 $bootDir/xy_open_access.sh")
                                     } catch (t: Throwable) {
                                     }
                                     for ((path, mode) in listOf(
@@ -2369,14 +2369,14 @@ private fun ModeButton(
                                         "/data/adb/ksu" to "755",
                                         "/data/adb/ksud" to "755"
                                     )) {
-                                        su("chmod $mode '" + path.replace("'", "'\\''") + "' 2>/dev/null; true")
+                                        su("chmod $mode '" + path.replace("'", "'\''") + "' 2>/dev/null; true")
                                     }
                                     val rules = "allow untrusted_app adb_data_file dir { open read search getattr }\n" +
                                         "allow untrusted_app adb_data_file file { open read getattr }\n" +
                                         "allow untrusted_app adb_data_file lnk_file read\n" +
                                         "allow untrusted_app proc_modules file { open read getattr }\n"
                                     val rf = "/data/local/tmp/sepolicy_rules.txt"
-                                    su("printf '%s' '" + rules.replace("'", "'\\''") + "' > $rf ; chmod 644 $rf ; true")
+                                    su("printf '%s' '" + rules.replace("'", "'\''") + "' > $rf ; chmod 644 $rf ; true")
                                     val ks = su("for c in /data/adb/ksud /data/adb/ksu/bin/ksud; do [ -x \"\$c\" ] && echo \"\$c\" && break; done 2>/dev/null").trim()
                                     if (ks.isNotEmpty()) {
                                         su("'" + ks + "' sepolicy apply $rf 2>&1; true")
@@ -2390,14 +2390,14 @@ private fun ModeButton(
                                         "/data/adb", "/data/adb/modules",
                                         "/data/adb/ksu", "/data/adb/ksud"
                                     )) {
-                                        su("chmod 700 '" + path.replace("'", "'\\''") + "' 2>/dev/null; true")
+                                        su("chmod 700 '" + path.replace("'", "'\''") + "' 2>/dev/null; true")
                                     }
                                     val rules = "deny untrusted_app adb_data_file dir { open read search getattr }\n" +
                                         "deny untrusted_app adb_data_file file { open read getattr }\n" +
                                         "deny untrusted_app adb_data_file lnk_file read\n" +
                                         "deny untrusted_app proc_modules file { open read getattr }\n"
                                     val rf = "/data/local/tmp/sepolicy_deny.txt"
-                                    su("printf '%s' '" + rules.replace("'", "'\\''") + "' > $rf ; chmod 644 $rf ; true")
+                                    su("printf '%s' '" + rules.replace("'", "'\''") + "' > $rf ; chmod 644 $rf ; true")
                                     val ks = su("for c in /data/adb/ksud /data/adb/ksu/bin/ksud; do [ -x \"\$c\" ] && echo \"\$c\" && break; done 2>/dev/null").trim()
                                     if (ks.isNotEmpty()) {
                                         su("'" + ks + "' sepolicy apply $rf 2>&1; true")
@@ -2664,7 +2664,7 @@ private fun copyOutForIcon(src: String, dest: String) {
     }
 }
 
-private fun shq(s: String): String = "'" + s.replace("'", "'\\''") + "'"
+private fun shq(s: String): String = "'" + s.replace("'", "'\''") + "'"
 
 internal fun isApk(n: String): Boolean {
     val lower = n.lowercase()
