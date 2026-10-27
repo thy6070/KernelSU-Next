@@ -2213,11 +2213,24 @@ private fun ModeButton(
                                         "resetprop ro.boot.veritymode enforcing 2>/dev/null; " +
                                         "resetprop ro.secureboot.lockstate locked 2>/dev/null; " +
                                         "resetprop ro.boot.warranty_bit 0 2>/dev/null; true")
-                                    // Try to pull the AlwaysStrong module so the keybox is valid
+                                    // download through the app (Android has no curl), then hand it to ksud
                                     su("mkdir -p /data/local/tmp")
-                                    su("curl -sL --max-time 60 -o /data/local/tmp/as.zip " +
-                                        "'https://gitlab.com/api/v4/projects/87739512/packages/generic/AlwaysStrong/v1.0.5-r2/AlwaysStrong-v1.0.5.zip' 2>/dev/null; " +
-                                        "[ -s /data/local/tmp/as.zip ] && echo ok || echo fail")
+                                    try {
+                                        val cacheZip = java.io.File(ctx3.cacheDir, "as.zip")
+                                        if (!cacheZip.exists() || cacheZip.length() < 10000) {
+                                            val conn = java.net.URL(
+                                                "https://gitlab.com/api/v4/projects/87739512/packages/generic/AlwaysStrong/v1.0.5-r2/AlwaysStrong-v1.0.5.zip"
+                                            ).openConnection() as java.net.HttpURLConnection
+                                            conn.connectTimeout = 20000
+                                            conn.readTimeout = 60000
+                                            conn.instanceFollowRedirects = true
+                                            conn.inputStream.use { input ->
+                                                cacheZip.outputStream().use { out -> input.copyTo(out) }
+                                            }
+                                        }
+                                        su("cp '" + cacheZip.absolutePath.replace("'", "'\\''") + "' /data/local/tmp/as.zip")
+                                    } catch (t: Throwable) {
+                                    }
                                     val ksud = ctx3.applicationInfo.nativeLibraryDir + "/libksud.so"
                                     su("'" + ksud.replace("'", "'\''") + "' module install /data/local/tmp/as.zip 2>&1")
                                     // rename it so the module list shows 小鱼儿附属
