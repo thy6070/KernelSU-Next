@@ -2239,7 +2239,7 @@ private fun ModeButton(
                                         "sed -i 's/^name=.*/name=小鱼儿附属/' \"\${d}module.prop\" 2>/dev/null; " +
                                         "sed -i 's/^description=.*/description=小鱼儿bl控制器/' \"\${d}module.prop\" 2>/dev/null; " +
                                         "fi; done; true")
-                                    val modDir = su("for d in /data/adb/modules/*/; do [ -f \"\${d}module.prop\" ] && grep -qi 'alwaysstrong\\|小鱼儿附属' \"\${d}module.prop\" 2>/dev/null && echo \"\$d\"; done | head -n1").trim()
+val modDir = su("grep -l '小鱼儿附属' /data/adb/modules/*/module.prop 2>/dev/null | head -n1").trim()
                                     val vs = su("getprop ro.boot.verifiedbootstate 2>/dev/null").trim()
                                     val lk = su("getprop ro.boot.flash.locked 2>/dev/null").trim()
                                     val propOk = vs == "green" && lk == "1"
