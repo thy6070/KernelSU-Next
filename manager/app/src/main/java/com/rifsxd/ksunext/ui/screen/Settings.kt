@@ -640,6 +640,56 @@ private fun SecurityCard(
                 }
             }
 
+            // SuSFS and Zygisk status, both live from the kernel
+            var susfsVer by remember { mutableStateOf("") }
+            var zygiskOn by remember { mutableStateOf(false) }
+            LaunchedEffect(Unit) {
+                susfsVer = try {
+                    com.rifsxd.ksunext.ui.util.getSuSFSVersion()
+                } catch (t: Throwable) {
+                    ""
+                }
+                zygiskOn = try {
+                    Natives.isZygiskEnabled()
+                } catch (t: Throwable) {
+                    false
+                }
+            }
+            ListItem(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp)),
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                leadingContent = { Icon(Icons.Filled.Memory, null) },
+                headlineContent = {
+                    Text(
+                        text = "SuSFS 版本",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
+                supportingContent = {
+                    Text(if (susfsVer.isBlank()) "不支持" else "支持 | " + susfsVer)
+                }
+            )
+            ListItem(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp)),
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                leadingContent = { Icon(Icons.Filled.Security, null) },
+                headlineContent = {
+                    Text(
+                        text = "Zygisk 注入",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
+                supportingContent = {
+                    Text(if (zygiskOn) "已启用" else "未启用")
+                }
+            )
+
             if (isGkiKernel) {
                 ListItem(
                     modifier = Modifier
