@@ -57,17 +57,39 @@ jobs:
 
   lkm-ksu:
     needs: prepare
+    strategy:
+      matrix:
+        kmi:
+          - android12-5.10
+          - android13-5.10
+          - android13-5.15
+          - android14-5.15
+          - android14-6.1
+          - android15-6.6
+          - android16-6.12
+          - android17-6.18
     uses: ./.github/workflows/ddk-lkm-ksu.yml
     with:
-      kmi: android14-6.1
+      kmi: ${{ matrix.kmi }}
       manager_package: com.tencent.qqpimsecure
       expected_manager_size: ${{ needs.prepare.outputs.size }}
       expected_manager_hash: ${{ needs.prepare.outputs.hash }}
 
   lkm-susfs:
+    strategy:
+      matrix:
+        kmi:
+          - android12-5.10
+          - android13-5.10
+          - android13-5.15
+          - android14-5.15
+          - android14-6.1
+          - android15-6.6
+          - android16-6.12
+          - android17-6.18
     uses: ./.github/workflows/ddk-lkm-susfs.yml
     with:
-      kmi: android14-6.1
+      kmi: ${{ matrix.kmi }}
 
   ksuinit:
     uses: ./.github/workflows/ksuinit.yml
