@@ -470,20 +470,10 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                         "export KSU_VER=1.0.0 ; export KSU_VER_CODE=12100 ; export KSU_KERNEL_VER_CODE=12100 ; " +
                         "'" + ksud + "' module install " + q + " 2>&1"
                     try {
-                        withContext(Dispatchers.IO) {
-                            val pb = ProcessBuilder("/system/bin/sh", "-c", "su -c " + "'" + cmd.replace("'", "'\\''") + "'")
-                            pb.redirectErrorStream(true)
-                            val proc = pb.start()
-                            activeProc = proc
-                            proc.inputStream.bufferedReader().useLines { lines ->
-                                lines.forEach { line ->
-                                    withContext(Dispatchers.Main) {
-                                        termText = (termText + line + "\n").takeLast(20000)
-                                    }
-                                }
-                            }
-                            proc.waitFor()
+                        val result = withContext(Dispatchers.IO) {
+                            Shell.cmd(cmd).exec()
                         }
+                        termText = (result.out + result.err).joinToString("\n").takeLast(20000)
                     } catch (t: Throwable) {
                         termText += "挂载失败: " + (t.message ?: "") + "\n"
                     }
@@ -831,8 +821,10 @@ private fun ProMaxIsland(
         if (longPressPath == null && jumpStep == 9) {
             expanded = false
             navMode = false
+            navTarget = null
             navClosing = false
             jumpStep = 0
+            jumpInput = ""
         }
     }
     LaunchedEffect(longPressTick) {
