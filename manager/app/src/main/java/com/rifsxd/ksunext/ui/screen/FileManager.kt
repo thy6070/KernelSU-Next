@@ -93,6 +93,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
@@ -495,9 +496,13 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                             }
                             if (op == "edit") {
                                 val content = try {
-                                    Shell.cmd("cat " + q(srcPath)).exec().out.joinToString("\n")
-                                } catch (t: Throwable) {
-                                    ""
+                                    java.io.File(srcPath).readText()
+                                } catch (t1: Throwable) {
+                                    try {
+                                        Shell.cmd("cat " + q(srcPath)).exec().out.joinToString("\n")
+                                    } catch (t: Throwable) {
+                                        ""
+                                    }
                                 }
                                 withContext(Dispatchers.Main) {
                                     editPath = srcPath
@@ -1344,7 +1349,10 @@ private fun ProMaxIsland(
                                     val isExec = lowerLp.endsWith(".sh") || lowerLp.endsWith(".so") ||
                                         lowerLp.endsWith(".rc")
                                     Column(
-                                        modifier = Modifier.fillMaxWidth(),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .heightIn(max = 300.dp)
+                                            .verticalScroll(rememberScrollState()),
                                         verticalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
                                         IslandActionButton("移动/复制", Color(0xFF0A84FF)) {
