@@ -2348,9 +2348,6 @@ private fun ModeButton(
                     val savedPath = ctx3.getSharedPreferences("yx_exec", 0).getString("path", null)
                     if (savedPath.isNullOrBlank()) {
                         latencyMsg = "暂无设置"
-                    } else if (savedPath.endsWith(".so")) {
-                        keyInput = ""
-                        showKeyDialog = true
                     } else {
                         onRun(savedPath)
                     }
