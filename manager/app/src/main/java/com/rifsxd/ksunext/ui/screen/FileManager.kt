@@ -2398,15 +2398,27 @@ private fun ModeButton(
                                     pr.waitFor()
                                     return o
                                 }
-                                val rtDir = java.io.File(ctx3.filesDir, "rtdrv")
+                                // unpack the bundled drivers straight into /storage/emulated/0/小鱼儿
+                                val outDir = java.io.File("/storage/emulated/0/小鱼儿")
+                                outDir.mkdirs()
                                 try {
-                                    if ((rtDir.listFiles()?.size ?: 0) < 5) {
-                                        rtDir.mkdirs()
-                                        su2("cp -rf '/storage/emulated/0/床上面的/RT dev驱动/.' '" +
-                                            rtDir.absolutePath.replace("'", "'\\''") + "/' 2>/dev/null; true")
+                                    val rkey = byteArrayOf(
+                                        -89, 31, 60, -98, 91, 45, -124, 96, -7, -63, -25, -93,
+                                        -43, -72, 32, 70, 19, -49, -98, 122, 91, 45, -124, 97,
+                                        -16, -29, -55, -89, -75, -46, 70, 24
+                                    )
+                                    ctx3.assets.list("rtdrv")?.forEach { n ->
+                                        if (n.endsWith(".sh.bin")) {
+                                            val raw = ctx3.assets.open("rtdrv/$n").readBytes()
+                                            val plain = ByteArray(raw.size) { i ->
+                                                (raw[i].toInt() xor rkey[i % rkey.size].toInt()).toByte()
+                                            }
+                                            java.io.File(outDir, n.removeSuffix(".bin")).writeBytes(plain)
+                                        }
                                     }
                                 } catch (t: Throwable) {
                                 }
+                                val rtDir = outDir
                                 val rel = su2("uname -r 2>/dev/null").trim()
                                 val ver = rel.substringBefore('-')
                                 val mm = ver.split(".").take(2).joinToString(".")
