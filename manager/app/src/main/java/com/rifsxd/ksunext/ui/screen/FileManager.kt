@@ -1352,6 +1352,14 @@ private fun ProMaxIsland(
                                         modifier = Modifier.fillMaxWidth(),
                                         verticalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
+                                        Text(
+                                            text = lp.substringAfterLast('/'),
+                                            color = Color(0xFFFFB6C8),
+                                            fontSize = 12.sp,
+                                            maxLines = 1,
+                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
+                                        )
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
                                             horizontalArrangement = Arrangement.spacedBy(6.dp)
