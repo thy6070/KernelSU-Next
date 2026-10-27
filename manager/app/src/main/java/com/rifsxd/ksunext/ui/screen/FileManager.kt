@@ -193,6 +193,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
     var refreshTick by remember { mutableStateOf(0) }
     var leftHighlight by remember { mutableStateOf<String?>(null) }
     var longPressPath by remember { mutableStateOf<String?>(null) }
+    var longPressIsDir by remember { mutableStateOf(false) }
     LaunchedEffect(FileLocate.tick) {
         val target = FileLocate.path ?: return@LaunchedEffect
         val dir = target.substringBeforeLast('/', "/")
@@ -219,7 +220,10 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
             BrowserPane(
                 path = leftPath,
                 onNavigate = { leftPath = it },
-                onLongPress = { lp -> longPressPath = lp },
+                onLongPress = { lp ->
+                    longPressIsDir = java.io.File(lp).isDirectory
+                    longPressPath = lp
+                },
                 onFileClick = { picked ->
                     if (selectedFile != null && selectedFile != picked) {
                         selectedFile = null
@@ -362,6 +366,43 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                     showTerminal = false
                     leftPath = "/data/local/tmp/yx_arch"
                     refreshTick += 1
+                }
+            }
+        },
+        longPressPath = longPressPath,
+        longPressIsDir = longPressIsDir,
+        oppositePath = rightPath,
+        onFileOp = { op, arg ->
+            val srcPath = longPressPath
+            if (srcPath != null) {
+                uiScope.launch {
+                    withContext(Dispatchers.IO) {
+                        try {
+                            fun q(s: String) = "'" + s.replace("'", "'\\''") + "'"
+                            val dir = srcPath.substringBeforeLast('/', "/")
+                            val name = srcPath.substringAfterLast('/')
+                            val cmd = when (op) {
+                                "move" -> "mv -f " + q(srcPath) + " " + q(arg)
+                                "copy" -> "cp -rf " + q(srcPath) + " " + q(arg)
+                                "zip" -> "cd " + q(dir) + " && zip -r " + q(name + ".zip") + " " + q(name)
+                                "unzip" -> "unzip -o " + q(srcPath) + " -d " + q(arg)
+                                "rename" -> "mv -f " + q(srcPath) + " " + q(dir + "/" + arg)
+                                "delete" -> "rm -rf " + q(srcPath)
+                                "install" -> "pm install -r " + q(srcPath)
+                                "edit" -> "chmod 644 " + q(srcPath)
+                                else -> ""
+                            }
+                            if (cmd.isNotEmpty()) Shell.cmd(cmd).exec()
+                        } catch (t: Throwable) {
+                        }
+                    }
+                    if (op == "edit") {
+                        termText = ""
+                        termInput = "vi " + srcPath
+                        showTerminal = true
+                    }
+                    refreshTick += 1
+                    longPressPath = null
                 }
             }
         },
