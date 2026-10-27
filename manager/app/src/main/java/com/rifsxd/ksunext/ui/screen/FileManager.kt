@@ -449,6 +449,10 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                         } catch (t: Throwable) {
                         }
                     }
+                    try {
+                        Shell.getShell().close()
+                    } catch (t: Throwable) {
+                    }
                     refreshTick += 1
                     longPressPath = null
                     runOk = true
@@ -502,6 +506,10 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                     }
                     activeProc = null
                     running = false
+                    try {
+                        Shell.getShell().close()
+                    } catch (t: Throwable) {
+                    }
                 }
             }
         },
@@ -700,10 +708,22 @@ private fun ProMaxIsland(
     var jumpInput by remember { mutableStateOf("") }
     var renameInput by remember { mutableStateOf("") }
     var susfsVer by remember { mutableStateOf("") }
+    var susfsVariant by remember { mutableStateOf("") }
+    var susfsSupp by remember { mutableStateOf(false) }
     var zygiskOn by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
+        susfsSupp = try {
+            com.rifsxd.ksunext.ui.util.getSuSFS() == "Supported"
+        } catch (t: Throwable) {
+            false
+        }
         susfsVer = try {
             com.rifsxd.ksunext.ui.util.getSuSFSVersion()
+        } catch (t: Throwable) {
+            ""
+        }
+        susfsVariant = try {
+            com.rifsxd.ksunext.ui.util.getSuSFSVariant()
         } catch (t: Throwable) {
             ""
         }
@@ -1350,7 +1370,7 @@ private fun ProMaxIsland(
                         }
                         "settings" -> {
                             Text(
-                                text = "SuSFS 版本：" + (susfsVer.ifBlank { "不支持" }),
+                                text = "SuSFS 版本：" + (if (susfsSupp) "支持 | " + susfsVer + " (" + susfsVariant + ")" else "不支持"),
                                 color = Color(0xFFB0B0B8),
                                 fontSize = 11.sp,
                                 modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 2.dp)
