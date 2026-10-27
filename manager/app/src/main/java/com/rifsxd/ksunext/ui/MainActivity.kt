@@ -126,39 +126,7 @@ fun Modifier.horizontalSwipeNavigator(
     destinations: List<BottomBarDestination>,
     isRtl: Boolean,
     onNavigate: (Int) -> Unit
-): Modifier = this /* swipe navigation disabled on purpose */
-
-    var totalDrag = 0f
-
-    detectHorizontalDragGestures(
-        onDragStart = { totalDrag = 0f },
-        onHorizontalDrag = { change, dragAmount ->
-            change.consume()
-            totalDrag += dragAmount
-        },
-        onDragEnd = {
-            val threshold = 150f
-
-            if (kotlin.math.abs(totalDrag) > threshold) {
-                val currentIndex = destinations.indexOfFirst {
-                    it.direction.route == currentRoute
-                }
-
-                if (currentIndex == -1) return@detectHorizontalDragGestures
-
-                if (if (isRtl) totalDrag > 0 else totalDrag < 0) {  
-                    val next = (currentIndex + 1)
-                        .coerceAtMost(destinations.lastIndex)
-                    if (next != currentIndex) onNavigate(next)
-                } else {
-                    val prev = (currentIndex - 1)
-                        .coerceAtLeast(0)
-                    if (prev != currentIndex) onNavigate(prev)
-                }
-            }
-        }
-    )
-}
+): Modifier = this // swipe between tabs disabled on purpose
 
 fun Modifier.trackScroll(
     isScrollingDown: MutableState<Boolean>,
