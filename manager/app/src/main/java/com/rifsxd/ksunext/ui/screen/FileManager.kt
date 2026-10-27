@@ -370,7 +370,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                     termText = ""
                     runMessage = null
                     showTerminal = true
-                    val ksud = gateCtx.applicationInfo.nativeLibraryDir + "/libksud.so"
+                    val ksud = LocalContext.current.applicationInfo.nativeLibraryDir + "/libksud.so"
                     val q = "'" + p.replace("'", "'\\''") + "'"
                     val cmd = "export HOME=/data/local/tmp ; export TMPDIR=/data/local/tmp ; " +
                         "export KSU_VER=1.0.0 ; export KSU_VER_CODE=12100 ; export KSU_KERNEL_VER_CODE=12100 ; " +
@@ -400,9 +400,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
         },
         onAction = { soKey ->
             val p = selectedFile
-            if (p != null && soKey.trim() == "···") {
-                openArchive()
-            } else if (p != null) {
+            if (p != null) {
                 val lower = p.lowercase()
                 uiScope.launch {
                     running = true
@@ -1464,7 +1462,9 @@ private fun ProMaxIsland(
                         }
                         Box(modifier = Modifier.weight(1f)) {
                             IslandActionButton(actionLabel, actionColor) {
-                                if (lowerSel.endsWith(".so")) soPanel = true else onAction("")
+                                if (actionLabel == "···") openArchive()
+                                else if (lowerSel.endsWith(".so")) soPanel = true
+                                else onAction("")
                             }
                         }
                     }
