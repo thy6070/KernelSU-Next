@@ -1369,7 +1369,7 @@ private fun TopBar(
         navigationIcon = {
             if (onBack != null) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                    Text(text = "←", fontSize = 22.sp)
                 }
             }
         },
