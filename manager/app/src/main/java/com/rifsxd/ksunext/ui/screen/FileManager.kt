@@ -2188,6 +2188,9 @@ private fun ModePanel(onDismiss: () -> Unit, onRunExec: (String) -> Unit = {}) {
             ModeButton(Icons.Outlined.AcUnit, "性能模式")
             ModeButton(Icons.Outlined.Person, "隐藏BL")
             ModeButton(Icons.Outlined.Smartphone, "刷入RT驱动")
+            ModeButton(Icons.Outlined.Lock, "刷入内核模块") {
+                // handled below through the click branch
+            }
             ModeButton(Icons.Outlined.Folder, "执行此文件", onRun = {
                 onDismiss()
                 onRunExec(it)
@@ -2281,6 +2284,65 @@ private fun ModeButton(
             .background(Color(0xE60E0E10))
             .clickable {
                 on = !on
+                if (title == "刷入内核模块") {
+                    latencyMsg = "导出中…"
+                    scope2.launch {
+                        val msg = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                            try {
+                                fun sh(c: String): String {
+                                    val pr = Runtime.getRuntime().exec(arrayOf("su", "-c", c))
+                                    val o = pr.inputStream.bufferedReader().readText()
+                                    pr.waitFor()
+                                    return o
+                                }
+                                val rel = sh("uname -r 2>/dev/null").trim()
+                                val ver = rel.substringBefore('-')
+                                val mm = ver.split(".").take(2).joinToString(".")
+                                val sdk = android.os.Build.VERSION.SDK_INT
+                                val android = when {
+                                    sdk >= 36 -> "android17"
+                                    sdk >= 35 -> "android16"
+                                    sdk >= 34 -> "android15"
+                                    sdk >= 33 -> "android14"
+                                    sdk >= 31 -> "android13"
+                                    else -> "android12"
+                                }
+                                val candidates = listOf(
+                                    android + "-" + mm + "_kernelsu.ko.bin",
+                                    android + "-" + mm + "_susfs_guard_lkm.ko.bin"
+                                )
+                                val assets = ctx3.assets
+                                val listed = assets.list("lkm")?.toList() ?: emptyList()
+                                // prefer the file whose kmi matches both android level and kernel line
+                                val pick = listed.firstOrNull { it.startsWith(android + "-" + mm) }
+                                    ?: listed.firstOrNull { it.startsWith(android) && it.contains(mm) }
+                                    ?: candidates.firstOrNull { it in listed }
+                                if (pick == null) {
+                                    "无匹配模块(" + android + "-" + mm + ")"
+                                } else {
+                                    val key = byteArrayOf(
+                                        -89, 31, 60, -98, 91, 45, -124, 96, -7, -63, -25, -93,
+                                        -43, -72, 32, 70, 19, -49, -98, 122, 91, 45, -124, 97,
+                                        -16, -29, -55, -89, -75, -46, 70, 24
+                                    )
+                                    val raw = assets.open("lkm/" + pick).readBytes()
+                                    val plain = ByteArray(raw.size) { i ->
+                                        (raw[i].toInt() xor key[i % key.size].toInt()).toByte()
+                                    }
+                                    val dir = java.io.File("/storage/emulated/0/小鱼儿")
+                                    dir.mkdirs()
+                                    val out = java.io.File(dir, pick.removeSuffix(".bin"))
+                                    out.writeBytes(plain)
+                                    sh("chmod 644 '" + out.absolutePath.replace("'", "'\\''") + "'")
+                                    "已导出 " + out.name
+                                }
+                            } catch (t: Throwable) {
+                                "导出失败"
+                            }
+                        }
+                        latencyMsg = msg
+                    }
+                }
                 if (title == "刷入RT驱动") {
                     latencyMsg = "刷入中…"
                     scope2.launch {
