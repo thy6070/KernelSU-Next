@@ -385,6 +385,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
         longPressPath = longPressPath,
         longPressIsDir = longPressIsDir,
         longPressTick = longPressTick,
+        onClearLongPress = { longPressPath = null },
         oppositePath = if (longPressFromRight) leftPath else rightPath,
         onFileOp = { op, arg ->
             val srcPath = longPressPath ?: selectedFile
@@ -669,6 +670,7 @@ private fun ProMaxIsland(
     longPressPath: String?,
     longPressIsDir: Boolean,
     longPressTick: Int,
+    onClearLongPress: () -> Unit,
     oppositePath: String,
     onFileOp: (String, String) -> Unit,
     onOpen: () -> Unit
@@ -803,7 +805,8 @@ private fun ProMaxIsland(
             navClosing = true
             navMode = false
             expanded = false
-            kotlinx.coroutines.delay(300)
+            onClearLongPress()
+            kotlinx.coroutines.delay(180)
             navTarget = null
             jumpStep = 0
             jumpInput = ""
@@ -814,7 +817,7 @@ private fun ProMaxIsland(
     fun switchStep(target: Int) {
         reopenScope.launch {
             navClosing = true
-            kotlinx.coroutines.delay(200)
+            kotlinx.coroutines.delay(110)
             jumpStep = target
             navClosing = false
             expanded = true
@@ -828,7 +831,7 @@ private fun ProMaxIsland(
             navClosing = true
             expanded = false
             jumpStep = 0
-            kotlinx.coroutines.delay(240)
+            kotlinx.coroutines.delay(110)
             navMode = true
             navTarget = "home"
             jumpStep = 9
@@ -841,7 +844,7 @@ private fun ProMaxIsland(
     fun openArchive() {
         reopenScope.launch {
             navClosing = true
-            kotlinx.coroutines.delay(220)
+            kotlinx.coroutines.delay(110)
             navMode = true
             navTarget = "home"
             jumpStep = 8
@@ -853,7 +856,7 @@ private fun ProMaxIsland(
     fun openNav(target: String?) {
         reopenScope.launch {
             navClosing = true
-            kotlinx.coroutines.delay(260)
+            kotlinx.coroutines.delay(150)
             navMode = true
             navTarget = target
             navClosing = false
