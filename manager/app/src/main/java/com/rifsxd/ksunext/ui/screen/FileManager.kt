@@ -2172,6 +2172,11 @@ private fun ModeButton(
             }
     }
     LaunchedEffect(title) {
+        if (title == "性能模式") {
+            on = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                java.io.File("/data/adb/service.d/xy_perf.sh").exists()
+            }
+        }
         if (title == "放开通行") {
             on = withContext(kotlinx.coroutines.Dispatchers.IO) {
                 java.io.File("/data/adb/service.d/xy_open_access.sh").exists()
@@ -2188,6 +2193,47 @@ private fun ModeButton(
             .background(Color(0xE60E0E10))
             .clickable {
                 on = !on
+                if (title == "性能模式") {
+                    val enabling = on
+                    latencyMsg = "处理中…"
+                    scope2.launch {
+                        val msg = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                            try {
+                                fun su(c: String): String {
+                                    val p = Runtime.getRuntime().exec(arrayOf("su", "-c", c))
+                                    val out = p.inputStream.bufferedReader().readText()
+                                    p.waitFor()
+                                    return out
+                                }
+                                val path = "/data/adb/service.d/xy_perf.sh"
+                                if (enabling) {
+                                    val script = "#!/system/bin/sh\n" +
+                                        "sleep 20\n" +
+                                        "for c in /sys/devices/system/cpu/cpu*/cpufreq; do\n" +
+                                        "  [ -f \"\$c/scaling_governor\" ] || continue\n" +
+                                        "  echo performance > \"\$c/scaling_governor\" 2>/dev/null\n" +
+                                        "done\n" +
+                                        "for z in /sys/class/thermal/thermal_zone*/mode; do echo disabled > \"\$z\" 2>/dev/null; done\n" +
+                                        "settings put system peak_refresh_rate 120 2>/dev/null\n" +
+                                        "settings put system min_refresh_rate 120 2>/dev/null\n"
+                                    su("mkdir -p /data/adb/service.d")
+                                    su("printf '%s' '" + script.replace("'", "'\\''") + "' > $path ; chmod 755 $path")
+                                    su("sh $path >/dev/null 2>&1")
+                                    val gov = su("cat /sys/devices/system/cpu/cpu7/cpufreq/scaling_governor 2>/dev/null || cat /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor 2>/dev/null").trim()
+                                    if (gov == "performance") "已开启 · performance" else "开启失败 · " + gov.ifEmpty { "?" }
+                                } else {
+                                    su("rm -f $path")
+                                    su("for c in /sys/devices/system/cpu/cpu*/cpufreq; do [ -f \"\$c/scaling_governor\" ] && grep -q schedutil \"\$c/scaling_available_governors\" 2>/dev/null && echo schedutil > \"\$c/scaling_governor\" 2>/dev/null; done; settings delete system peak_refresh_rate 2>/dev/null; settings delete system min_refresh_rate 2>/dev/null; true")
+                                    val gov = su("cat /sys/devices/system/cpu/cpu7/cpufreq/scaling_governor 2>/dev/null").trim()
+                                    "已恢复 · " + gov.ifEmpty { "?" }
+                                }
+                            } catch (t: Throwable) {
+                                "操作失败"
+                            }
+                        }
+                        latencyMsg = msg
+                    }
+                }
                 if (title == "放开通行") {
                     val enabling = on
                     scope2.launch {
