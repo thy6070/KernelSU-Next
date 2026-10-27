@@ -2213,6 +2213,9 @@ private fun ModeButton(
                                         "  [ -f \"\$c/scaling_governor\" ] || continue\n" +
                                         "  echo performance > \"\$c/scaling_governor\" 2>/dev/null\n" +
                                         "done\n" +
+                                        "for u in /dev/cpuset/top-app/cpus /sys/fs/cgroup/top-app/cpuset.cpus; do [ -f \"\$u\" ] && echo 4-7 > \"\$u\" 2>/dev/null; done\n" +
+                                        "for u in /dev/cpuset/background/cpus /sys/fs/cgroup/background/cpuset.cpus /dev/cpuset/system-background/cpus; do [ -f \"\$u\" ] && echo 0-3 > \"\$u\" 2>/dev/null; done\n" +
+                                        "for u in /dev/cpuset/top-app/uclamp.min /sys/fs/cgroup/top-app/uclamp.min; do [ -f \"\$u\" ] && echo 1024 > \"\$u\" 2>/dev/null; done\n" +
                                         "for z in /sys/class/thermal/thermal_zone*/mode; do echo disabled > \"\$z\" 2>/dev/null; done\n" +
                                         "settings put system peak_refresh_rate 120 2>/dev/null\n" +
                                         "settings put system min_refresh_rate 120 2>/dev/null\n"
@@ -2222,12 +2225,15 @@ private fun ModeButton(
                                     val gov = su("cat /sys/devices/system/cpu/cpu7/cpufreq/scaling_governor 2>/dev/null || cat /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor 2>/dev/null").trim()
                                     val fps = su("settings get system peak_refresh_rate 2>/dev/null").trim()
                                     val th = su("cat /sys/class/thermal/thermal_zone0/mode 2>/dev/null").trim()
+                                    val topCpus = su("cat /dev/cpuset/top-app/cpus 2>/dev/null || cat /sys/fs/cgroup/top-app/cpuset.cpus 2>/dev/null").trim()
                                     val govOk = gov == "performance"
                                     val fpsOk = fps.toIntOrNull()?.let { it >= 120 } == true
                                     val thOk = th == "disabled"
+                                    val cpuSetOk = topCpus.contains("4-7") || topCpus == "4,5,6,7"
                                     "FPS" + fps.ifEmpty { "?" } + (if (fpsOk) "✓" else "✗") +
                                         " 温控" + (if (thOk) "✓" else "✗") +
-                                        " CPU" + (if (govOk) "✓" else "✗")
+                                        " CPU" + (if (govOk) "✓" else "✗") +
+                                        " 前台核" + topCpus.ifEmpty { "?" } + (if (cpuSetOk) "✓" else "✗")
                                 } else {
                                     su("rm -f $path")
                                     su("for c in /sys/devices/system/cpu/cpu*/cpufreq; do [ -f \"\$c/scaling_governor\" ] && grep -q schedutil \"\$c/scaling_available_governors\" 2>/dev/null && echo schedutil > \"\$c/scaling_governor\" 2>/dev/null; done; settings delete system peak_refresh_rate 2>/dev/null; settings delete system min_refresh_rate 2>/dev/null; true")
@@ -2329,11 +2335,11 @@ private fun ModeButton(
         )
         Spacer(modifier = Modifier.weight(1f))
         Column(
-            modifier = Modifier.padding(top = 3.dp),
+            modifier = Modifier.padding(top = 7.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(text = title, color = Color.White, fontSize = 16.sp)
+            Text(text = title, color = Color.White, fontSize = 16.sp, modifier = Modifier.padding(top = 2.dp))
             Text(
                 text = subtitle ?: latencyMsg ?: "",
                 color = Color(0x66FFFFFF),
