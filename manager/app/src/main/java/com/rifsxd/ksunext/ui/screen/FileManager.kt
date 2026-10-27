@@ -229,7 +229,6 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                     longPressIsDir = !lp.endsWith(".apk") && !lp.contains(".")
                     longPressFromRight = false
                     longPressPath = lp
-                    selectedFile = lp
                     longPressTick += 1
                 },
                 onFileClick = { picked ->
@@ -258,7 +257,6 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                     longPressIsDir = !lp.endsWith(".apk") && !lp.contains(".")
                     longPressFromRight = true
                     longPressPath = lp
-                    selectedFile = lp
                     longPressTick += 1
                 },
                 onFileClick = { picked ->
@@ -1033,9 +1031,9 @@ private fun ProMaxIsland(
                         running = running,
                         modifier = Modifier.weight(1f)
                     )
-                } else if (sel != null) {
+                } else if (sel != null || longPressPath != null) {
                     Text(
-                        text = selName,
+                        text = if (longPressPath != null) longPressPath.substringAfterLast('/') else selName,
                         modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
                         fontSize = 12.sp,
                         maxLines = 1,
