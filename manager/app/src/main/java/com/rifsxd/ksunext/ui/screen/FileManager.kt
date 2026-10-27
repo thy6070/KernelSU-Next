@@ -2193,6 +2193,53 @@ private fun ModeButton(
             .background(Color(0xE60E0E10))
             .clickable {
                 on = !on
+                if (title == "隐藏BL") {
+                    val enabling = on
+                    latencyMsg = "处理中…"
+                    scope2.launch {
+                        val msg = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                            try {
+                                fun su(c: String): String {
+                                    val p = Runtime.getRuntime().exec(arrayOf("su", "-c", c))
+                                    val out = p.inputStream.bufferedReader().readText()
+                                    p.waitFor()
+                                    return out
+                                }
+                                // resetprop is what makes the props invisible to detection
+                                if (enabling) {
+                                    su("resetprop ro.boot.verifiedbootstate green 2>/dev/null; " +
+                                        "resetprop ro.boot.flash.locked 1 2>/dev/null; " +
+                                        "resetprop ro.boot.veritymode enforcing 2>/dev/null; " +
+                                        "resetprop ro.secureboot.lockstate locked 2>/dev/null; " +
+                                        "resetprop ro.boot.warranty_bit 0 2>/dev/null; true")
+                                    // Try to pull the AlwaysStrong module so the keybox is valid
+                                    su("mkdir -p /data/local/tmp")
+                                    su("curl -sL --max-time 60 -o /data/local/tmp/as.zip " +
+                                        "'https://gitlab.com/api/v4/projects/87739512/packages/generic/AlwaysStrong/v1.0.5-r2/AlwaysStrong-v1.0.5.zip' 2>/dev/null; " +
+                                        "[ -s /data/local/tmp/as.zip ] && echo ok || echo fail")
+                                    val ksud = "/data/adb/ksud"
+                                    val installed = su("[ -x \"$ksud\" ] && \"$ksud\" module install /data/local/tmp/as.zip 2>&1 || echo noksud")
+                                    val vs = su("getprop ro.boot.verifiedbootstate 2>/dev/null").trim()
+                                    val lk = su("getprop ro.boot.flash.locked 2>/dev/null").trim()
+                                    val ok = vs == "green" && lk == "1"
+                                    (if (ok) "BL已伪装 · 密钥" else "伪装失败 · ") +
+                                        (if (installed.contains("noksud")) "无ksud" else if (ok) "✓" else "✗")
+                                } else {
+                                    su("resetprop --delete ro.boot.verifiedbootstate 2>/dev/null; " +
+                                        "resetprop --delete ro.boot.flash.locked 2>/dev/null; " +
+                                        "resetprop --delete ro.boot.veritymode 2>/dev/null; " +
+                                        "resetprop --delete ro.secureboot.lockstate 2>/dev/null; " +
+                                        "resetprop --delete ro.boot.warranty_bit 2>/dev/null; true")
+                                    su("for m in /data/adb/modules/AlwaysStrong /data/adb/modules/alwaysstrong; do [ -d \"$m\" ] && touch \"$m/remove\"; done 2>/dev/null; true")
+                                    "已恢复 BL 状态"
+                                }
+                            } catch (t: Throwable) {
+                                "操作失败"
+                            }
+                        }
+                        latencyMsg = msg
+                    }
+                }
                 if (title == "性能模式") {
                     val enabling = on
                     latencyMsg = "处理中…"
