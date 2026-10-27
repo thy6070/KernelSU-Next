@@ -194,6 +194,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
     var leftHighlight by remember { mutableStateOf<String?>(null) }
     var longPressPath by remember { mutableStateOf<String?>(null) }
     var longPressIsDir by remember { mutableStateOf(false) }
+    var longPressTick by remember { mutableStateOf(0) }
     LaunchedEffect(FileLocate.tick) {
         val target = FileLocate.path ?: return@LaunchedEffect
         val dir = target.substringBeforeLast('/', "/")
@@ -221,8 +222,9 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                 path = leftPath,
                 onNavigate = { leftPath = it },
                 onLongPress = { lp ->
-                    longPressIsDir = java.io.File(lp).isDirectory
+                    longPressIsDir = !lp.endsWith(".apk") && !lp.contains(".")
                     longPressPath = lp
+                    longPressTick += 1
                 },
                 onFileClick = { picked ->
                     if (selectedFile != null && selectedFile != picked) {
@@ -246,6 +248,11 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
             BrowserPane(
                 path = rightPath,
                 onNavigate = { rightPath = it },
+                onLongPress = { lp ->
+                    longPressIsDir = !lp.endsWith(".apk") && !lp.contains(".")
+                    longPressPath = lp
+                    longPressTick += 1
+                },
                 onFileClick = { picked ->
                     if (selectedFile != null && selectedFile != picked) {
                         selectedFile = null
@@ -371,6 +378,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
         },
         longPressPath = longPressPath,
         longPressIsDir = longPressIsDir,
+        longPressTick = longPressTick,
         oppositePath = rightPath,
         onFileOp = { op, arg ->
             val srcPath = longPressPath
@@ -555,6 +563,7 @@ private fun ProMaxIsland(
     onArchiveMount: () -> Unit,
     longPressPath: String?,
     longPressIsDir: Boolean,
+    longPressTick: Int,
     oppositePath: String,
     onFileOp: (String, String) -> Unit,
     onOpen: () -> Unit
@@ -707,7 +716,8 @@ private fun ProMaxIsland(
         }
     }
 
-    LaunchedEffect(longPressPath) {
+    LaunchedEffect(longPressTick) {
+        if (longPressTick <= 0) return@LaunchedEffect
         val lp = longPressPath ?: return@LaunchedEffect
         if (lp.isNotEmpty()) {
             navClosing = true
