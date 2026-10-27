@@ -2118,7 +2118,6 @@ private fun YukiWave(color: Color, running: Boolean, modifier: Modifier = Modifi
 
 @Composable
 private fun ModePanel(onDismiss: () -> Unit) {
-    val ctx = androidx.compose.ui.platform.LocalContext.current
     Box(
         modifier = Modifier.fillMaxSize().clickable { onDismiss() },
         contentAlignment = Alignment.Center
@@ -2142,9 +2141,7 @@ private fun ModeButton(
     title: String
 ) {
     var on by remember { mutableStateOf(false) }
-    val ctx2 = androidx.compose.ui.platform.LocalContext.current
     val scope2 = rememberCoroutineScope()
-    if (title == "放开通行") {
 
     Row(
         modifier = Modifier
