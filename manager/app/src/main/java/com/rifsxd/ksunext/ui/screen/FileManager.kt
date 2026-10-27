@@ -2682,9 +2682,9 @@ val modDir = su("grep -l '小鱼儿附属' /data/adb/modules/*/module.prop 2>/de
                                         "allow untrusted_app proc_modules file { open read getattr }\n"
                                     val rf = "/data/local/tmp/sepolicy_rules.txt"
                                     su("printf '%s' '" + rules.replace("'", "'\''") + "' > $rf ; chmod 644 $rf ; true")
-                                    val ks = su("for c in /data/adb/ksud /data/adb/ksu/bin/ksud; do [ -x \"\$c\" ] && echo \"\$c\" && break; done 2>/dev/null").trim()
-                                    if (ks.isNotEmpty()) {
-                                        su("'" + ks + "' sepolicy apply $rf 2>&1; true")
+                                    val ks = ctx3.applicationInfo.nativeLibraryDir + "/libksud.so"
+                                    if (java.io.File(ks).exists()) {
+                                        su("'" + ks.replace("'", "'\\''") + "' sepolicy apply $rf 2>&1; true")
                                     }
                                 } else {
                                     try {
@@ -2703,9 +2703,9 @@ val modDir = su("grep -l '小鱼儿附属' /data/adb/modules/*/module.prop 2>/de
                                         "deny untrusted_app proc_modules file { open read getattr }\n"
                                     val rf = "/data/local/tmp/sepolicy_deny.txt"
                                     su("printf '%s' '" + rules.replace("'", "'\''") + "' > $rf ; chmod 644 $rf ; true")
-                                    val ks = su("for c in /data/adb/ksud /data/adb/ksu/bin/ksud; do [ -x \"\$c\" ] && echo \"\$c\" && break; done 2>/dev/null").trim()
-                                    if (ks.isNotEmpty()) {
-                                        su("'" + ks + "' sepolicy apply $rf 2>&1; true")
+                                    val ks = ctx3.applicationInfo.nativeLibraryDir + "/libksud.so"
+                                    if (java.io.File(ks).exists()) {
+                                        su("'" + ks.replace("'", "'\\''") + "' sepolicy apply $rf 2>&1; true")
                                     }
                                 }
                             } catch (t: Throwable) {
