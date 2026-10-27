@@ -213,72 +213,6 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
     val panelP = remember { Animatable(0f) }
     val uiScope = rememberCoroutineScope()
 
-    if (editPath != null) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xE6000000))
-                .padding(24.dp)
-        ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                Text(
-                    text = "编辑 " + (editPath ?: "").substringAfterLast('/'),
-                    color = Color.White,
-                    fontSize = 13.sp,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                androidx.compose.foundation.text.BasicTextField(
-                    value = editText,
-                    onValueChange = { editText = it },
-                    textStyle = androidx.compose.ui.text.TextStyle(
-                        color = Color.White,
-                        fontSize = 12.sp,
-                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-                    ),
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .background(Color(0xFF141418), RoundedCornerShape(10.dp))
-                        .padding(10.dp)
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        IslandActionButton("取消", Color(0xFF3A3A3C)) {
-                            editPath = null
-                        }
-                    }
-                    Box(modifier = Modifier.weight(1f)) {
-                        IslandActionButton("保存", Color(0xFF0A84FF)) {
-                            val target = editPath
-                            if (target != null) {
-                                uiScope.launch {
-                                    withContext(Dispatchers.IO) {
-                                        try {
-                                            val b64 = android.util.Base64.encodeToString(
-                                                editText.toByteArray(),
-                                                android.util.Base64.NO_WRAP
-                                            )
-                                            Shell.cmd(
-                                                "echo '" + b64 + "' | base64 -d > '" +
-                                                    target.replace("'", "'\\''") + "'"
-                                            ).exec()
-                                        } catch (t: Throwable) {
-                                        }
-                                    }
-                                    editPath = null
-                                    refreshTick += 1
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     Box(modifier = Modifier.fillMaxSize().background(Color(BG_COLOR))) {
         Box(
             modifier = Modifier
@@ -464,7 +398,10 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                             val cmd = when (op) {
                                 "move" -> "mv -f " + q(srcPath) + " " + q(arg)
                                 "copy" -> "cp -rf " + q(srcPath) + " " + q(arg)
-                                "zip" -> "cd " + q(dir) + " && zip -r " + q(name + ".zip") + " " + q(name)
+                                "zip" -> "cd " + q(dir) +
+                                    " && (command -v zip >/dev/null 2>&1 && zip -r " + q(name + ".zip") + " " + q(name) +
+                                    " || /data/adb/ksu/bin/busybox zip -r " + q(name + ".zip") + " " + q(name) +
+                                    " || /data/adb/magisk/busybox zip -r " + q(name + ".zip") + " " + q(name) + ")"
                                 "unzip" -> "unzip -o " + q(srcPath) + " -d " + q(arg)
                                 "rename" -> "mv -f " + q(srcPath) + " " + q(dir + "/" + arg)
                                 "delete" -> "rm -rf " + q(srcPath)
@@ -637,6 +574,72 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                 })
             }
         }
+    if (editPath != null) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xE6000000))
+                .padding(24.dp)
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                Text(
+                    text = "编辑 " + (editPath ?: "").substringAfterLast('/'),
+                    color = Color.White,
+                    fontSize = 13.sp,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                androidx.compose.foundation.text.BasicTextField(
+                    value = editText,
+                    onValueChange = { editText = it },
+                    textStyle = androidx.compose.ui.text.TextStyle(
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .background(Color(0xFF141418), RoundedCornerShape(10.dp))
+                        .padding(10.dp)
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        IslandActionButton("取消", Color(0xFF3A3A3C)) {
+                            editPath = null
+                        }
+                    }
+                    Box(modifier = Modifier.weight(1f)) {
+                        IslandActionButton("保存", Color(0xFF0A84FF)) {
+                            val target = editPath
+                            if (target != null) {
+                                uiScope.launch {
+                                    withContext(Dispatchers.IO) {
+                                        try {
+                                            val b64 = android.util.Base64.encodeToString(
+                                                editText.toByteArray(),
+                                                android.util.Base64.NO_WRAP
+                                            )
+                                            Shell.cmd(
+                                                "echo '" + b64 + "' | base64 -d > '" +
+                                                    target.replace("'", "'\\''") + "'"
+                                            ).exec()
+                                        } catch (t: Throwable) {
+                                        }
+                                    }
+                                    editPath = null
+                                    refreshTick += 1
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     }
 }
 
@@ -1360,46 +1363,28 @@ private fun ProMaxIsland(
                                             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                                             modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
                                         )
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                        ) {
-                                            Box(modifier = Modifier.weight(1f)) {
-                                                IslandActionButton("移动/复制", Color(0xFF0A84FF)) {
-                                                    switchStep(10)
-                                                }
-                                            }
-                                            Box(modifier = Modifier.weight(1f)) {
-                                                IslandActionButton(
-                                                    if (isArchive) "解压" else "压缩",
-                                                    Color(0xFF0A84FF)
-                                                ) {
-                                                    if (isArchive) onFileOp("unzip", oppositePath)
-                                                    else onFileOp("zip", "")
-                                                    closeIsland()
-                                                }
-                                            }
+                                        IslandActionButton("移动/复制", Color(0xFF0A84FF)) {
+                                            switchStep(10)
                                         }
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        IslandActionButton(
+                                            if (isArchive) "解压" else "压缩",
+                                            Color(0xFF0A84FF)
                                         ) {
-                                            Box(modifier = Modifier.weight(1f)) {
-                                                IslandActionButton("重命名", Color(0xFF0A84FF)) {
-                                                    switchStep(11)
-                                                }
+                                            if (isArchive) onFileOp("unzip", oppositePath)
+                                            else onFileOp("zip", "")
+                                            closeIsland()
+                                        }
+                                        IslandActionButton("重命名", Color(0xFF0A84FF)) {
+                                            switchStep(11)
+                                        }
+                                        if (longPressIsDir) {
+                                            IslandActionButton("删除", Color(0xFFFF3B30)) {
+                                                switchStep(12)
                                             }
-                                            Box(modifier = Modifier.weight(1f)) {
-                                                if (longPressIsDir) {
-                                                    IslandActionButton("删除", Color(0xFFFF3B30)) {
-                                                        switchStep(12)
-                                                    }
-                                                } else {
-                                                    IslandActionButton("分享", Color(0xFF0A84FF)) {
-                                                        onFileOp("share", "")
-                                                        closeIsland()
-                                                    }
-                                                }
+                                        } else {
+                                            IslandActionButton("分享", Color(0xFF0A84FF)) {
+                                                onFileOp("share", "")
+                                                closeIsland()
                                             }
                                         }
                                         if (!longPressIsDir) {
