@@ -800,9 +800,10 @@ private fun ProMaxIsland(
         sel == null -> ""
         lowerSel.endsWith(".apk") -> "安装"
         lowerSel.endsWith(".so") -> "启动"
+        lowerSel.endsWith(".sh") || lowerSel.endsWith(".rc") -> "执行"
         lowerSel.endsWith(".zip") || lowerSel.endsWith(".tar") || lowerSel.endsWith(".gz") ||
             lowerSel.endsWith(".7z") || lowerSel.endsWith(".rar") || lowerSel.endsWith(".xz") -> "更多"
-        else -> "执行"
+        else -> "编辑"
     }
     val actionColor = Color(0xFF0A84FF)
 
@@ -1654,6 +1655,7 @@ private fun ProMaxIsland(
                         Box(modifier = Modifier.weight(1f)) {
                             IslandActionButton(actionLabel, actionColor) {
                                 if (actionLabel == "更多") openArchive()
+                                else if (actionLabel == "编辑") onFileOp("edit", "")
                                 else if (lowerSel.endsWith(".so")) soPanel = true
                                 else onAction("")
                             }
