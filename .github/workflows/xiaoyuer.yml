@@ -103,7 +103,7 @@ jobs:
       pack_ksuinit: true
 
   build-manager:
-    needs: [prepare, build-ksud]
+    needs: [prepare, build-ksud, lkm-ksu, lkm-susfs]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -123,6 +123,12 @@ jobs:
           name: ksud-aarch64-linux-android
           path: ksud-artifact
 
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: aarch64-*-lkm
+          path: lkm-artifacts
+          merge-multiple: true
+
       - name: Wire signing and ksud payload
         run: |
           set -euo pipefail
@@ -136,6 +142,9 @@ jobs:
             echo "KEY_PASSWORD=$PASS"
           } >> manager/gradle.properties
           ls -la manager/app/src/main/jniLibs/arm64-v8a
+
+      - name: Bundle LKM payloads (obfuscated)
+        run: python3 .github/brand/pack_lkm.py lkm-artifacts manager/app/src/main/assets/lkm
 
       - name: Spoof namespace
         run: python3 .github/brand/spoof_ns.py
