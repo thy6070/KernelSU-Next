@@ -192,6 +192,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
     var selectedFile by remember { mutableStateOf<String?>(null) }
     var refreshTick by remember { mutableStateOf(0) }
     var leftHighlight by remember { mutableStateOf<String?>(null) }
+    var longPressPath by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(FileLocate.tick) {
         val target = FileLocate.path ?: return@LaunchedEffect
         val dir = target.substringBeforeLast('/', "/")
@@ -218,6 +219,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
             BrowserPane(
                 path = leftPath,
                 onNavigate = { leftPath = it },
+                onLongPress = { lp -> longPressPath = lp },
                 onFileClick = { picked ->
                     if (selectedFile != null && selectedFile != picked) {
                         selectedFile = null
@@ -1833,6 +1835,7 @@ private fun BrowserPane(
     refreshTick: Int = 0,
     selectedPath: String? = null,
     highlightName: String? = null,
+    onLongPress: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var entries by remember { mutableStateOf<List<FsEntry>>(emptyList()) }
@@ -1891,7 +1894,8 @@ private fun BrowserPane(
                 highlight = highlightName,
                 onClick = {
                     if (entry.isDir) onNavigate(joinPath(path, entry.name)) else onFileClick(joinPath(path, entry.name))
-                }
+                },
+                onLongClick = { onLongPress(rowPath) }
             )
         }
     }
