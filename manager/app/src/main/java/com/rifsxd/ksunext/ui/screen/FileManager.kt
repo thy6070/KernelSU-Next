@@ -433,6 +433,8 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                 ok = res.isSuccess
                             }
                             if (op == "share") {
+                                // verbatim from the source: copy with root, keep the file name,
+                                // then try every plausible FileProvider authority
                                 val shareDir = java.io.File(appCtx.cacheDir, "share")
                                 shareDir.mkdirs()
                                 val dest = java.io.File(shareDir, java.io.File(srcPath).name)
@@ -440,34 +442,48 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                     dest.delete()
                                 } catch (t: Throwable) {
                                 }
-                                val cpOut = runCatching {
+                                runCatching {
                                     val pr = Runtime.getRuntime().exec(arrayOf("su", "-c",
-                                        "cp -f " + q(srcPath) + " " + q(dest.absolutePath) +
-                                            " ; chmod 644 " + q(dest.absolutePath) +
-                                            " ; [ -s " + q(dest.absolutePath) + " ] && echo ok || echo fail"))
-                                    val o = pr.inputStream.bufferedReader().readText()
+                                        "cp " + q(srcPath) + " " + q(dest.absolutePath) +
+                                            " ; chmod 644 " + q(dest.absolutePath)))
                                     pr.waitFor()
-                                    o.trim()
-                                }.getOrDefault("")
-                                if (cpOut != "ok") {
-                                    withContext(Dispatchers.Main) {
-                                        runMessage = "分享失败：无法复制"
+                                }
+                                var note: String? = null
+                                var launched = false
+                                if (!dest.exists()) {
+                                    note = "提取失败"
+                                } else {
+                                    val candidates = listOf(
+                                        appCtx.packageName + ".fileprovider",
+                                        "com.rifsxd.ksunext.fileprovider"
+                                    )
+                                    for (authority in candidates) {
+                                        if (launched) break
+                                        try {
+                                            val uri = androidx.core.content.FileProvider.getUriForFile(
+                                                appCtx, authority, dest
+                                            )
+                                            val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                                type = "application/octet-stream"
+                                                putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                                                putExtra(android.content.Intent.EXTRA_TITLE, dest.name)
+                                                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                            }
+                                            withContext(Dispatchers.Main) {
+                                                val chooser = android.content.Intent.createChooser(send, "分享")
+                                                chooser.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                                appCtx.startActivity(chooser)
+                                            }
+                                            launched = true
+                                        } catch (t: Throwable) {
+                                            note = t.message
+                                        }
                                     }
                                 }
-                                val uri = androidx.core.content.FileProvider.getUriForFile(
-                                    appCtx,
-                                    appCtx.packageName + ".fileprovider",
-                                    dest
-                                )
-                                withContext(Dispatchers.Main) {
-                                    val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                                        type = "*/*"
-                                        putExtra(android.content.Intent.EXTRA_STREAM, uri)
-                                        addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                if (note != null && !launched) {
+                                    withContext(Dispatchers.Main) {
+                                        runMessage = "分享失败：" + note.take(40)
                                     }
-                                    appCtx.startActivity(
-                                        android.content.Intent.createChooser(send, "分享")
-                                    )
                                 }
                             }
                             if (op == "edit") {
