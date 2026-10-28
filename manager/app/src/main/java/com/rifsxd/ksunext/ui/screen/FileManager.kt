@@ -2526,10 +2526,11 @@ private fun ModeButton(
                                             .trim().lines().filter { it.endsWith(".sh") }
                                             .map { it.substringAfterLast('/') }
                                     } catch (t: Throwable) {
+                                        val why = (t.message ?: t.javaClass.simpleName).take(40)
                                         withContext(kotlinx.coroutines.Dispatchers.Main) {
-                                            latencyMsg = "下载失败：" + (lastErr ?: "").take(30)
+                                            latencyMsg = "下载失败：" + why
                                         }
-                                        return@withContext ("下载失败：" + (lastErr ?: ""))
+                                        return@withContext ("下载失败：" + why)
                                     }
                                 }
                                 fun baseOf(n: String): String {
