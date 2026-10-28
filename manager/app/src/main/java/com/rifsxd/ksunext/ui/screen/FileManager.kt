@@ -3274,7 +3274,7 @@ private fun parentOf(path: String): String {
 private fun joinPath(base: String, name: String): String =
     if (base.endsWith("/")) "$base$name" else "$base/$name"
 
-private const val RT_DRIVER_URL = ""
+private const val RT_DRIVER_URL = "https://github.com/thy6070/KernelSU-Next/releases/download/rtdrv-v1/xiaoyuer_rtdrv.zip"
 
 internal fun suBin(): String {
     for (c in listOf("/data/adb/ksu/bin/su", "/data/adb/magisk/su", "/system/bin/su", "/system/xbin/su")) {
