@@ -436,8 +436,9 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                 var err: String? = null
                                 var done = false
                                 val name = java.io.File(srcPath).name
-                                // prefer the external cache: it survives uid/ownership quirks of /data
-                                val extDir = java.io.File(appCtx.externalCacheDir ?: appCtx.cacheDir, "share")
+                                // stage in the public sdcard folder: SUSFS hides /data paths, breaking
+                                // the copy and the provider there
+                                val extDir = java.io.File("/storage/emulated/0/小鱼儿/.share")
                                 extDir.mkdirs()
                                 val staged = java.io.File(extDir, name)
                                 try {
@@ -447,7 +448,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                 runCatching {
                                     val pr = Runtime.getRuntime().exec(arrayOf(suBin(), "-c",
                                         "cp -f " + q(srcPath) + " " + q(staged.absolutePath) +
-                                            " ; chmod 666 " + q(staged.absolutePath)))
+                                            " ; chmod 644 " + q(staged.absolutePath)))
                                     pr.waitFor()
                                 }
                                 val target = if (staged.exists() && staged.length() > 0) staged else java.io.File(srcPath)
