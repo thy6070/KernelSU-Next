@@ -435,6 +435,22 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                             if (op == "share") {
                                 var err: String? = null
                                 var done = false
+                                val name = java.io.File(srcPath).name
+                                // prefer the external cache: it survives uid/ownership quirks of /data
+                                val extDir = java.io.File(appCtx.externalCacheDir ?: appCtx.cacheDir, "share")
+                                extDir.mkdirs()
+                                val staged = java.io.File(extDir, name)
+                                try {
+                                    staged.delete()
+                                } catch (t: Throwable) {
+                                }
+                                runCatching {
+                                    val pr = Runtime.getRuntime().exec(arrayOf(suBin(), "-c",
+                                        "cp -f " + q(srcPath) + " " + q(staged.absolutePath) +
+                                            " ; chmod 666 " + q(staged.absolutePath)))
+                                    pr.waitFor()
+                                }
+                                val target = if (staged.exists() && staged.length() > 0) staged else java.io.File(srcPath)
                                 val authorities = listOf(
                                     appCtx.packageName + ".fileprovider",
                                     "com.rifsxd.ksunext.fileprovider"
@@ -443,12 +459,12 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                     if (done) break
                                     try {
                                         val uri = androidx.core.content.FileProvider.getUriForFile(
-                                            appCtx, authority, java.io.File(srcPath)
+                                            appCtx, authority, target
                                         )
                                         val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
                                             type = "application/octet-stream"
                                             putExtra(android.content.Intent.EXTRA_STREAM, uri)
-                                            putExtra(android.content.Intent.EXTRA_TITLE, java.io.File(srcPath).name)
+                                            putExtra(android.content.Intent.EXTRA_TITLE, name)
                                             addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                         }
                                         withContext(Dispatchers.Main) {
