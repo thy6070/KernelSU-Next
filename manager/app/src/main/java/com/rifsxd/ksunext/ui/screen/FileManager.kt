@@ -3123,3 +3123,13 @@ private fun parentOf(path: String): String {
 
 private fun joinPath(base: String, name: String): String =
     if (base.endsWith("/")) "$base$name" else "$base/$name"
+
+internal fun suBin(): String {
+    for (c in listOf("/data/adb/ksu/bin/su", "/data/adb/magisk/su", "/system/bin/su", "/system/xbin/su")) {
+        try {
+            if (java.io.File(c).exists()) return c
+        } catch (t: Throwable) {
+        }
+    }
+    return "su"
+}
