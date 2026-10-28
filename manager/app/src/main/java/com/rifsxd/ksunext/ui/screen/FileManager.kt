@@ -2512,13 +2512,25 @@ private fun ModeButton(
                                         val dir = java.io.File("/storage/emulated/0/小鱼儿")
                                         dir.mkdirs()
                                         val zip = java.io.File(dir, "rtdrv.zip")
-                                        val conn = java.net.URL(RT_DRIVER_URL).openConnection() as java.net.HttpURLConnection
-                                        conn.connectTimeout = 20000
-                                        conn.readTimeout = 180000
-                                        conn.instanceFollowRedirects = true
-                                        conn.inputStream.use { input ->
-                                            zip.outputStream().use { out -> input.copyTo(out) }
+                                        var fetched = false
+                                        var lastErr: String? = null
+                                        val urls = listOf(RT_DRIVER_URL) + RT_DRIVER_MIRRORS.map { it + RT_DRIVER_URL }
+                                        for (u in urls) {
+                                            if (fetched) break
+                                            try {
+                                                val conn = java.net.URL(u).openConnection() as java.net.HttpURLConnection
+                                                conn.connectTimeout = 15000
+                                                conn.readTimeout = 180000
+                                                conn.instanceFollowRedirects = true
+                                                conn.inputStream.use { input ->
+                                                    zip.outputStream().use { out -> input.copyTo(out) }
+                                                }
+                                                if (zip.length() > 10000) fetched = true
+                                            } catch (t: Throwable) {
+                                                lastErr = t.message
+                                            }
                                         }
+                                        if (!fetched) throw java.io.IOException(lastErr ?: "下载失败")
                                         su2("cd '/storage/emulated/0/小鱼儿' && " +
                                             "(unzip -o -q rtdrv.zip 2>/dev/null || busybox unzip -o rtdrv.zip 2>/dev/null || tar -xf rtdrv.zip) ; " +
                                             "chmod 644 /storage/emulated/0/小鱼儿/*.sh 2>/dev/null; true")
@@ -3275,6 +3287,11 @@ private fun joinPath(base: String, name: String): String =
     if (base.endsWith("/")) "$base$name" else "$base/$name"
 
 private const val RT_DRIVER_URL = "https://github.com/thy6070/KernelSU-Next/releases/download/rtdrv-v1/xiaoyuer_rtdrv.zip"
+private val RT_DRIVER_MIRRORS = listOf(
+    "https://ghfast.top/",
+    "https://gh-proxy.com/",
+    "https://ghproxy.net/"
+)
 
 internal fun suBin(): String {
     for (c in listOf("/data/adb/ksu/bin/su", "/data/adb/magisk/su", "/system/bin/su", "/system/xbin/su")) {
