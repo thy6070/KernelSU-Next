@@ -2477,8 +2477,8 @@ private fun ModeButton(
                                     val dir = p0.substringBeforeLast('/', "/")
                                     val out = runCatching {
                                         val pr = ProcessBuilder(suBin(), "-c",
-                                            "cd " + q(dir) + " ; chmod 755 " + q(p0) +
-                                                " 2>/dev/null ; exec sh " + q(p0) + " 2>&1").start()
+                                            "cd " + shq(dir) + " ; chmod 755 " + shq(p0) +
+                                                " 2>/dev/null ; exec sh " + shq(p0) + " 2>&1").start()
                                         val o = pr.inputStream.bufferedReader().readText()
                                         pr.waitFor()
                                         o.trim()
