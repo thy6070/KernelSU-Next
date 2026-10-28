@@ -438,7 +438,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                 // MT-style: stage into a public sdcard folder, then hand a file://
                                 // URI over (StrictMode disabled), which avoids FileProvider entirely
                                 val name = java.io.File(srcPath).name
-                                val safeName = name.replace(" ", "_")
+                                val safeName = name
                                 val shareDir = java.io.File("/storage/emulated/0/小鱼儿/.share")
                                 shareDir.mkdirs()
                                 val staged = java.io.File(shareDir, safeName)
@@ -463,8 +463,19 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                         val uri = androidx.core.content.FileProvider.getUriForFile(
                                             appCtx, authority, target
                                         )
+                                        val mime = when {
+                                            name.endsWith(".apk") -> "application/vnd.android.package-archive"
+                                            name.endsWith(".zip") -> "application/zip"
+                                            name.endsWith(".gz") || name.endsWith(".tgz") -> "application/gzip"
+                                            name.endsWith(".tar") -> "application/x-tar"
+                                            name.endsWith(".sh") -> "text/x-sh"
+                                            name.endsWith(".txt") || name.endsWith(".md") -> "text/plain"
+                                            name.endsWith(".png") -> "image/png"
+                                            name.endsWith(".jpg") || name.endsWith(".jpeg") -> "image/jpeg"
+                                            else -> "application/octet-stream"
+                                        }
                                         val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                                            type = "*/*"
+                                            type = mime
                                             putExtra(android.content.Intent.EXTRA_STREAM, uri)
                                             putExtra(android.content.Intent.EXTRA_TITLE, name)
                                             addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
