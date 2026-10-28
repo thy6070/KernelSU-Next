@@ -2253,7 +2253,7 @@ private fun ModePanel(onDismiss: () -> Unit, onRunExec: (String) -> Unit = {}) {
             ModeButton(Icons.Outlined.DarkMode, "放开通行")
             ModeButton(Icons.Outlined.AcUnit, "性能模式")
             ModeButton(Icons.Outlined.Person, "隐藏BL")
-            ModeButton(Icons.Outlined.Smartphone, "刷入驱动")
+            ModeButton(Icons.Outlined.Smartphone, "执行此文件", slot = "path2")
             ModeButton(Icons.Outlined.Folder, "执行此文件", onRun = {
                 onDismiss()
                 onRunExec(it)
@@ -2267,7 +2267,8 @@ private fun ModeButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     subtitle: String? = null,
-    onRun: ((String) -> Unit)? = null
+    onRun: ((String) -> Unit)? = null,
+    slot: String = "path"
 ) {
     var on by remember { mutableStateOf(false) }
     var latencyMsg by remember { mutableStateOf<String?>(null) }
@@ -2335,7 +2336,7 @@ private fun ModeButton(
             }
         }
         if (title == "执行此文件" || title == "刷入驱动") {
-            execPath = ctx3.getSharedPreferences("yx_exec", 0).getString("path", null)
+            execPath = ctx3.getSharedPreferences("yx_exec", 0).getString(slot, null)
         }
         if (title == "隐藏BL") {
             on = ctx3.getSharedPreferences("yx_mode", 0).getBoolean("bl", false) ||
@@ -2852,7 +2853,7 @@ val modDir = su("grep -l '小鱼儿附属' /data/adb/modules/*/module.prop 2>/de
             confirmButton = {
                 androidx.compose.material3.TextButton(onClick = {
                     val v = pathInput.trim()
-                    ctx3.getSharedPreferences("yx_exec", 0).edit().putString("path", v).apply()
+                    ctx3.getSharedPreferences("yx_exec", 0).edit().putString(slot, v).apply()
                     execPath = v
                     showPathDialog = false
                 }) { androidx.compose.material3.Text("确定") }
