@@ -479,8 +479,21 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                     }
                                 }
                                 if (!done) {
+                                    val trace = buildString {
+                                        appendLine("分享失败")
+                                        appendLine("源: " + srcPath)
+                                        appendLine("源存在: " + java.io.File(srcPath).exists())
+                                        appendLine("暂存: " + staged.absolutePath)
+                                        appendLine("暂存存在: " + staged.exists() + " 长度=" + staged.length())
+                                        appendLine("最终目标: " + target.absolutePath)
+                                        appendLine("目标存在: " + target.exists())
+                                        appendLine("异常: " + (err ?: "无"))
+                                    }
                                     withContext(Dispatchers.Main) {
-                                        runMessage = "分享失败：" + (err ?: "未知").take(50)
+                                        running = true
+                                        termText = trace
+                                        showTerminal = true
+                                        runMessage = "分享失败"
                                         android.widget.Toast.makeText(
                                             appCtx,
                                             "分享失败：" + (err ?: "未知").take(120),
