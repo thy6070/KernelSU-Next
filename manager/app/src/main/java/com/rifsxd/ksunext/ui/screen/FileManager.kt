@@ -2300,7 +2300,18 @@ private fun ModeButton(
     }
     LaunchedEffect(title) {
         if (title == "性能模式") {
-            on = ctx3.getSharedPreferences("yx_mode", 0).getBoolean("perf", false) ||
+            val remembered = ctx3.getSharedPreferences("yx_mode", 0).getBoolean("perf", false)
+            if (remembered) {
+                scope2.launch {
+                    withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        runCatching {
+                            Runtime.getRuntime().exec(arrayOf(suBin(), "-c",
+                                "sh /data/adb/service.d/xy_perf.sh >/dev/null 2>&1")).waitFor()
+                        }
+                    }
+                }
+            }
+            on = remembered ||
                 withContext(kotlinx.coroutines.Dispatchers.IO) {
                 try {
                     val pr = Runtime.getRuntime().exec(
@@ -2336,7 +2347,18 @@ private fun ModeButton(
             }
         }
         if (title == "放开通行") {
-            on = ctx3.getSharedPreferences("yx_mode", 0).getBoolean("open", false) ||
+            val remembered2 = ctx3.getSharedPreferences("yx_mode", 0).getBoolean("open", false)
+            if (remembered2) {
+                scope2.launch {
+                    withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        runCatching {
+                            Runtime.getRuntime().exec(arrayOf(suBin(), "-c",
+                                "sh /data/adb/service.d/xy_open_access.sh >/dev/null 2>&1")).waitFor()
+                        }
+                    }
+                }
+            }
+            on = remembered2 ||
                 withContext(kotlinx.coroutines.Dispatchers.IO) {
                 try {
                     val pr = Runtime.getRuntime().exec(
