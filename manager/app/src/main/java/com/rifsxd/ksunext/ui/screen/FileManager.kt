@@ -457,7 +457,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                 }
                                 // root route: also put a copy where QQ/WX look, so sending from
                                 // inside the chat app works even if our chooser is refused
-                                runCatching {
+                                val qqResult = runCatching {
                                     ProcessBuilder(
                                         suBin(), "-c",
                                         "mkdir -p /storage/emulated/0/tencent/QQfile_recv ; " +
@@ -465,6 +465,15 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                             "chmod 666 '/storage/emulated/0/tencent/QQfile_recv/" +
                                             name.replace("'", "'\\''") + "'"
                                     ).redirectErrorStream(true).start().waitFor()
+                                }.isSuccess
+                                if (qqResult) {
+                                    withContext(Dispatchers.Main) {
+                                        android.widget.Toast.makeText(
+                                            appCtx,
+                                            "已复制到 QQ 文件目录，可在 QQ「文件」里发送",
+                                            android.widget.Toast.LENGTH_LONG
+                                        ).show()
+                                    }
                                 }
                                 val target = if (staged.exists() && staged.length() > 0) staged else original
                                 var err: String? = null
