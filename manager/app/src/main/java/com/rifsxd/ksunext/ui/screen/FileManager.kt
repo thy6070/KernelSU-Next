@@ -2316,7 +2316,9 @@ private fun ModeButton(
                     withContext(kotlinx.coroutines.Dispatchers.IO) {
                         runCatching {
                             Runtime.getRuntime().exec(arrayOf(suBin(), "-c",
-                                "sh /data/adb/service.d/xy_perf.sh >/dev/null 2>&1")).waitFor()
+                                "sed 's/^sleep 20$/sleep 1/' /data/adb/service.d/xy_perf.sh > /data/local/tmp/xy_now.sh 2>/dev/null; " +
+                                    "chmod 755 /data/local/tmp/xy_now.sh 2>/dev/null; " +
+                                    "sh /data/local/tmp/xy_now.sh >/dev/null 2>&1")).waitFor()
                         }
                     }
                 }
