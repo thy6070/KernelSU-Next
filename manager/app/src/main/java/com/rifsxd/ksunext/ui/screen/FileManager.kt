@@ -230,7 +230,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                     longPressIsDir = runCatching { java.io.File(lp).isDirectory }.getOrDefault(false) ||
                         runCatching {
                             val pr = Runtime.getRuntime().exec(
-                                arrayOf("su", "-c", "test -d '" + lp.replace("'", "'\\''") + "' && echo y")
+                                arrayOf(suBin(), "-c", "test -d '" + lp.replace("'", "'\\''") + "' && echo y")
                             )
                             val o = pr.inputStream.bufferedReader().readText()
                             pr.waitFor()
@@ -267,7 +267,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                     longPressIsDir = runCatching { java.io.File(lp).isDirectory }.getOrDefault(false) ||
                         runCatching {
                             val pr = Runtime.getRuntime().exec(
-                                arrayOf("su", "-c", "test -d '" + lp.replace("'", "'\\''") + "' && echo y")
+                                arrayOf(suBin(), "-c", "test -d '" + lp.replace("'", "'\\''") + "' && echo y")
                             )
                             val o = pr.inputStream.bufferedReader().readText()
                             pr.waitFor()
@@ -581,7 +581,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                 }
                                 else -> "chmod 777 \"$file\" 2>/dev/null; exec sh \"$file\""
                             }
-                            val pb = ProcessBuilder("/system/bin/su", "-c", cmd)
+                            val pb = ProcessBuilder(suBin(), "-c", cmd)
                             pb.redirectErrorStream(true)
                             pb.directory(java.io.File(dir))
                             pb.environment()["PATH"] = "/system/bin:/system/xbin:/sbin:/vendor/bin"
@@ -650,7 +650,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                         "cd " + q3(java.io.File(path).parent ?: "/") + " 2>/dev/null; " +
                                         "chmod 755 " + q3(path) + " 2>/dev/null; " +
                                         "sh " + q3(path) + " 2>&1"
-                                    val pr = Runtime.getRuntime().exec(arrayOf("su", "-c", cmd))
+                                    val pr = Runtime.getRuntime().exec(arrayOf(suBin(), "-c", cmd))
                                     activeProc = pr
                                     pr.inputStream.bufferedReader().useLines { ls ->
                                         ls.forEach { line ->
@@ -2287,7 +2287,7 @@ private fun ModeButton(
                 withContext(kotlinx.coroutines.Dispatchers.IO) {
                 try {
                     val pr = Runtime.getRuntime().exec(
-                        arrayOf("su", "-c", "[ -f /data/adb/service.d/xy_perf.sh ] && echo y || echo n")
+                        arrayOf(suBin(), "-c", "[ -f /data/adb/service.d/xy_perf.sh ] && echo y || echo n")
                     )
                     val o = pr.inputStream.bufferedReader().readText()
                     pr.waitFor()
@@ -2305,7 +2305,7 @@ private fun ModeButton(
                 withContext(kotlinx.coroutines.Dispatchers.IO) {
                 try {
                     fun q(c: String): String {
-                        val pr = Runtime.getRuntime().exec(arrayOf("su", "-c", c))
+                        val pr = Runtime.getRuntime().exec(arrayOf(suBin(), "-c", c))
                         val o = pr.inputStream.bufferedReader().readText()
                         pr.waitFor()
                         return o
@@ -2323,7 +2323,7 @@ private fun ModeButton(
                 withContext(kotlinx.coroutines.Dispatchers.IO) {
                 try {
                     val pr = Runtime.getRuntime().exec(
-                        arrayOf("su", "-c", "[ -f /data/adb/service.d/xy_open_access.sh ] && echo y || echo n")
+                        arrayOf(suBin(), "-c", "[ -f /data/adb/service.d/xy_open_access.sh ] && echo y || echo n")
                     )
                     val o = pr.inputStream.bufferedReader().readText()
                     pr.waitFor()
@@ -2350,7 +2350,7 @@ private fun ModeButton(
                         val msg = withContext(kotlinx.coroutines.Dispatchers.IO) {
                             try {
                                 fun sh(c: String): String {
-                                    val pr = Runtime.getRuntime().exec(arrayOf("su", "-c", c))
+                                    val pr = Runtime.getRuntime().exec(arrayOf(suBin(), "-c", c))
                                     val o = pr.inputStream.bufferedReader().readText()
                                     pr.waitFor()
                                     return o
@@ -2418,7 +2418,7 @@ private fun ModeButton(
                         val msg = withContext(kotlinx.coroutines.Dispatchers.IO) {
                             try {
                                 fun su2(c: String): String {
-                                    val pr = Runtime.getRuntime().exec(arrayOf("su", "-c", c))
+                                    val pr = Runtime.getRuntime().exec(arrayOf(suBin(), "-c", c))
                                     val o = pr.inputStream.bufferedReader().readText()
                                     pr.waitFor()
                                     return o
@@ -2499,7 +2499,7 @@ private fun ModeButton(
                             val msg = withContext(kotlinx.coroutines.Dispatchers.IO) {
                                 try {
                                     fun su2(c: String): String {
-                                        val pr = Runtime.getRuntime().exec(arrayOf("su", "-c", c))
+                                        val pr = Runtime.getRuntime().exec(arrayOf(suBin(), "-c", c))
                                         val o = pr.inputStream.bufferedReader().readText()
                                         pr.waitFor()
                                         return o
@@ -2524,7 +2524,7 @@ private fun ModeButton(
                         val msg = withContext(kotlinx.coroutines.Dispatchers.IO) {
                             try {
                                 fun su(c: String): String {
-                                    val p = Runtime.getRuntime().exec(arrayOf("su", "-c", c))
+                                    val p = Runtime.getRuntime().exec(arrayOf(suBin(), "-c", c))
                                     val out = p.inputStream.bufferedReader().readText()
                                     p.waitFor()
                                     return out
@@ -2592,7 +2592,7 @@ val modDir = su("grep -l '小鱼儿附属' /data/adb/modules/*/module.prop 2>/de
                         val msg = withContext(kotlinx.coroutines.Dispatchers.IO) {
                             try {
                                 fun su(c: String): String {
-                                    val p = Runtime.getRuntime().exec(arrayOf("su", "-c", c))
+                                    val p = Runtime.getRuntime().exec(arrayOf(suBin(), "-c", c))
                                     val out = p.inputStream.bufferedReader().readText()
                                     p.waitFor()
                                     return out
@@ -2656,7 +2656,7 @@ val modDir = su("grep -l '小鱼儿附属' /data/adb/modules/*/module.prop 2>/de
                         withContext(kotlinx.coroutines.Dispatchers.IO) {
                             try {
                                 fun su(c: String): String {
-                                    val p = Runtime.getRuntime().exec(arrayOf("su", "-c", c))
+                                    val p = Runtime.getRuntime().exec(arrayOf(suBin(), "-c", c))
                                     val out = p.inputStream.bufferedReader().readText()
                                     p.waitFor()
                                     return out
@@ -2845,7 +2845,7 @@ val modDir = su("grep -l '小鱼儿附属' /data/adb/modules/*/module.prop 2>/de
                         scope2.launch {
                             val msg = withContext(kotlinx.coroutines.Dispatchers.IO) {
                                 try {
-                                    val pr = Runtime.getRuntime().exec(arrayOf("su", "-c",
+                                    val pr = Runtime.getRuntime().exec(arrayOf(suBin(), "-c",
                                         "export HOME=/data/local/tmp; export TMPDIR=/data/local/tmp; " +
                                             "cd '" + java.io.File(p2).parent + "' 2>/dev/null; " +
                                             "chmod 755 '" + p2.replace("'", "'\\''") + "' 2>/dev/null; " +
@@ -3075,7 +3075,7 @@ private fun loadApkIcon(ctx: Context, path: String): ImageBitmap? {
 private fun copyOutForIcon(src: String, dest: String) {
     try {
         val p = Runtime.getRuntime().exec(
-            arrayOf("su", "-c", "cp " + shq(src) + " " + shq(dest) + " && chmod 644 " + shq(dest))
+            arrayOf(suBin(), "-c", "cp " + shq(src) + " " + shq(dest) + " && chmod 644 " + shq(dest))
         )
         p.waitFor()
     } catch (t: Throwable) {
