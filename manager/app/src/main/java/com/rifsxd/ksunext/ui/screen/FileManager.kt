@@ -442,7 +442,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                 // stage into the public share dir (that is the path QQ manages to
                                 // read) but never truncate an upload still in flight: reuse the file
                                 // when its size already matches
-                                val shareDir = java.io.File("/storage/emulated/0/小鱼儿/share")
+                                val shareDir = java.io.File("/storage/emulated/0/Download")
                                 shareDir.mkdirs()
                                 val staged = java.io.File(shareDir, name)
                                 val needsCopy = !staged.exists() || staged.length() != original.length()
