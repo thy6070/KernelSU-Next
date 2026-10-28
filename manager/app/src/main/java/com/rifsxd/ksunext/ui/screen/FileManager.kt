@@ -438,9 +438,10 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                 // MT-style: stage into a public sdcard folder, then hand a file://
                                 // URI over (StrictMode disabled), which avoids FileProvider entirely
                                 val name = java.io.File(srcPath).name
+                                val safeName = name.replace(" ", "_")
                                 val shareDir = java.io.File("/storage/emulated/0/小鱼儿/.share")
                                 shareDir.mkdirs()
-                                val staged = java.io.File(shareDir, name)
+                                val staged = java.io.File(shareDir, safeName)
                                 try {
                                     staged.delete()
                                 } catch (t: Throwable) {
@@ -455,11 +456,8 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                 val target = if (staged.exists() && staged.length() > 0) staged else java.io.File(srcPath)
                                 var err: String? = null
                                 var done = false
-                                // 1) content:// first — it survives spaces and CJK in names
-                                for (authority in listOf(
-                                    appCtx.packageName + ".fileprovider",
-                                    "com.rifsxd.ksunext.fileprovider"
-                                )) {
+                                // 1) file:// first — FileProvider is unreliable once SUSFS is active
+                                for (authority in emptyList<String>()) {
                                     if (done) break
                                     try {
                                         val uri = androidx.core.content.FileProvider.getUriForFile(
