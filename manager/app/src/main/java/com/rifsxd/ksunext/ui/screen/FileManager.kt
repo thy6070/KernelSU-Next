@@ -482,9 +482,13 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                             putExtra(android.content.Intent.EXTRA_TITLE, name)
                                             addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                         }
+                                        send.clipData = android.content.ClipData.newUri(
+                                            appCtx.contentResolver, name, uri
+                                        )
                                         withContext(Dispatchers.Main) {
                                             val chooser = android.content.Intent.createChooser(send, "分享")
                                             chooser.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                            chooser.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                             appCtx.startActivity(chooser)
                                         }
                                         done = true
@@ -507,9 +511,13 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                             putExtra(android.content.Intent.EXTRA_TITLE, name)
                                             addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                         }
+                                        send.clipData = android.content.ClipData.newUri(
+                                            appCtx.contentResolver, name, uri
+                                        )
                                         withContext(Dispatchers.Main) {
                                             val chooser = android.content.Intent.createChooser(send, "分享")
                                             chooser.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                            chooser.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                             appCtx.startActivity(chooser)
                                         }
                                         done = true
