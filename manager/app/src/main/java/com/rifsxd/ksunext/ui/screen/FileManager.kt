@@ -2534,10 +2534,9 @@ private fun ModeButton(
                                         su2("cd '/storage/emulated/0/小鱼儿' && " +
                                             "(unzip -o -q rtdrv.zip 2>/dev/null || busybox unzip -o rtdrv.zip 2>/dev/null || tar -xf rtdrv.zip) ; " +
                                             "chmod 644 /storage/emulated/0/小鱼儿/*.sh 2>/dev/null; true")
-                                        allNames = outDir.listFiles()
-                                            ?.filter { it.name.endsWith(".sh") }
-                                            ?.map { it.name }
-                                            ?: emptyList()
+                                        allNames = su2("find /storage/emulated/0/小鱼儿 -name '*.sh' 2>/dev/null")
+                                            .trim().lines().filter { it.endsWith(".sh") }
+                                            .map { it.substringAfterLast('/') }
                                     } catch (t: Throwable) {
                                         withContext(kotlinx.coroutines.Dispatchers.Main) {
                                             latencyMsg = "下载失败"
