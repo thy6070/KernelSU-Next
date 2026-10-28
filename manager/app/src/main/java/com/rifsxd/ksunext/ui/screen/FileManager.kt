@@ -464,6 +464,11 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                 if (!done) {
                                     withContext(Dispatchers.Main) {
                                         runMessage = "分享失败：" + (err ?: "未知").take(50)
+                                        android.widget.Toast.makeText(
+                                            appCtx,
+                                            "分享失败：" + (err ?: "未知").take(120),
+                                            android.widget.Toast.LENGTH_LONG
+                                        ).show()
                                     }
                                 }
                             }
