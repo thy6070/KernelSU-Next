@@ -455,27 +455,56 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                 val target = if (staged.exists() && staged.length() > 0) staged else java.io.File(srcPath)
                                 var err: String? = null
                                 var done = false
-                                try {
-                                    runCatching {
-                                        android.os.StrictMode.setVmPolicy(
-                                            android.os.StrictMode.VmPolicy.Builder().build()
+                                // 1) content:// first — it survives spaces and CJK in names
+                                for (authority in listOf(
+                                    appCtx.packageName + ".fileprovider",
+                                    "com.rifsxd.ksunext.fileprovider"
+                                )) {
+                                    if (done) break
+                                    try {
+                                        val uri = androidx.core.content.FileProvider.getUriForFile(
+                                            appCtx, authority, target
                                         )
+                                        val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                            type = "*/*"
+                                            putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                                            putExtra(android.content.Intent.EXTRA_TITLE, name)
+                                            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                        }
+                                        withContext(Dispatchers.Main) {
+                                            val chooser = android.content.Intent.createChooser(send, "分享")
+                                            chooser.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                            appCtx.startActivity(chooser)
+                                        }
+                                        done = true
+                                    } catch (t: Throwable) {
+                                        err = (t.message ?: t.javaClass.simpleName)
                                     }
-                                    val uri = android.net.Uri.fromFile(target)
-                                    val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                                        type = "*/*"
-                                        putExtra(android.content.Intent.EXTRA_STREAM, uri)
-                                        putExtra(android.content.Intent.EXTRA_TITLE, name)
-                                        addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                // 2) file:// fallback (MT style)
+                                if (!done) {
+                                    try {
+                                        runCatching {
+                                            android.os.StrictMode.setVmPolicy(
+                                                android.os.StrictMode.VmPolicy.Builder().build()
+                                            )
+                                        }
+                                        val uri = android.net.Uri.fromFile(target)
+                                        val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                            type = "*/*"
+                                            putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                                            putExtra(android.content.Intent.EXTRA_TITLE, name)
+                                            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                        }
+                                        withContext(Dispatchers.Main) {
+                                            val chooser = android.content.Intent.createChooser(send, "分享")
+                                            chooser.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                            appCtx.startActivity(chooser)
+                                        }
+                                        done = true
+                                    } catch (t: Throwable) {
+                                        err = (t.message ?: t.javaClass.simpleName)
                                     }
-                                    withContext(Dispatchers.Main) {
-                                        val chooser = android.content.Intent.createChooser(send, "分享")
-                                        chooser.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-                                        appCtx.startActivity(chooser)
-                                    }
-                                    done = true
-                                } catch (t: Throwable) {
-                                    err = (t.message ?: t.javaClass.simpleName)
                                 }
                                 if (!done) {
                                     val trace = buildString {
