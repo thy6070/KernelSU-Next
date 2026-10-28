@@ -2485,15 +2485,6 @@ private fun ModeButton(
                                     ?.map { it.name }
                                     ?: emptyList()
                                 if (allNames.isEmpty()) {
-                                    val sd = java.io.File("/storage/emulated/0/床上面的/RT dev驱动")
-                                    if (sd.isDirectory) {
-                                        allNames = sd.listFiles()
-                                            ?.filter { it.name.endsWith(".sh") }
-                                            ?.map { it.name }
-                                            ?: emptyList()
-                                    }
-                                }
-                                if (allNames.isEmpty()) {
                                     // nothing on disk: pull the archive from the configured link
                                     if (RT_DRIVER_URL.isEmpty()) {
                                         withContext(kotlinx.coroutines.Dispatchers.Main) {
