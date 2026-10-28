@@ -435,128 +435,56 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                 ok = res.isSuccess
                             }
                             if (op == "share") {
-                                // MT-style: stage into a public sdcard folder, then hand a file://
-                                // URI over (StrictMode disabled), which avoids FileProvider entirely
-                                val name = java.io.File(srcPath).name
-                                val original = java.io.File(srcPath)
-                                // stage into the public share dir (that is the path QQ manages to
-                                // read) but never truncate an upload still in flight: reuse the file
-                                // when its size already matches
-                                val shareDir = java.io.File("/storage/emulated/0/Download")
+                                // verbatim from the ZySU source, no local changes
+                                val shareDir = java.io.File(appCtx.cacheDir, "share")
                                 shareDir.mkdirs()
-                                val staged = java.io.File(shareDir, name)
-                                val needsCopy = !staged.exists() || staged.length() != original.length()
-                                if (needsCopy) {
-                                    runCatching {
-                                        ProcessBuilder(
-                                            suBin(), "-c",
-                                            "cp -f " + q(srcPath) + " " + q(staged.absolutePath) +
-                                                " ; chmod 644 " + q(staged.absolutePath)
-                                        ).redirectErrorStream(true).start().waitFor()
-                                    }
+                                val dest = java.io.File(shareDir, java.io.File(srcPath).name)
+                                try {
+                                    dest.delete()
+                                } catch (t: Throwable) {
                                 }
-                                // root route: also put a copy where QQ/WX look, so sending from
-                                // inside the chat app works even if our chooser is refused
-                                val qqResult = runCatching {
+                                runCatching {
                                     ProcessBuilder(
                                         suBin(), "-c",
-                                        "mkdir -p /storage/emulated/0/tencent/QQfile_recv ; " +
-                                            "cp -f " + q(srcPath) + " /storage/emulated/0/tencent/QQfile_recv/ ; " +
-                                            "chmod 666 '/storage/emulated/0/tencent/QQfile_recv/" +
-                                            name.replace("'", "'\\''") + "'"
+                                        "cp " + q(srcPath) + " " + q(dest.absolutePath) +
+                                            " ; chmod 644 " + q(dest.absolutePath)
                                     ).redirectErrorStream(true).start().waitFor()
-                                }.isSuccess
-                                if (qqResult) {
-                                    withContext(Dispatchers.Main) {
-                                        android.widget.Toast.makeText(
-                                            appCtx,
-                                            "已复制到 QQ 文件目录，可在 QQ「文件」里发送",
-                                            android.widget.Toast.LENGTH_LONG
-                                        ).show()
-                                    }
                                 }
-                                val target = if (staged.exists() && staged.length() > 0) staged else original
-                                var err: String? = null
-                                var done = false
-                                // 1) file:// first — FileProvider is unreliable once SUSFS is active
-                                for (authority in emptyList<String>()) {
-                                    if (done) break
-                                    try {
-                                        val uri = androidx.core.content.FileProvider.getUriForFile(
-                                            appCtx, authority, target
-                                        )
-                                        val mime = when {
-                                            name.endsWith(".apk") -> "application/vnd.android.package-archive"
-                                            name.endsWith(".zip") -> "application/zip"
-                                            name.endsWith(".gz") || name.endsWith(".tgz") -> "application/gzip"
-                                            name.endsWith(".tar") -> "application/x-tar"
-                                            name.endsWith(".sh") -> "text/x-sh"
-                                            name.endsWith(".txt") || name.endsWith(".md") -> "text/plain"
-                                            name.endsWith(".png") -> "image/png"
-                                            name.endsWith(".jpg") || name.endsWith(".jpeg") -> "image/jpeg"
-                                            else -> "application/octet-stream"
-                                        }
-                                        val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                                            type = mime
-                                            putExtra(android.content.Intent.EXTRA_STREAM, uri)
-                                            putExtra(android.content.Intent.EXTRA_TITLE, name)
-                                            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                        }
-                                        send.clipData = android.content.ClipData.newUri(
-                                            appCtx.contentResolver, name, uri
-                                        )
-                                        withContext(Dispatchers.Main) {
-                                            val chooser = android.content.Intent.createChooser(send, "分享")
-                                            chooser.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-                                            chooser.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                            appCtx.startActivity(chooser)
-                                        }
-                                        done = true
-                                    } catch (t: Throwable) {
-                                        err = (t.message ?: t.javaClass.simpleName)
-                                    }
-                                }
-                                // 2) file:// fallback (MT style)
-                                if (!done) {
-                                    try {
-                                        runCatching {
-                                            android.os.StrictMode.setVmPolicy(
-                                                android.os.StrictMode.VmPolicy.Builder().build()
+                                var note: String? = null
+                                if (!dest.exists()) {
+                                    note = "提取失败"
+                                } else {
+                                    val candidates = listOf(
+                                        appCtx.packageName + ".fileprovider",
+                                        "com.rifsxd.ksunext.fileprovider"
+                                    )
+                                    var launched = false
+                                    for (authority in candidates) {
+                                        if (launched) break
+                                        try {
+                                            val uri = androidx.core.content.FileProvider.getUriForFile(
+                                                appCtx, authority, dest
                                             )
+                                            val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                                type = "application/octet-stream"
+                                                putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                                                putExtra(android.content.Intent.EXTRA_TITLE, java.io.File(srcPath).name)
+                                                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                            }
+                                            withContext(Dispatchers.Main) {
+                                                val chooser = android.content.Intent.createChooser(send, "分享")
+                                                chooser.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                                appCtx.startActivity(chooser)
+                                            }
+                                            launched = true
+                                        } catch (t: Throwable) {
+                                            note = t.message
                                         }
-                                        val uri = android.net.Uri.fromFile(target)
-                                        val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                                            type = "*/*"
-                                            putExtra(android.content.Intent.EXTRA_STREAM, uri)
-                                            putExtra(android.content.Intent.EXTRA_TITLE, name)
-                                            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                        }
-                                        send.clipData = android.content.ClipData.newUri(
-                                            appCtx.contentResolver, name, uri
-                                        )
-                                        withContext(Dispatchers.Main) {
-                                            val chooser = android.content.Intent.createChooser(send, "分享")
-                                            chooser.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-                                            chooser.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                            appCtx.startActivity(chooser)
-                                        }
-                                        done = true
-                                    } catch (t: Throwable) {
-                                        err = (t.message ?: t.javaClass.simpleName)
                                     }
                                 }
-                                if (!done) {
-                                    val trace = buildString {
-                                        appendLine("分享失败")
-                                        appendLine("源: " + srcPath)
-                                        appendLine("源存在: " + java.io.File(srcPath).exists())
-                                        appendLine("目标: " + target.absolutePath)
-                                        appendLine("目标存在: " + target.exists() + " 长度=" + target.length())
-                                        appendLine("异常: " + (err ?: "无"))
-                                    }
+                                if (note != null) {
                                     withContext(Dispatchers.Main) {
-                                        running = true
-                                        termText = trace
+                                        termText = "分享失败：" + note
                                         showTerminal = true
                                         shareFailTick += 1
                                     }
