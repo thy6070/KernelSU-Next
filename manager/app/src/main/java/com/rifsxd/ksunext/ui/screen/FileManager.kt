@@ -439,26 +439,23 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                 // URI over (StrictMode disabled), which avoids FileProvider entirely
                                 val name = java.io.File(srcPath).name
                                 val original = java.io.File(srcPath)
-                                // MT shares the real path, no staging: that avoids overwriting a
-                                // file the receiver is still uploading
-                                val readable = runCatching { original.canRead() }.getOrDefault(false)
-                                val target = if (readable) {
-                                    original
-                                } else {
-                                    val shareDir = java.io.File("/storage/emulated/0/小鱼儿/.share")
-                                    shareDir.mkdirs()
-                                    val staged = java.io.File(shareDir, name)
-                                    if (!staged.exists() || staged.length() == 0L) {
-                                        runCatching {
-                                            ProcessBuilder(
-                                                suBin(), "-c",
-                                                "cp -f " + q(srcPath) + " " + q(staged.absolutePath) +
-                                                    " ; chmod 644 " + q(staged.absolutePath)
-                                            ).redirectErrorStream(true).start().waitFor()
-                                        }
+                                // stage into the public share dir (that is the path QQ manages to
+                                // read) but never truncate an upload still in flight: reuse the file
+                                // when its size already matches
+                                val shareDir = java.io.File("/storage/emulated/0/小鱼儿/.share")
+                                shareDir.mkdirs()
+                                val staged = java.io.File(shareDir, name)
+                                val needsCopy = !staged.exists() || staged.length() != original.length()
+                                if (needsCopy) {
+                                    runCatching {
+                                        ProcessBuilder(
+                                            suBin(), "-c",
+                                            "cp -f " + q(srcPath) + " " + q(staged.absolutePath) +
+                                                " ; chmod 644 " + q(staged.absolutePath)
+                                        ).redirectErrorStream(true).start().waitFor()
                                     }
-                                    if (staged.exists() && staged.length() > 0) staged else original
                                 }
+                                val target = if (staged.exists() && staged.length() > 0) staged else original
                                 var err: String? = null
                                 var done = false
                                 // 1) file:// first — FileProvider is unreliable once SUSFS is active
