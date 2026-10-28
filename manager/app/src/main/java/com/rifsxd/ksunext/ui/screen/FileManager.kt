@@ -2494,10 +2494,6 @@ private fun ModeButton(
                                     }
                                 }
                                 if (allNames.isEmpty()) {
-                                    allNames = su2("ls '/storage/emulated/0/床上面的/RT dev驱动' 2>/dev/null")
-                                        .trim().lines().filter { it.endsWith(".sh") }
-                                }
-                                if (allNames.isEmpty()) {
                                     // nothing on disk: pull the archive from the configured link
                                     if (RT_DRIVER_URL.isEmpty()) {
                                         withContext(kotlinx.coroutines.Dispatchers.Main) {
@@ -2551,14 +2547,17 @@ private fun ModeButton(
                                     }
                                     return b
                                 }
-                                val exactName = allNames.firstOrNull { baseOf(it) == ver }
-                                val sameMinor = allNames.filter { baseOf(it).startsWith(mm) }
-                                val chosenName = exactName ?: sameMinor.firstOrNull()
-                                val cands = if (chosenName != null) {
-                                    listOf(chosenName)
-                                } else {
-                                    listOf(mm + ".sh")
+                                fun nums(sv: String): List<Int> =
+                                    sv.filter { it.isDigit() || it == '.' }.split(".")
+                                        .mapNotNull { it.toIntOrNull() }
+                                val want = nums(ver)
+                                val chosen = allNames.minByOrNull { n ->
+                                    val have = nums(baseOf(n))
+                                    kotlin.math.abs((have.getOrNull(0) ?: 0) - (want.getOrNull(0) ?: 0)) * 10000 +
+                                        kotlin.math.abs((have.getOrNull(1) ?: 0) - (want.getOrNull(1) ?: 0)) * 100 +
+                                        kotlin.math.abs((have.getOrNull(2) ?: 0) - (want.getOrNull(2) ?: 0))
                                 }
+                                val cands = if (chosen != null) listOf(chosen) else listOf(mm + ".sh")
                                 val root = rtDir.absolutePath
                                 val script = cands.map { "$root/$it" }.firstOrNull { java.io.File(it).isFile }
                                 if (script == null) {
