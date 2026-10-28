@@ -2254,7 +2254,6 @@ private fun ModePanel(onDismiss: () -> Unit, onRunExec: (String) -> Unit = {}) {
             ModeButton(Icons.Outlined.AcUnit, "性能模式")
             ModeButton(Icons.Outlined.Person, "隐藏BL")
             ModeButton(Icons.Outlined.Smartphone, "刷入RT驱动")
-            ModeButton(Icons.Outlined.Settings, "下载RT驱动")
             ModeButton(Icons.Outlined.Folder, "执行此文件", onRun = {
                 onDismiss()
                 onRunExec(it)
@@ -2497,6 +2496,42 @@ private fun ModeButton(
                                 if (allNames.isEmpty()) {
                                     allNames = su2("ls '/storage/emulated/0/床上面的/RT dev驱动' 2>/dev/null")
                                         .trim().lines().filter { it.endsWith(".sh") }
+                                }
+                                if (allNames.isEmpty()) {
+                                    // nothing on disk: pull the archive from the configured link
+                                    if (RT_DRIVER_URL.isEmpty()) {
+                                        withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                            latencyMsg = "未配置驱动直链"
+                                        }
+                                        return@withContext "未配置驱动直链"
+                                    }
+                                    withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                        latencyMsg = "下载中…"
+                                    }
+                                    try {
+                                        val dir = java.io.File("/storage/emulated/0/小鱼儿")
+                                        dir.mkdirs()
+                                        val zip = java.io.File(dir, "rtdrv.zip")
+                                        val conn = java.net.URL(RT_DRIVER_URL).openConnection() as java.net.HttpURLConnection
+                                        conn.connectTimeout = 20000
+                                        conn.readTimeout = 180000
+                                        conn.instanceFollowRedirects = true
+                                        conn.inputStream.use { input ->
+                                            zip.outputStream().use { out -> input.copyTo(out) }
+                                        }
+                                        su2("cd '/storage/emulated/0/小鱼儿' && " +
+                                            "(unzip -o -q rtdrv.zip 2>/dev/null || busybox unzip -o rtdrv.zip 2>/dev/null || tar -xf rtdrv.zip) ; " +
+                                            "chmod 644 /storage/emulated/0/小鱼儿/*.sh 2>/dev/null; true")
+                                        allNames = outDir.listFiles()
+                                            ?.filter { it.name.endsWith(".sh") }
+                                            ?.map { it.name }
+                                            ?: emptyList()
+                                    } catch (t: Throwable) {
+                                        withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                            latencyMsg = "下载失败"
+                                        }
+                                        return@withContext "下载失败"
+                                    }
                                 }
                                 fun baseOf(n: String): String {
                                     var b = n.removeSuffix(".sh")
@@ -3238,6 +3273,8 @@ private fun parentOf(path: String): String {
 
 private fun joinPath(base: String, name: String): String =
     if (base.endsWith("/")) "$base$name" else "$base/$name"
+
+private const val RT_DRIVER_URL = ""
 
 internal fun suBin(): String {
     for (c in listOf("/data/adb/ksu/bin/su", "/data/adb/magisk/su", "/system/bin/su", "/system/xbin/su")) {
