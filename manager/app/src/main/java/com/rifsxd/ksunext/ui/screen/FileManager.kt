@@ -2506,6 +2506,7 @@ private fun ModeButton(
                                             if (fetched) break
                                             try {
                                                 val conn = java.net.URL(u).openConnection() as java.net.HttpURLConnection
+                                                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14)")
                                                 conn.connectTimeout = 15000
                                                 conn.readTimeout = 180000
                                                 conn.instanceFollowRedirects = true
@@ -2526,9 +2527,9 @@ private fun ModeButton(
                                             .map { it.substringAfterLast('/') }
                                     } catch (t: Throwable) {
                                         withContext(kotlinx.coroutines.Dispatchers.Main) {
-                                            latencyMsg = "下载失败"
+                                            latencyMsg = "下载失败：" + (lastErr ?: "").take(30)
                                         }
-                                        return@withContext "下载失败"
+                                        return@withContext ("下载失败：" + (lastErr ?: ""))
                                     }
                                 }
                                 fun baseOf(n: String): String {
@@ -3279,7 +3280,9 @@ private const val RT_DRIVER_URL = "https://github.com/thy6070/KernelSU-Next/rele
 private val RT_DRIVER_MIRRORS = listOf(
     "https://ghfast.top/",
     "https://gh-proxy.com/",
-    "https://ghproxy.net/"
+    "https://ghproxy.net/",
+    "https://gh.llkk.cc/",
+    "https://hub.gitmirror.com/"
 )
 
 internal fun suBin(): String {
