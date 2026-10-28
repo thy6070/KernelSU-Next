@@ -2475,7 +2475,7 @@ private fun ModeButton(
                                     pr.waitFor()
                                     return o
                                 }
-                                val rtDir = java.io.File("/storage/emulated/0/小鱼儿")
+                                val rtDir = java.io.File("/storage/emulated/0/小鱼儿/驱动")
                                 rtDir.mkdirs()
                                 val rel = su2("uname -r 2>/dev/null").trim()
                                 val ver = rel.substringBefore('-')
@@ -2485,53 +2485,14 @@ private fun ModeButton(
                                     ?.map { it.name }
                                     ?: emptyList()
                                 if (allNames.isEmpty()) {
-                                    // nothing on disk: pull the archive from the configured link
-                                    if (RT_DRIVER_URL.isEmpty()) {
-                                        withContext(kotlinx.coroutines.Dispatchers.Main) {
-                                            latencyMsg = "未配置驱动直链"
-                                        }
-                                        return@withContext "未配置驱动直链"
-                                    }
+                                    allNames = su2("ls '/storage/emulated/0/小鱼儿/驱动' 2>/dev/null")
+                                        .trim().lines().filter { it.endsWith(".sh") }
+                                }
+                                if (allNames.isEmpty()) {
                                     withContext(kotlinx.coroutines.Dispatchers.Main) {
-                                        latencyMsg = "下载中…"
+                                        latencyMsg = "请把驱动放进 小鱼儿/驱动/"
                                     }
-                                    try {
-                                        val dir = java.io.File("/storage/emulated/0/小鱼儿")
-                                        dir.mkdirs()
-                                        val zip = java.io.File(dir, "rtdrv.zip")
-                                        var fetched = false
-                                        var lastErr: String? = null
-                                        val urls = listOf(RT_DRIVER_URL) + RT_DRIVER_MIRRORS.map { it + RT_DRIVER_URL }
-                                        for (u in urls) {
-                                            if (fetched) break
-                                            try {
-                                                val conn = java.net.URL(u).openConnection() as java.net.HttpURLConnection
-                                                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14)")
-                                                conn.connectTimeout = 15000
-                                                conn.readTimeout = 180000
-                                                conn.instanceFollowRedirects = true
-                                                conn.inputStream.use { input ->
-                                                    zip.outputStream().use { out -> input.copyTo(out) }
-                                                }
-                                                if (zip.length() > 10000) fetched = true
-                                            } catch (t: Throwable) {
-                                                lastErr = t.message
-                                            }
-                                        }
-                                        if (!fetched) throw java.io.IOException(lastErr ?: "下载失败")
-                                        su2("cd '/storage/emulated/0/小鱼儿' && " +
-                                            "(unzip -o -q rtdrv.zip 2>/dev/null || busybox unzip -o rtdrv.zip 2>/dev/null || tar -xf rtdrv.zip) ; " +
-                                            "chmod 644 /storage/emulated/0/小鱼儿/*.sh 2>/dev/null; true")
-                                        allNames = su2("find /storage/emulated/0/小鱼儿 -name '*.sh' 2>/dev/null")
-                                            .trim().lines().filter { it.endsWith(".sh") }
-                                            .map { it.substringAfterLast('/') }
-                                    } catch (t: Throwable) {
-                                        val why = (t.message ?: t.javaClass.simpleName).take(40)
-                                        withContext(kotlinx.coroutines.Dispatchers.Main) {
-                                            latencyMsg = "下载失败：" + why
-                                        }
-                                        return@withContext ("下载失败：" + why)
-                                    }
+                                    return@withContext "请把驱动放进 小鱼儿/驱动/"
                                 }
                                 fun baseOf(n: String): String {
                                     var b = n.removeSuffix(".sh")
