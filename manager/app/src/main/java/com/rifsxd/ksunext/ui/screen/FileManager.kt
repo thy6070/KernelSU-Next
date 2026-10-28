@@ -435,50 +435,47 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                 ok = res.isSuccess
                             }
                             if (op == "share") {
-                                var err: String? = null
-                                var done = false
+                                // MT-style: stage into a public sdcard folder, then hand a file://
+                                // URI over (StrictMode disabled), which avoids FileProvider entirely
                                 val name = java.io.File(srcPath).name
-                                // stage in the public sdcard folder: SUSFS hides /data paths, breaking
-                                // the copy and the provider there
-                                val extDir = java.io.File("/storage/emulated/0/小鱼儿/.share")
-                                extDir.mkdirs()
-                                val staged = java.io.File(extDir, name)
+                                val shareDir = java.io.File("/storage/emulated/0/小鱼儿/.share")
+                                shareDir.mkdirs()
+                                val staged = java.io.File(shareDir, name)
                                 try {
                                     staged.delete()
                                 } catch (t: Throwable) {
                                 }
                                 runCatching {
-                                    val pr = Runtime.getRuntime().exec(arrayOf(suBin(), "-c",
+                                    ProcessBuilder(
+                                        suBin(), "-c",
                                         "cp -f " + q(srcPath) + " " + q(staged.absolutePath) +
-                                            " ; chmod 644 " + q(staged.absolutePath)))
-                                    pr.waitFor()
+                                            " ; chmod 644 " + q(staged.absolutePath)
+                                    ).redirectErrorStream(true).start().waitFor()
                                 }
                                 val target = if (staged.exists() && staged.length() > 0) staged else java.io.File(srcPath)
-                                val authorities = listOf(
-                                    appCtx.packageName + ".fileprovider",
-                                    "com.rifsxd.ksunext.fileprovider"
-                                )
-                                for (authority in authorities) {
-                                    if (done) break
-                                    try {
-                                        val uri = androidx.core.content.FileProvider.getUriForFile(
-                                            appCtx, authority, target
+                                var err: String? = null
+                                var done = false
+                                try {
+                                    runCatching {
+                                        android.os.StrictMode.setVmPolicy(
+                                            android.os.StrictMode.VmPolicy.Builder().build()
                                         )
-                                        val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                                            type = "application/octet-stream"
-                                            putExtra(android.content.Intent.EXTRA_STREAM, uri)
-                                            putExtra(android.content.Intent.EXTRA_TITLE, name)
-                                            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                        }
-                                        withContext(Dispatchers.Main) {
-                                            val chooser = android.content.Intent.createChooser(send, "分享")
-                                            chooser.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-                                            appCtx.startActivity(chooser)
-                                        }
-                                        done = true
-                                    } catch (t: Throwable) {
-                                        err = (t.message ?: t.javaClass.simpleName)
                                     }
+                                    val uri = android.net.Uri.fromFile(target)
+                                    val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                        type = "*/*"
+                                        putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                                        putExtra(android.content.Intent.EXTRA_TITLE, name)
+                                        addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    }
+                                    withContext(Dispatchers.Main) {
+                                        val chooser = android.content.Intent.createChooser(send, "分享")
+                                        chooser.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        appCtx.startActivity(chooser)
+                                    }
+                                    done = true
+                                } catch (t: Throwable) {
+                                    err = (t.message ?: t.javaClass.simpleName)
                                 }
                                 if (!done) {
                                     val trace = buildString {
@@ -487,8 +484,6 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                         appendLine("源存在: " + java.io.File(srcPath).exists())
                                         appendLine("暂存: " + staged.absolutePath)
                                         appendLine("暂存存在: " + staged.exists() + " 长度=" + staged.length())
-                                        appendLine("最终目标: " + target.absolutePath)
-                                        appendLine("目标存在: " + target.exists())
                                         appendLine("异常: " + (err ?: "无"))
                                     }
                                     withContext(Dispatchers.Main) {
@@ -496,12 +491,6 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                         termText = trace
                                         showTerminal = true
                                         shareFailTick += 1
-                                        runMessage = "分享失败"
-                                        android.widget.Toast.makeText(
-                                            appCtx,
-                                            "分享失败：" + (err ?: "未知").take(120),
-                                            android.widget.Toast.LENGTH_LONG
-                                        ).show()
                                     }
                                 }
                             }
