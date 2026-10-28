@@ -2253,7 +2253,7 @@ private fun ModePanel(onDismiss: () -> Unit, onRunExec: (String) -> Unit = {}) {
             ModeButton(Icons.Outlined.DarkMode, "放开通行")
             ModeButton(Icons.Outlined.AcUnit, "性能模式")
             ModeButton(Icons.Outlined.Person, "隐藏BL")
-            ModeButton(Icons.Outlined.Smartphone, "刷入RT驱动")
+            ModeButton(Icons.Outlined.Smartphone, "刷入驱动")
             ModeButton(Icons.Outlined.Folder, "执行此文件", onRun = {
                 onDismiss()
                 onRunExec(it)
@@ -2464,7 +2464,7 @@ private fun ModeButton(
                     urlInput = ctx3.getSharedPreferences("yx_exec", 0).getString("rt_url", "") ?: ""
                     showUrlDialog = true
                 }
-                if (title == "刷入RT驱动") {
+                if (title == "刷入驱动") {
                     latencyMsg = "刷入中…"
                     scope2.launch {
                         val msg = withContext(kotlinx.coroutines.Dispatchers.IO) {
