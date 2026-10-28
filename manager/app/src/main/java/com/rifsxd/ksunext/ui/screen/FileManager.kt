@@ -197,6 +197,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
     var longPressIsDir by remember { mutableStateOf(false) }
     var longPressTick by remember { mutableStateOf(0) }
     var forceSoPanelTick by remember { mutableStateOf(0) }
+    var shareFailTick by remember { mutableStateOf(0) }
     var longPressFromRight by remember { mutableStateOf(false) }
     var editPath by remember { mutableStateOf<String?>(null) }
     var editText by remember { mutableStateOf("") }
@@ -405,6 +406,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
         longPressIsDir = longPressIsDir,
         longPressTick = longPressTick,
         forceSoPanelTick = forceSoPanelTick,
+        shareFailTick = shareFailTick,
         onClearLongPress = { longPressPath = null },
         oppositePath = if (longPressFromRight) leftPath else rightPath,
         onFileOp = { op, arg ->
@@ -493,6 +495,7 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                         running = true
                                         termText = trace
                                         showTerminal = true
+                                        shareFailTick += 1
                                         runMessage = "分享失败"
                                         android.widget.Toast.makeText(
                                             appCtx,
@@ -807,6 +810,7 @@ private fun ProMaxIsland(
     longPressIsDir: Boolean,
     longPressTick: Int,
     forceSoPanelTick: Int,
+    shareFailTick: Int,
     onClearLongPress: () -> Unit,
     oppositePath: String,
     onFileOp: (String, String) -> Unit,
@@ -992,6 +996,11 @@ private fun ProMaxIsland(
         // a cleared long press (file tapped elsewhere) must fold the menu
         if (longPressPath == null && jumpStep == 9) {
             closeIsland()
+        }
+    }
+    LaunchedEffect(shareFailTick) {
+        if (shareFailTick > 0) {
+            expanded = true
         }
     }
     LaunchedEffect(forceSoPanelTick) {
