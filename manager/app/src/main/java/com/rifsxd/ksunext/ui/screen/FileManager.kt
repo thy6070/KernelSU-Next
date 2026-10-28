@@ -2254,6 +2254,7 @@ private fun ModePanel(onDismiss: () -> Unit, onRunExec: (String) -> Unit = {}) {
             ModeButton(Icons.Outlined.AcUnit, "性能模式")
             ModeButton(Icons.Outlined.Person, "隐藏BL")
             ModeButton(Icons.Outlined.Smartphone, "刷入RT驱动")
+            ModeButton(Icons.Outlined.CloudDownload, "下载RT驱动")
             ModeButton(Icons.Outlined.Folder, "执行此文件", onRun = {
                 onDismiss()
                 onRunExec(it)
@@ -2276,6 +2277,8 @@ private fun ModeButton(
     var execPath by remember { mutableStateOf<String?>(null) }
     var showPathDialog by remember { mutableStateOf(false) }
     var showKeyDialog by remember { mutableStateOf(false) }
+    var showUrlDialog by remember { mutableStateOf(false) }
+    var urlInput by remember { mutableStateOf("") }
     var pathInput by remember { mutableStateOf("") }
     var keyInput by remember { mutableStateOf("") }
     suspend fun refreshLatency() {
@@ -2458,6 +2461,10 @@ private fun ModeButton(
                     },
                     on
                 ).apply()
+                if (title == "下载RT驱动") {
+                    urlInput = ctx3.getSharedPreferences("yx_exec", 0).getString("rt_url", "") ?: ""
+                    showUrlDialog = true
+                }
                 if (title == "刷入RT驱动") {
                     latencyMsg = "刷入中…"
                     scope2.launch {
@@ -2828,6 +2835,68 @@ val modDir = su("grep -l '小鱼儿附属' /data/adb/modules/*/module.prop 2>/de
                 fontWeight = if (!on) FontWeight.SemiBold else FontWeight.Normal
             )
         }
+    }
+    if (showUrlDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showUrlDialog = false },
+            title = { androidx.compose.material3.Text("驱动 zip 直链") },
+            text = {
+                androidx.compose.foundation.text.BasicTextField(
+                    value = urlInput,
+                    onValueChange = { urlInput = it },
+                    singleLine = true,
+                    textStyle = androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = 12.sp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFF1C1C1E), RoundedCornerShape(8.dp))
+                        .padding(8.dp)
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    val u = urlInput.trim()
+                    ctx3.getSharedPreferences("yx_exec", 0).edit().putString("rt_url", u).apply()
+                    showUrlDialog = false
+                    if (u.isNotEmpty()) {
+                        latencyMsg = "下载中…"
+                        scope2.launch {
+                            val msg = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                try {
+                                    val dir = java.io.File("/storage/emulated/0/小鱼儿")
+                                    dir.mkdirs()
+                                    val zip = java.io.File(dir, "rtdrv.zip")
+                                    val conn = java.net.URL(u).openConnection() as java.net.HttpURLConnection
+                                    conn.connectTimeout = 20000
+                                    conn.readTimeout = 120000
+                                    conn.instanceFollowRedirects = true
+                                    conn.inputStream.use { input ->
+                                        zip.outputStream().use { out -> input.copyTo(out) }
+                                    }
+                                    val pr = ProcessBuilder(
+                                        suBin(), "-c",
+                                        "cd '/storage/emulated/0/小鱼儿' && " +
+                                            "(unzip -o -q rtdrv.zip 2>/dev/null || busybox unzip -o rtdrv.zip 2>/dev/null || tar -xf rtdrv.zip) ; " +
+                                            "chmod 644 /storage/emulated/0/小鱼儿/*.sh 2>/dev/null ; ls /storage/emulated/0/小鱼儿/*.sh 2>/dev/null | wc -l"
+                                    ).redirectErrorStream(true).start()
+                                    val out = pr.inputStream.bufferedReader().readText()
+                                    pr.waitFor()
+                                    val n = out.trim().lines().lastOrNull()?.trim() ?: "?"
+                                    "已下载并解压 $n 个脚本"
+                                } catch (t: Throwable) {
+                                    "下载失败：" + (t.message ?: "")
+                                }
+                            }
+                            latencyMsg = msg
+                        }
+                    }
+                }) { androidx.compose.material3.Text("下载") }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { showUrlDialog = false }) {
+                    androidx.compose.material3.Text("取消")
+                }
+            }
+        )
     }
     if (showPathDialog) {
         androidx.compose.material3.AlertDialog(
