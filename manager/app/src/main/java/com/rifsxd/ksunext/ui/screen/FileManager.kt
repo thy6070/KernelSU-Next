@@ -438,22 +438,27 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                 // MT-style: stage into a public sdcard folder, then hand a file://
                                 // URI over (StrictMode disabled), which avoids FileProvider entirely
                                 val name = java.io.File(srcPath).name
-                                val safeName = name
-                                val shareDir = java.io.File("/storage/emulated/0/小鱼儿/.share")
-                                shareDir.mkdirs()
-                                val staged = java.io.File(shareDir, safeName)
-                                try {
-                                    staged.delete()
-                                } catch (t: Throwable) {
+                                val original = java.io.File(srcPath)
+                                // MT shares the real path, no staging: that avoids overwriting a
+                                // file the receiver is still uploading
+                                val readable = runCatching { original.canRead() }.getOrDefault(false)
+                                val target = if (readable) {
+                                    original
+                                } else {
+                                    val shareDir = java.io.File("/storage/emulated/0/小鱼儿/.share")
+                                    shareDir.mkdirs()
+                                    val staged = java.io.File(shareDir, name)
+                                    if (!staged.exists() || staged.length() == 0L) {
+                                        runCatching {
+                                            ProcessBuilder(
+                                                suBin(), "-c",
+                                                "cp -f " + q(srcPath) + " " + q(staged.absolutePath) +
+                                                    " ; chmod 644 " + q(staged.absolutePath)
+                                            ).redirectErrorStream(true).start().waitFor()
+                                        }
+                                    }
+                                    if (staged.exists() && staged.length() > 0) staged else original
                                 }
-                                runCatching {
-                                    ProcessBuilder(
-                                        suBin(), "-c",
-                                        "cp -f " + q(srcPath) + " " + q(staged.absolutePath) +
-                                            " ; chmod 644 " + q(staged.absolutePath)
-                                    ).redirectErrorStream(true).start().waitFor()
-                                }
-                                val target = if (staged.exists() && staged.length() > 0) staged else java.io.File(srcPath)
                                 var err: String? = null
                                 var done = false
                                 // 1) file:// first — FileProvider is unreliable once SUSFS is active
@@ -520,8 +525,8 @@ fun FileManagerScreen(navigator: DestinationsNavigator) {
                                         appendLine("分享失败")
                                         appendLine("源: " + srcPath)
                                         appendLine("源存在: " + java.io.File(srcPath).exists())
-                                        appendLine("暂存: " + staged.absolutePath)
-                                        appendLine("暂存存在: " + staged.exists() + " 长度=" + staged.length())
+                                        appendLine("目标: " + target.absolutePath)
+                                        appendLine("目标存在: " + target.exists() + " 长度=" + target.length())
                                         appendLine("异常: " + (err ?: "无"))
                                     }
                                     withContext(Dispatchers.Main) {
