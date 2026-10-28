@@ -314,6 +314,50 @@ fun SettingScreen(navigator: DestinationsNavigator) {
                     )
                 }
             )
+            var kernelUmount by remember { mutableStateOf(false) }
+            var avcSpoof by remember { mutableStateOf(false) }
+            LaunchedEffect(Unit) {
+                kernelUmount = runCatching { Natives.isKernelUmountEnabled() }.getOrDefault(false)
+                avcSpoof = runCatching { Natives.isAvcSpoofEnabled() }.getOrDefault(false)
+            }
+            ListItem(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable {
+                        val next = !kernelUmount
+                        if (Natives.setKernelUmountEnabled(next)) kernelUmount = next
+                    },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                leadingContent = { Icon(Icons.Filled.FolderDelete, null) },
+                headlineContent = {
+                    Text(
+                        text = "内核卸载模块",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
+                supportingContent = { Text(if (kernelUmount) "已开启" else "已关闭") }
+            )
+            ListItem(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable {
+                        val next = !avcSpoof
+                        if (Natives.setAvcSpoofEnabled(next)) avcSpoof = next
+                    },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                leadingContent = { Icon(Icons.Filled.RemoveModerator, null) },
+                headlineContent = {
+                    Text(
+                        text = "ACE 日志伪装",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
+                supportingContent = { Text(if (avcSpoof) "已开启" else "已关闭") }
+            )
             Spacer(Modifier)
         }
     }
