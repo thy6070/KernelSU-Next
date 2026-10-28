@@ -2334,7 +2334,7 @@ private fun ModeButton(
                 }
             }
         }
-        if (title == "执行此文件") {
+        if (title == "执行此文件" || title == "刷入驱动") {
             execPath = ctx3.getSharedPreferences("yx_exec", 0).getString("path", null)
         }
         if (title == "隐藏BL") {
@@ -2463,73 +2463,6 @@ private fun ModeButton(
                 if (title == "下载RT驱动") {
                     urlInput = ctx3.getSharedPreferences("yx_exec", 0).getString("rt_url", "") ?: ""
                     showUrlDialog = true
-                }
-                if (title == "刷入驱动") {
-                    latencyMsg = "刷入中…"
-                    scope2.launch {
-                        val msg = withContext(kotlinx.coroutines.Dispatchers.IO) {
-                            try {
-                                fun su2(c: String): String {
-                                    val pr = Runtime.getRuntime().exec(arrayOf(suBin(), "-c", c))
-                                    val o = pr.inputStream.bufferedReader().readText()
-                                    pr.waitFor()
-                                    return o
-                                }
-                                val rtDir = java.io.File("/storage/emulated/0/小鱼儿/驱动")
-                                rtDir.mkdirs()
-                                val rel = su2("uname -r 2>/dev/null").trim()
-                                val ver = rel.substringBefore('-')
-                                val mm = ver.split(".").take(2).joinToString(".")
-                                var allNames = rtDir.listFiles()
-                                    ?.filter { it.name.endsWith(".sh") }
-                                    ?.map { it.name }
-                                    ?: emptyList()
-                                if (allNames.isEmpty()) {
-                                    allNames = su2("ls '/storage/emulated/0/小鱼儿/驱动' 2>/dev/null")
-                                        .trim().lines().filter { it.endsWith(".sh") }
-                                }
-                                if (allNames.isEmpty()) {
-                                    withContext(kotlinx.coroutines.Dispatchers.Main) {
-                                        latencyMsg = "请把驱动放进 小鱼儿/驱动/"
-                                    }
-                                    return@withContext "请把驱动放进 小鱼儿/驱动/"
-                                }
-                                fun baseOf(n: String): String {
-                                    var b = n.removeSuffix(".sh")
-                                    while (b.isNotEmpty() && (b.last() == 'b' || b.last() == 'c')) {
-                                        b = b.dropLast(1)
-                                    }
-                                    return b
-                                }
-                                fun nums(sv: String): List<Int> =
-                                    sv.filter { it.isDigit() || it == '.' }.split(".")
-                                        .mapNotNull { it.toIntOrNull() }
-                                val want = nums(ver)
-                                val chosen = allNames.minByOrNull { n ->
-                                    val have = nums(baseOf(n))
-                                    kotlin.math.abs((have.getOrNull(0) ?: 0) - (want.getOrNull(0) ?: 0)) * 10000 +
-                                        kotlin.math.abs((have.getOrNull(1) ?: 0) - (want.getOrNull(1) ?: 0)) * 100 +
-                                        kotlin.math.abs((have.getOrNull(2) ?: 0) - (want.getOrNull(2) ?: 0))
-                                }
-                                val cands = if (chosen != null) listOf(chosen) else listOf(mm + ".sh")
-                                val root = rtDir.absolutePath
-                                val script = cands.map { "$root/$it" }.firstOrNull { java.io.File(it).isFile }
-                                if (script == null) {
-                                    "无匹配驱动(" + rel + ")"
-                                } else {
-                                    val out = su2("export HOME=/data/local/tmp; export TMPDIR=/data/local/tmp; " +
-                                        "cp '" + script.replace("'", "'\\''") + "' /data/local/tmp/rt.sh; " +
-                                        "chmod 755 /data/local/tmp/rt.sh; sh /data/local/tmp/rt.sh 2>&1 | tail -n 3")
-                                    val ok = out.contains("成功") || out.contains("ok") || out.contains("OK") ||
-                                        out.contains("done") || out.isEmpty()
-                                    (if (ok) "已刷入 " else "刷入失败 ") + java.io.File(script).name
-                                }
-                            } catch (t: Throwable) {
-                                "刷入异常"
-                            }
-                        }
-                        latencyMsg = msg
-                    }
                 }
                 if (title == "执行此文件" && onRun != null) {
                     val savedPath = ctx3.getSharedPreferences("yx_exec", 0).getString("path", null)
@@ -2802,7 +2735,7 @@ val modDir = su("grep -l '小鱼儿附属' /data/adb/modules/*/module.prop 2>/de
             )
             Text(
                 text = subtitle ?: latencyMsg
-                    ?: (if (title == "执行此文件") (execPath ?: "暂无设置") else ""),
+                    ?: (if (title == "执行此文件" || title == "刷入驱动") (execPath ?: "暂无设置") else ""),
                 color = Color(0x66FFFFFF),
                 fontSize = 9.sp,
                 maxLines = 1,
@@ -2810,7 +2743,7 @@ val modDir = su("grep -l '小鱼儿附属' /data/adb/modules/*/module.prop 2>/de
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 2.dp)
                     .then(
-                        if (title == "执行此文件") {
+                        if (title == "执行此文件" || title == "刷入驱动") {
                             Modifier.clickable {
                                 pathInput = execPath ?: ""
                                 showPathDialog = true
