@@ -19,9 +19,12 @@ class BootReceiver : BroadcastReceiver() {
         val bin = suBin()
         Thread {
             runCatching {
-                Thread.sleep(8000)
+                Thread.sleep(20000)
                 if (perf) {
-                    ProcessBuilder(bin, "-c", "sh /data/adb/service.d/xy_perf.sh")
+                    ProcessBuilder(bin, "-c",
+                        "sed 's/^sleep 20$/sleep 1/' /data/adb/service.d/xy_perf.sh > /data/local/tmp/xy_now.sh 2>/dev/null; " +
+                            "chmod 755 /data/local/tmp/xy_now.sh 2>/dev/null; " +
+                            "sh /data/local/tmp/xy_now.sh >/dev/null 2>&1")
                         .redirectErrorStream(true).start().waitFor()
                 }
                 if (open) {
